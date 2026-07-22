@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Attention v3 — Softmax anatomy</title>
+<link rel="stylesheet" href="shared/slide.css">
+<style>
+  #wS, #wA { position: absolute; left: 70px; }
+  #wS { top: 130px; } #wA { top: 420px; }
+  .rowhl {
+    position: absolute; border: 2.5px solid #2fd6b0; border-radius: 8px;
+    pointer-events: none; opacity: 0; z-index: 3;
+  }
+  #panel {
+    position: absolute; left: 430px; top: 130px; width: 780px; height: 520px;
+    background: var(--panel); border: 1px solid var(--line); border-radius: 14px;
+    padding: 24px 30px;
+  }
+  #panelTitle { font-size: 18px; font-weight: 650; margin-bottom: 18px; }
+  #panelTitle .tok { margin-left: 8px; }
+  .stage-label { font-size: 13px; color: var(--ink-2); margin: 14px 0 8px; font-family: ui-monospace, monospace; }
+  .barrow { display: flex; align-items: center; gap: 10px; height: 34px; margin-bottom: 6px; }
+  .barrow .who { width: 52px; font-size: 13px; color: var(--ink-2); text-align: right; }
+  .bar { height: 22px; border-radius: 4px 6px 6px 4px; background: #2fd6b0; width: 0; }
+  .bar.logit { background: #d95926; }
+  .bar.neg { background: #3987e5; }
+  .barval { font-family: ui-monospace, monospace; font-size: 13px; color: #c7cce0; white-space: nowrap; }
+  #unit { position: relative; width: 620px; height: 46px; margin-top: 8px; border-radius: 8px; overflow: hidden; background: #10131a; display: flex; }
+  #unit .seg { height: 100%; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 600; min-width: 0; overflow: hidden; border-right: 2px solid var(--surface); }
+  #unitScale { display: flex; justify-content: space-between; width: 620px; font-size: 11px; color: var(--ink-2); margin-top: 4px; font-family: ui-monospace, monospace; }
+</style>
+</head>
+<body>
+<div class="stage">
+  <div class="slide-title">Softmax turns scores into a distribution</div>
+  <div class="slide-sub">A<sub>ij</sub> = exp(s<sub>ij</sub>) / Σ<sub>j'</sub> exp(s<sub>ij'</sub>) — every query row becomes a convex combination</div>
+  <div class="variant-tag">style 3 · softmax anatomy</div>
+
+  <div id="wS">
+    <div class="m-label">S = QKᵀ/√dₖ</div>
+    <div id="mS"></div>
+  </div>
+  <div id="wA">
+    <div class="m-label">A = softmax(S) <span class="dim">rows sum to 1</span></div>
+    <div id="mA"></div>
+  </div>
+  <div class="rowhl" id="rowhl"></div>
+
+  <div id="panel">
+    <div id="panelTitle">query row: <span class="tok" id="curTok"></span></div>
+    <div class="stage-label"># 1 — scaled logits s<sub>ij</sub></div>
+    <div id="logits"></div>
+    <div class="stage-label"># 2 — exponentiate: exp(s<sub>ij</sub>) &nbsp;(all positive, gaps amplified)</div>
+    <div id="exps"></div>
+    <div class="stage-label" id="sumLabel"># 3 — divide by the sum → weights</div>
+    <div id="unit"></div>
+    <div id="unitScale"><span>0</span><span>0.25</span><span>0.5</span><span>0.75</span><span>1</span></div>
+  </div>
+
+  <a class="back-link" href="index.html">&larr; style lab</a>
+  <button class="replay" id="replayBtn">↻ replay</button>
+</div>
+
+<script src="../vendor/motion.min.js"></script>
+<script src="shared/attn.js"></script>
+<script src="shared/stage.js"></script>
+<script>
+  var mS = ATTN.buildMatrix(document.getElementById("mS"), ATTN.S, {
+    cls: "small", colorFn: function (x) { return ATTN.scoreColor(x, 1.7); }
+  });
+  var mA = ATTN.buildMatrix(document.getElementById("mA"), ATTN.A, { cls: "small" });
+  var aCells = [].slice.call(mA.children);
+  aCells.forEach(function (c) { c.textContent = "·"; });
+
+  // build bar rows
+  var maxExp = Math.max.apply(null, ATTN.S.map(function (r) {
+    return Math.max.apply(null, r.map(Math.exp));
+  }));
+  function mkRows(host, cls) {
+    ATTN.tokens.forEach(function (t, j) {
+      var row = document.createElement("div"); row.className = "barrow";
+      row.innerHTML = '<div class="who">' + t + '</div><div class="bar ' + cls + '"></div><div class="barval"></div>';
+      host.appendChild(row);
+    });
+  }
+  mkRows(document.getElementById("logits"), "logit");
+  mkRows(document.getElementById("exps"), "");
+
+  var unit = document.getElementById("unit");
+  ATTN.tokens.forEach(function (t, j) {
+    var seg = document.createElement("div");
+    seg.className = "seg";
+    seg.style.background = ATTN.weightColor(0.35 + 0.16 * j);
+    seg.style.color = "#0c1116";
+    seg.style.width = "0px";
+    seg.textContent = t;
+    unit.appendChild(seg);
+  });
+
+  function sleep(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
+
+  var running = 0;
+  async function showRow(r) {
+    document.getElementById("curTok").textContent = ATTN.tokens[r] + "  (i = " + r + ")";
+    // highlight source row in S (matrix at 70, top 130+label 27; cell 32h gap 3 pad 8)
+    var hl = document.getElementById("rowhl");
+    hl.style.left = (70 + 4) + "px";
+    hl.style.top = (130 + 27 + 4 + r * 35) + "px";
+    hl.style.width = (42 * 4 + 3 * 3 + 8 + 40) + "px";
+    hl.style.height = (32 + 8) + "px";
+    Motion.animate(hl, { opacity: 1 }, { duration: 0.3 });
+
+    var logitBars = document.querySelectorAll("#logits .barrow");
+    var expBars = document.querySelectorAll("#exps .barrow");
+    var segs = document.querySelectorAll("#unit .seg");
+
+    // reset
+    logitBars.forEach(function (b) { b.querySelector(".bar").style.width = "0px"; b.querySelector(".barval").textContent = ""; });
+    expBars.forEach(function (b) { b.querySelector(".bar").style.width = "0px"; b.querySelector(".barval").textContent = ""; });
+    segs.forEach(function (s) { s.style.width = "0px"; });
+
+    // 1. logits (diverging: blue negative, orange positive)
+    for (var j = 0; j < 4; j++) {
+      var s = ATTN.S[r][j];
+      var bar = logitBars[j].querySelector(".bar");
+      bar.className = "bar logit" + (s < 0 ? " neg" : "");
+      Motion.animate(bar, { width: Math.abs(s) / 1.7 * 320 + 2 + "px" }, { type: "spring", stiffness: 220, damping: 24 });
+      logitBars[j].querySelector(".barval").textContent = ATTN.fmt(s);
+    }
+    await sleep(900);
+
+    // 2. exp
+    var sumExp = 0;
+    for (var j = 0; j < 4; j++) sumExp += Math.exp(ATTN.S[r][j]);
+    for (var j = 0; j < 4; j++) {
+      var e = Math.exp(ATTN.S[r][j]);
+      Motion.animate(expBars[j].querySelector(".bar"), { width: e / maxExp * 480 + "px" }, { type: "spring", stiffness: 180, damping: 20 });
+      expBars[j].querySelector(".barval").textContent = "exp → " + ATTN.fmt(e);
+    }
+    document.getElementById("sumLabel").innerHTML = "# 3 — divide by the sum (Σ = " + ATTN.fmt(sumExp) + ") → weights";
+    await sleep(1000);
+
+    // 3. normalized unit bar
+    for (var j = 0; j < 4; j++) {
+      var w = ATTN.A[r][j];
+      segs[j].textContent = ATTN.tokens[j] + " " + ATTN.fmt(w);
+      Motion.animate(segs[j], { width: w * 620 + "px" }, { type: "spring", stiffness: 160, damping: 22 });
+    }
+    await sleep(900);
+
+    // write into A
+    for (var j = 0; j < 4; j++) {
+      var c = aCells[r * 4 + j];
+      c.textContent = ATTN.fmt(ATTN.A[r][j]);
+      c.style.background = ATTN.weightColor(ATTN.A[r][j]);
+      c.style.color = ATTN.inkFor(ATTN.A[r][j]);
+      Motion.animate(c, { scale: [0.5, 1] }, { type: "spring", stiffness: 300, damping: 18 });
+    }
+    await sleep(700);
+    Motion.animate(hl, { opacity: 0 }, { duration: 0.25 });
+  }
+
+  async function run() {
+    var my = ++running;
+    while (running === my) {
+      aCells.forEach(function (c) { c.textContent = "·"; c.style.background = ""; c.style.color = ""; });
+      for (var r = 0; r < 4; r++) {
+        if (running !== my) return;
+        await showRow(r);
+      }
+      await sleep(2200);
+    }
+  }
+  run();
+  document.getElementById("replayBtn").onclick = function () { run(); };
+</script>
+</body>
+</html>

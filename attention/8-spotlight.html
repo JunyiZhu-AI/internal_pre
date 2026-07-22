@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Attention v8 — Spotlight</title>
+<link rel="stylesheet" href="shared/slide.css">
+<style>
+  #beams { position: absolute; inset: 0; pointer-events: none; }
+  .kcard {
+    position: absolute; width: 150px; top: 170px; text-align: center;
+    background: var(--panel); border: 2px solid var(--line); border-radius: 18px;
+    padding: 16px 0 12px; transition: transform 0.5s, border-color 0.5s, filter 0.5s;
+    filter: brightness(0.55);
+  }
+  .kcard .emo { font-size: 42px; }
+  .kcard .name { font-size: 16px; font-weight: 700; margin-top: 4px; }
+  .kcard .wtag {
+    margin-top: 8px; font-family: ui-monospace, monospace; font-size: 14px;
+    color: #ffd166; opacity: 0; transition: opacity 0.4s;
+  }
+  .kcard.lit .wtag { opacity: 1; }
+  #qcard {
+    position: absolute; left: 50%; top: 408px; transform: translateX(-50%);
+    width: 210px; text-align: center;
+    background: linear-gradient(160deg, #24406e, #1b2a47);
+    border: 2px solid var(--c-q); border-radius: 22px; padding: 18px 0 14px;
+    box-shadow: 0 0 40px rgba(57, 135, 229, 0.35);
+  }
+  #qcard .emo { font-size: 52px; }
+  #qcard .name { font-size: 20px; font-weight: 800; }
+  #qcard .role { font-size: 12px; color: #9db8e0; margin-top: 4px; letter-spacing: 0.08em; }
+  #tray {
+    position: absolute; left: 50%; bottom: 40px; transform: translateX(-50%);
+    width: 560px;
+  }
+  #traylab { text-align: center; font-size: 13px; color: var(--ink-2); margin-bottom: 7px; }
+  #traybar { display: flex; height: 40px; border-radius: 10px; overflow: hidden; background: #10131a; border: 1px solid var(--line); }
+  #traybar .seg { border-right: 2px solid var(--surface); width: 0; display: flex; align-items: center; justify-content: center; font-size: 18px; overflow: hidden; }
+  .flychip { position: absolute; font-size: 26px; z-index: 8; }
+</style>
+</head>
+<body>
+<div class="stage">
+  <div class="slide-title">Every token shines a light</div>
+  <div class="slide-sub">the query decides where to look; brightness = attention weight; what it collects = value vectors</div>
+  <div class="variant-tag">style 8 · spotlight</div>
+
+  <svg id="beams" width="1280" height="720">
+    <defs>
+      <linearGradient id="beamGrad" x1="0" y1="1" x2="0" y2="0">
+        <stop offset="0" stop-color="#ffd166" stop-opacity="0.85"/>
+        <stop offset="1" stop-color="#ffd166" stop-opacity="0.06"/>
+      </linearGradient>
+    </defs>
+  </svg>
+
+  <div id="qcard">
+    <div class="emo" id="qEmo"></div>
+    <div class="name" id="qName"></div>
+    <div class="role">QUERY · 🔦</div>
+  </div>
+
+  <div id="tray">
+    <div id="traylab">collected context (Σ weight × value)</div>
+    <div id="traybar"></div>
+  </div>
+
+  <a class="back-link" href="index.html">&larr; style lab</a>
+  <button class="replay" id="replayBtn">↻ replay</button>
+</div>
+
+<script src="../vendor/anime.iife.min.js"></script>
+<script src="shared/attn.js"></script>
+<script src="shared/stage.js"></script>
+<script>
+  var EMO = ["📎", "🤖", "🏋️", "📦"];
+  var CARD_COLORS = ["#4cc9f0", "#06d6a0", "#ffd166", "#f77f6b"];
+  var keyX = [250, 510, 770, 1030];
+  var stage = document.querySelector(".stage");
+  var svg = document.getElementById("beams");
+  var NS = "http://www.w3.org/2000/svg";
+
+  var kcards = ATTN.tokens.map(function (t, j) {
+    var d = document.createElement("div");
+    d.className = "kcard";
+    d.style.left = keyX[j] - 75 + "px";
+    d.innerHTML = '<div class="emo">' + EMO[j] + '</div><div class="name">' + t + '</div><div class="wtag"></div>';
+    stage.appendChild(d);
+    return d;
+  });
+
+  var beams = ATTN.tokens.map(function () {
+    var p = document.createElementNS(NS, "polygon");
+    p.setAttribute("fill", "url(#beamGrad)");
+    p.setAttribute("opacity", 0);
+    svg.appendChild(p);
+    return p;
+  });
+
+  var tray = document.getElementById("traybar");
+  var segs = ATTN.tokens.map(function (t, j) {
+    var s = document.createElement("div");
+    s.className = "seg";
+    s.style.background = CARD_COLORS[j];
+    s.textContent = EMO[j];
+    tray.appendChild(s);
+    return s;
+  });
+
+  function sleep(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
+
+  var running = 0;
+  async function showQuery(i) {
+    var qc = document.getElementById("qcard");
+    document.getElementById("qEmo").textContent = EMO[i];
+    document.getElementById("qName").textContent = ATTN.tokens[i];
+    anime.animate(qc, { scale: [0.85, 1], duration: 600, ease: "outElastic(1, .6)" });
+
+    // beams: from query card mouth to each key card base
+    var qx = 640, qy = 408;
+    for (var j = 0; j < 4; j++) {
+      var w = ATTN.A[i][j];
+      var kx = keyX[j], ky = 316;
+      var spread = 24 + w * 62;
+      beams[j].setAttribute("points",
+        (qx - 14) + "," + qy + " " + (qx + 14) + "," + qy + " " +
+        (kx + spread) + "," + ky + " " + (kx - spread) + "," + ky);
+      anime.animate(beams[j], { opacity: [0, 0.25 + w * 0.75], duration: 650, delay: j * 90, ease: "outQuad" });
+      kcards[j].style.filter = "brightness(" + (0.5 + w * 1.5) + ")";
+      kcards[j].style.transform = "scale(" + (0.94 + w * 0.28) + ")";
+      kcards[j].style.borderColor = w > 0.25 ? "#ffd166" : "var(--line)";
+      kcards[j].classList.toggle("lit", w > 0.12);
+      kcards[j].querySelector(".wtag").textContent = "w = " + ATTN.fmt(w);
+    }
+    await sleep(1100);
+
+    // fly value chips into the tray, sized by weight
+    segs.forEach(function (s) { s.style.width = "0px"; });
+    for (var j = 0; j < 4; j++) {
+      (function (j) {
+        var chip = document.createElement("div");
+        chip.className = "flychip";
+        chip.textContent = EMO[j];
+        chip.style.left = keyX[j] - 13 + "px";
+        chip.style.top = "320px";
+        stage.appendChild(chip);
+        var tx = (640 - 280 + 560 * (j * 0.25 + 0.125)) - (keyX[j] - 13);
+        anime.animate(chip, {
+          x: tx, y: 320, opacity: [1, 0.2],
+          duration: 800, delay: j * 120, ease: "inQuad",
+          onComplete: function () {
+            chip.remove();
+            anime.animate(segs[j], { width: ATTN.A[i][j] * 556 + "px", duration: 500, ease: "outBack(1.4)" });
+          }
+        });
+      })(j);
+    }
+    await sleep(2600);
+    beams.forEach(function (b) { anime.animate(b, { opacity: 0, duration: 300 }); });
+  }
+
+  async function run() {
+    var my = ++running;
+    while (running === my) {
+      for (var i = 0; i < 4; i++) {
+        if (running !== my) return;
+        await showQuery(i);
+      }
+    }
+  }
+  run();
+  document.getElementById("replayBtn").onclick = function () { run(); };
+</script>
+</body>
+</html>

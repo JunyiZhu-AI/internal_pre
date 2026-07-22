@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Attention v7 — Terminal</title>
+<link rel="stylesheet" href="shared/slide.css">
+<style>
+  #term {
+    position: absolute; left: 90px; top: 120px; width: 1100px; height: 540px;
+    background: #0a0f0c; border: 1px solid #1d2a22; border-radius: 12px;
+    padding: 26px 32px; overflow: hidden;
+    font-family: ui-monospace, "SF Mono", Menlo, monospace; font-size: 16.5px;
+    line-height: 1.62; color: #8ef0a3; white-space: pre;
+  }
+  #term .dim2 { color: #4d7a5c; }
+  #term .cmd { color: #d3f9dc; }
+  #term .num { display: inline-block; min-width: 62px; text-align: right; }
+  #term .wcell { display: inline-block; min-width: 62px; text-align: right; border-radius: 4px; }
+  #caret { display: inline-block; width: 10px; height: 20px; background: #8ef0a3; vertical-align: text-bottom; animation: blink 1s steps(1) infinite; }
+  @keyframes blink { 50% { opacity: 0; } }
+  .term-dots { position: absolute; left: 116px; top: 134px; display: flex; gap: 8px; }
+  .term-dots i { width: 12px; height: 12px; border-radius: 50%; display: block; }
+</style>
+</head>
+<body>
+<div class="stage">
+  <div class="slide-title">Attention, computed live</div>
+  <div class="slide-sub">the whole mechanism is three lines of NumPy</div>
+  <div class="variant-tag">style 7 · terminal</div>
+
+  <div id="term"></div>
+  <div class="term-dots"><i style="background:#ff5f57"></i><i style="background:#febc2e"></i><i style="background:#28c840"></i></div>
+
+  <a class="back-link" href="index.html">&larr; style lab</a>
+  <button class="replay" id="replayBtn">↻ replay</button>
+</div>
+
+<script src="shared/attn.js"></script>
+<script src="shared/stage.js"></script>
+<script>
+  var term = document.getElementById("term");
+  var caret = document.createElement("span");
+  caret.id = "caret";
+
+  function sleep(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
+
+  function put(html) {
+    var s = document.createElement("span");
+    s.innerHTML = html;
+    term.insertBefore(s, caret);
+    return s;
+  }
+
+  async function typeLine(text, cls, cps) {
+    var s = put("");
+    s.className = cls || "cmd";
+    for (var i = 0; i < text.length; i++) {
+      s.textContent += text[i];
+      await sleep(cps || 22);
+    }
+    put("\n");
+  }
+
+  function countTo(el, target, digits, dur) {
+    var t0 = performance.now();
+    function frame(t) {
+      var p = Math.min(1, (t - t0) / dur);
+      p = 1 - Math.pow(1 - p, 3);
+      el.textContent = (target * p).toFixed(digits);
+      if (p < 1) requestAnimationFrame(frame);
+    }
+    requestAnimationFrame(frame);
+  }
+
+  async function printMatrix(M, opts) {
+    opts = opts || {};
+    for (var i = 0; i < M.length; i++) {
+      put('<span class="dim2">' + (i === 0 ? " [[" : "  [") + "</span>");
+      for (var j = 0; j < M[i].length; j++) {
+        var v = M[i][j];
+        var cell = put('<span class="' + (opts.weights ? "wcell" : "num") + '">0.00</span>');
+        var inner = cell.firstChild;
+        if (opts.weights) {
+          inner.style.background = ATTN.weightColor(v);
+          inner.style.color = ATTN.inkFor(v);
+          inner.style.padding = "0 4px";
+        }
+        countTo(inner, v, opts.digits === undefined ? 2 : opts.digits, 600);
+      }
+      put('<span class="dim2">' + (i === M.length - 1 ? " ]]" : " ]") + "</span>\n");
+      await sleep(opts.rowDelay || 260);
+    }
+  }
+
+  var running = 0;
+  async function run() {
+    var my = ++running;
+    term.innerHTML = "";
+    term.appendChild(caret);
+    function alive() { return running === my; }
+
+    await typeLine("$ python demo_attention.py", "dim2", 16); if (!alive()) return;
+    await sleep(300);
+    await typeLine(">>> tokens");
+    await typeLine("['The', 'robot', 'lifts', 'boxes']       # n = 4, d_k = 3", "dim2", 6);
+    await sleep(500); if (!alive()) return;
+
+    await typeLine(">>> S = Q @ K.T / sqrt(d_k)   # 16 dot products: score(i,j) = q_i · k_j");
+    await printMatrix(ATTN.S, {}); if (!alive()) return;
+    await sleep(700);
+
+    await typeLine(">>> A = softmax(S, axis=-1)   # each row -> distribution over keys");
+    await printMatrix(ATTN.A, { weights: true }); if (!alive()) return;
+    await typeLine("# A.sum(axis=-1) = [1.00 1.00 1.00 1.00]  — row-stochastic", "dim2", 6);
+    await sleep(700);
+
+    await typeLine(">>> out = A @ V               # blend value rows with those weights");
+    await printMatrix(ATTN.O, {}); if (!alive()) return;
+    await typeLine("# done: out[i] is a convex combination of value vectors.", "dim2", 6);
+
+    await sleep(4200);
+    if (alive()) run();
+  }
+  run();
+  document.getElementById("replayBtn").onclick = function () { run(); };
+</script>
+</body>
+</html>

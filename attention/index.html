@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Attention style lab — 8 variants</title>
+<link rel="stylesheet" href="../shared/styles.css">
+</head>
+<body>
+<a class="back" href="../index.html">&larr; capability tests</a>
+<h1>🎬 Attention style lab</h1>
+<p style="color:#9aa1b5; max-width: 760px">
+  Eight page-slides explaining <b>scaled dot-product attention</b>, each in a different visual
+  style. All eight compute the <i>same</i> 4-token example (<code>The robot lifts boxes</code>,
+  d<sub>k</sub>=3) from one shared math module, so every number on every slide is real and
+  consistent. Animations auto-play and loop; each page has a replay button.
+  Pick the style (or mix) you want for the real deck.
+</p>
+
+<div class="grid">
+  <a class="card" href="1-pipeline.html">
+    <h2>1 · Dataflow pipeline</h2>
+    <p class="desc">The whole mechanism left-to-right: Q/K/V → scores → softmax → output, wired with animated connectors.</p>
+    <p class="expect">GSAP · overview-first</p>
+  </a>
+  <a class="card" href="2-matmul.html">
+    <h2>2 · Matmul close-up</h2>
+    <p class="desc">Row × column → cell, with the actual arithmetic on screen; then ÷√d and softmax morph the grid in place.</p>
+    <p class="expect">GSAP · the matrix-multiplication money shot</p>
+  </a>
+  <a class="card" href="3-softmax.html">
+    <h2>3 · Softmax anatomy</h2>
+    <p class="desc">One score row dissected: logits → exp → normalize, springing into a unit bar; A assembles row by row.</p>
+    <p class="expect">Motion One · distribution-first</p>
+  </a>
+  <a class="card" href="4-graph.html">
+    <h2>4 · Token graph</h2>
+    <p class="desc">Attention as weighted arcs between tokens — edge thickness is A<sub>ij</sub>, synced with the matrix row.</p>
+    <p class="expect">Anime.js + SVG · relational view</p>
+  </a>
+  <a class="card" href="5-formula.html">
+    <h2>5 · Formula first</h2>
+    <p class="desc">The equation is the hero; each term lights up and demos itself, including why √d<sub>k</sub> matters.</p>
+    <p class="expect">Pure CSS · math-forward</p>
+  </a>
+  <a class="card" href="6-isometric.html">
+    <h2>6 · Isometric scene</h2>
+    <p class="desc">Tensors as slabs on a 3D floor: K flips into Kᵀ, Q collides with it, the output lifts off the plane.</p>
+    <p class="expect">CSS 3D + GSAP · cinematic</p>
+  </a>
+  <a class="card" href="7-terminal.html">
+    <h2>7 · Terminal</h2>
+    <p class="desc">A Python session types itself: three lines of NumPy, matrices printing with live-counting numbers.</p>
+    <p class="expect">Vanilla JS · numbers-first, code-flavored</p>
+  </a>
+  <a class="card" href="8-spotlight.html">
+    <h2>8 · Spotlight</h2>
+    <p class="desc">The query shines a literal light on the keys; value chips fly into a context tray sized by weight.</p>
+    <p class="expect">Anime.js · playful, intuition-first</p>
+  </a>
+</div>
+</body>
+</html>

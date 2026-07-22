@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Attention v4 — Token graph</title>
+<link rel="stylesheet" href="shared/slide.css">
+<style>
+  #arcs { position: absolute; inset: 0; pointer-events: none; }
+  .tok.key, .tok.qry {
+    position: absolute; width: 120px; text-align: center; font-size: 17px;
+    padding: 12px 0; transition: box-shadow 0.4s, border-color 0.4s, transform 0.4s;
+  }
+  .tok.key { border-color: rgba(25,158,112,0.7); }
+  .tok.qry { border-color: rgba(57,135,229,0.7); }
+  .tok.qry.active { border-color: var(--c-q); box-shadow: 0 0 24px rgba(57,135,229,0.55); transform: scale(1.08); }
+  .rowlab { position: absolute; font-size: 13px; color: var(--ink-2); }
+  .wlab {
+    position: absolute; font-family: ui-monospace, monospace; font-size: 14px;
+    color: #2fd6b0; opacity: 0; transform: translate(-50%, -50%);
+    background: rgba(11,13,18,0.85); padding: 2px 7px; border-radius: 6px;
+  }
+  #wA { position: absolute; right: 70px; top: 150px; }
+  .rowhl { position: absolute; border: 2px solid #2fd6b0; border-radius: 7px; opacity: 0; pointer-events: none; }
+  #mixwrap { position: absolute; left: 190px; bottom: 84px; width: 620px; }
+  #mixlab { font-size: 13px; color: var(--ink-2); margin-bottom: 6px; }
+  #mix { display: flex; height: 34px; border-radius: 7px; overflow: hidden; background: #10131a; }
+  #mix .seg { border-right: 2px solid var(--surface); display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 600; color: #0c1116; overflow: hidden; }
+</style>
+</head>
+<body>
+<div class="stage">
+  <div class="slide-title">Attention is a weighted graph over tokens</div>
+  <div class="slide-sub">edge (i → j) carries weight A<sub>ij</sub>; the output mixes value vectors along the edges</div>
+  <div class="variant-tag">style 4 · token graph</div>
+
+  <svg id="arcs" width="1280" height="720"></svg>
+  <div class="rowlab" style="left:75px; top:205px">keys j</div>
+  <div class="rowlab" style="left:75px; top:475px">queries i</div>
+
+  <div id="wA">
+    <div class="m-label">A <span class="dim">row = active query</span></div>
+    <div id="mA"></div>
+  </div>
+  <div class="rowhl" id="rowhl"></div>
+
+  <div id="mixwrap">
+    <div id="mixlab">output row — convex mix of V rows: <span id="mixeq"></span></div>
+    <div id="mix"></div>
+  </div>
+
+  <a class="back-link" href="index.html">&larr; style lab</a>
+  <button class="replay" id="replayBtn">↻ replay</button>
+</div>
+
+<script src="../vendor/anime.iife.min.js"></script>
+<script src="shared/attn.js"></script>
+<script src="shared/stage.js"></script>
+<script>
+  var keyX = [180, 360, 540, 720], keyY = 190, qryY = 460;
+  var stage = document.querySelector(".stage");
+  var svg = document.getElementById("arcs");
+  var NS = "http://www.w3.org/2000/svg";
+
+  ATTN.tokens.forEach(function (t, j) {
+    var k = document.createElement("div");
+    k.className = "tok key"; k.textContent = t;
+    k.style.left = keyX[j] - 60 + "px"; k.style.top = keyY + "px";
+    stage.appendChild(k);
+    var q = document.createElement("div");
+    q.className = "tok qry"; q.id = "q" + j; q.textContent = t;
+    q.style.left = keyX[j] - 60 + "px"; q.style.top = qryY + "px";
+    stage.appendChild(q);
+  });
+  var keyEls = [].slice.call(document.querySelectorAll(".tok.key"));
+
+  var mA = ATTN.buildMatrix(document.getElementById("mA"), ATTN.A, {
+    cls: "small", colorFn: ATTN.weightColor, inkFn: ATTN.inkFor
+  });
+
+  // edges + labels for one active query at a time
+  var paths = [], wlabs = [];
+  for (var j = 0; j < 4; j++) {
+    var p = document.createElementNS(NS, "path");
+    p.setAttribute("fill", "none");
+    p.setAttribute("stroke", "#2fd6b0");
+    p.setAttribute("stroke-linecap", "round");
+    svg.appendChild(p);
+    paths.push(p);
+    var w = document.createElement("div");
+    w.className = "wlab";
+    stage.appendChild(w);
+    wlabs.push(w);
+  }
+
+  function edgeD(i, j) {
+    var x1 = keyX[i], y1 = qryY - 4, x2 = keyX[j], y2 = keyY + 52;
+    var mx = (x1 + x2) / 2, my = (y1 + y2) / 2 - Math.abs(x1 - x2) * 0.12 - 30;
+    return "M " + x1 + " " + y1 + " Q " + mx + " " + my + " " + x2 + " " + y2;
+  }
+
+  function sleep(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
+
+  var mix = document.getElementById("mix");
+  ATTN.tokens.forEach(function (t, j) {
+    var seg = document.createElement("div");
+    seg.className = "seg";
+    seg.style.background = ATTN.weightColor(0.35 + 0.16 * j);
+    seg.style.width = "0px";
+    mix.appendChild(seg);
+  });
+  var segs = [].slice.call(mix.children);
+
+  var running = 0;
+  async function showQuery(i) {
+    document.querySelectorAll(".tok.qry").forEach(function (q, n) {
+      q.classList.toggle("active", n === i);
+    });
+    // matrix row highlight: matrix panel right:70 → left = 1280-70-width; compute from DOM
+    var mr = document.getElementById("mA").getBoundingClientRect ? null : null;
+    var hl = document.getElementById("rowhl");
+    var wrap = document.getElementById("wA");
+    hl.style.left = (wrap.offsetLeft + 4) + "px";
+    hl.style.top = (wrap.offsetTop + 27 + 4 + i * 35) + "px";
+    hl.style.width = (42 * 4 + 3 * 3 + 8) + "px";
+    hl.style.height = (32 + 8) + "px";
+    hl.style.opacity = 1;
+
+    for (var j = 0; j < 4; j++) {
+      var w = ATTN.A[i][j];
+      var p = paths[j];
+      p.setAttribute("d", edgeD(i, j));
+      p.setAttribute("stroke-width", 1.5 + w * 14);
+      p.setAttribute("stroke-opacity", 0.25 + w * 0.75);
+      var len = p.getTotalLength();
+      p.style.strokeDasharray = len;
+      p.style.strokeDashoffset = len;
+      wlabs[j].style.opacity = 0;
+    }
+    anime.animate(paths, {
+      strokeDashoffset: 0,
+      duration: 700,
+      delay: anime.stagger(110),
+      ease: "outQuad",
+    });
+    await sleep(500);
+    for (var j = 0; j < 4; j++) {
+      var w = ATTN.A[i][j];
+      var x1 = keyX[i], x2 = keyX[j];
+      var mx = (x1 + x2) / 2, my = (qryY - 4 + keyY + 52) / 2 - Math.abs(x1 - x2) * 0.06 - 15;
+      wlabs[j].style.left = mx + "px"; wlabs[j].style.top = my + "px";
+      wlabs[j].textContent = ATTN.fmt(w);
+      keyEls[j].style.boxShadow = "0 0 " + (w * 46) + "px rgba(47,214,176," + (0.15 + w) * 0.6 + ")";
+    }
+    anime.animate(wlabs, { opacity: [0, 1], duration: 350, delay: anime.stagger(60) });
+
+    // output mix bar
+    var eq = ATTN.tokens.map(function (t, j) { return ATTN.fmt(ATTN.A[i][j]) + "·v(" + t + ")"; }).join(" + ");
+    document.getElementById("mixeq").textContent = eq;
+    for (var j = 0; j < 4; j++) {
+      segs[j].textContent = ATTN.fmt(ATTN.A[i][j]);
+      anime.animate(segs[j], { width: ATTN.A[i][j] * 620 + "px", duration: 550, ease: "outCubic" });
+    }
+    await sleep(2400);
+  }
+
+  async function run() {
+    var my = ++running;
+    while (running === my) {
+      for (var i = 0; i < 4; i++) {
+        if (running !== my) return;
+        await showQuery(i);
+      }
+    }
+  }
+  run();
+  document.getElementById("replayBtn").onclick = function () { run(); };
+</script>
+</body>
+</html>

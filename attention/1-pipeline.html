@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Attention v1 — Dataflow pipeline</title>
+<link rel="stylesheet" href="shared/slide.css">
+<style>
+  .grp { position: absolute; }
+  #wires { position: absolute; inset: 0; pointer-events: none; }
+  #wires path { fill: none; stroke: #3a4157; stroke-width: 2.5; }
+  .note { position: absolute; font-size: 13px; color: var(--ink-2); }
+</style>
+</head>
+<body>
+<div class="stage">
+  <div class="slide-title">Scaled dot-product attention</div>
+  <div class="slide-sub">Attention(Q, K, V) = softmax(QKᵀ / √d<sub>k</sub>) · V</div>
+  <div class="variant-tag">style 1 · pipeline</div>
+
+  <svg id="wires" width="1280" height="720"></svg>
+
+  <div class="grp" id="gQ" style="left:70px; top:130px">
+    <div class="m-label"><span class="swatch" style="background:var(--c-q)"></span>Q <span class="dim">4×3 &nbsp;(X·W<sub>Q</sub>)</span></div>
+    <div id="mQ"></div>
+  </div>
+  <div class="grp" id="gK" style="left:70px; top:320px">
+    <div class="m-label"><span class="swatch" style="background:var(--c-k)"></span>K <span class="dim">4×3 &nbsp;(X·W<sub>K</sub>)</span></div>
+    <div id="mK"></div>
+  </div>
+  <div class="grp" id="gV" style="left:70px; top:510px">
+    <div class="m-label"><span class="swatch" style="background:var(--c-v)"></span>V <span class="dim">4×3 &nbsp;(X·W<sub>V</sub>)</span></div>
+    <div id="mV"></div>
+  </div>
+
+  <div class="grp" id="gS" style="left:400px; top:200px">
+    <div class="m-label">scores = QKᵀ / √3 <span class="dim">4×4</span></div>
+    <div id="mS"></div>
+    <div class="note" style="margin-top:8px">every entry is one query·key dot product</div>
+  </div>
+
+  <div class="grp op-chip" id="chipSm" style="left:672px; top:300px">softmax<br><span style="font-size:11px">row-wise</span></div>
+
+  <div class="grp" id="gA" style="left:790px; top:200px">
+    <div class="m-label">A = attention weights <span class="dim">4×4, rows sum to 1</span></div>
+    <div id="mA"></div>
+  </div>
+
+  <div class="grp" id="gO" style="left:1050px; top:430px">
+    <div class="m-label"><span class="swatch" style="background:var(--c-o)"></span>output = A·V <span class="dim">4×3</span></div>
+    <div id="mO"></div>
+    <div class="note" style="margin-top:8px; max-width:190px">each row: a convex mix of value rows</div>
+  </div>
+
+  <a class="back-link" href="index.html">&larr; style lab</a>
+  <button class="replay" id="replayBtn">↻ replay</button>
+</div>
+
+<script src="../vendor/gsap.min.js"></script>
+<script src="shared/attn.js"></script>
+<script src="shared/stage.js"></script>
+<script>
+  ATTN.buildMatrix(document.getElementById("mQ"), ATTN.Q, { cls: "small", digits: 1 });
+  ATTN.buildMatrix(document.getElementById("mK"), ATTN.K, { cls: "small", digits: 1 });
+  ATTN.buildMatrix(document.getElementById("mV"), ATTN.V, { cls: "small", digits: 1 });
+  ATTN.buildMatrix(document.getElementById("mS"), ATTN.S, {
+    cls: "small", colorFn: function (x) { return ATTN.scoreColor(x, 1.7); }
+  });
+  ATTN.buildMatrix(document.getElementById("mA"), ATTN.A, {
+    cls: "small", colorFn: ATTN.weightColor, inkFn: ATTN.inkFor
+  });
+  ATTN.buildMatrix(document.getElementById("mO"), ATTN.O, { cls: "small" });
+
+  // connector wires
+  var wires = document.getElementById("wires");
+  function wire(d) {
+    var p = document.createElementNS("http://www.w3.org/2000/svg", "path");
+    p.setAttribute("d", d);
+    wires.appendChild(p);
+    var len = p.getTotalLength();
+    p.style.strokeDasharray = len;
+    p.style.strokeDashoffset = len;
+    return p;
+  }
+  var wQS = wire("M 235 210 C 320 210, 320 260, 396 264");
+  var wKS = wire("M 235 400 C 320 400, 320 300, 396 296");
+  var wSA = wire("M 620 305 L 668 305 M 745 305 L 786 305");
+  var wAO = wire("M 900 430 C 900 500, 980 500, 1046 500");
+  var wVO = wire("M 235 590 C 620 590, 800 560, 1046 540");
+
+  var tl = gsap.timeline({ repeat: -1, repeatDelay: 2.2 });
+  tl.from("#gQ, #gK, #gV", { opacity: 0, x: -40, duration: 0.5, stagger: 0.15, ease: "power2.out" })
+    .to([wQS, wKS], { strokeDashoffset: 0, duration: 0.5, stagger: 0.1 }, "+=0.2")
+    .from("#gS .m-label, #gS .note", { opacity: 0, duration: 0.3 })
+    .from("#mS .cell", { opacity: 0, scale: 0.3, duration: 0.35, stagger: { each: 0.045, grid: [4, 4], from: "start" }, ease: "back.out(1.7)" })
+    .from("#chipSm", { opacity: 0, scale: 0.6, duration: 0.35, ease: "back.out(2)" }, "+=0.3")
+    .to(wSA, { strokeDashoffset: 0, duration: 0.4 })
+    .from("#gA .m-label", { opacity: 0, duration: 0.3 })
+    .from("#mA .cell", { opacity: 0, scale: 0.3, duration: 0.35, stagger: { each: 0.05, grid: [4, 4], axis: "y" }, ease: "back.out(1.7)" })
+    .to([wAO, wVO], { strokeDashoffset: 0, duration: 0.5, stagger: 0.1 }, "+=0.3")
+    .from("#gO", { opacity: 0, y: 30, duration: 0.5, ease: "power2.out" })
+    .to({}, { duration: 0.1, onComplete: function () { window.reportPass && reportPass("anim", "timeline ran"); } });
+
+  document.getElementById("replayBtn").onclick = function () { tl.restart(); };
+</script>
+</body>
+</html>

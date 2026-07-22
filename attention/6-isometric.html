@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Attention v6 — Isometric scene</title>
+<link rel="stylesheet" href="shared/slide.css">
+<style>
+  #scene {
+    position: absolute; inset: 0;
+    perspective: 1600px; perspective-origin: 50% 30%;
+  }
+  #floor {
+    position: absolute; left: 50%; top: 56%;
+    width: 1150px; height: 820px;
+    transform: translate(-50%, -50%) rotateX(56deg) rotateZ(-32deg);
+    transform-style: preserve-3d;
+    background:
+      repeating-linear-gradient(0deg, rgba(58,65,87,0.25) 0 1px, transparent 1px 50px),
+      repeating-linear-gradient(90deg, rgba(58,65,87,0.25) 0 1px, transparent 1px 50px);
+    border: 1px solid rgba(58,65,87,0.5);
+    border-radius: 18px;
+  }
+  .slab {
+    position: absolute; transform-style: preserve-3d;
+    filter: drop-shadow(12px 18px 14px rgba(0, 0, 0, 0.45));
+  }
+  .slab .matrix { border: 1.5px solid var(--line); }
+  .slab .tag {
+    position: absolute; top: -34px; left: 4px; font-size: 20px; font-weight: 700;
+    letter-spacing: 0.02em;
+  }
+  .slab .tag .dim { font-size: 13px; color: var(--ink-2); font-weight: 400; }
+  #sq .tag { color: var(--c-q); } #sk .tag, #skt .tag { color: var(--c-k); }
+  #sv .tag { color: var(--c-v); } #so .tag { color: var(--c-o); }
+  #sS .tag, #sA .tag { color: #2fd6b0; }
+  .cell { min-width: 46px; height: 38px; font-size: 13px; }
+  .banner {
+    position: absolute; left: 44px; top: 108px; font-size: 17px; color: var(--ink-2);
+    transition: opacity 0.4s; opacity: 0; max-width: 380px; line-height: 1.5;
+  }
+</style>
+</head>
+<body>
+<div class="stage">
+  <div class="slide-title">Attention, staged</div>
+  <div class="slide-sub">watch the tensors move: Q meets Kᵀ → scores → softmax → blend V</div>
+  <div class="variant-tag">style 6 · isometric</div>
+  <div class="banner" id="banner"></div>
+
+  <div id="scene">
+    <div id="floor">
+      <div class="slab" id="sq" style="left:40px; top:330px"><div class="tag">Q <span class="dim">4×3</span></div><div id="mQ"></div></div>
+      <div class="slab" id="sk" style="left:330px; top:40px"><div class="tag">K <span class="dim">4×3</span></div><div id="mK"></div></div>
+      <div class="slab" id="skt" style="left:330px; top:60px"><div class="tag">Kᵀ <span class="dim">3×4</span></div><div id="mKT"></div></div>
+      <div class="slab" id="sS" style="left:330px; top:330px"><div class="tag" id="tagS">S = QKᵀ/√d <span class="dim">4×4</span></div><div id="mS"></div></div>
+      <div class="slab" id="sA" style="left:330px; top:330px"><div class="tag">A = softmax(S)</div><div id="mA"></div></div>
+      <div class="slab" id="sv" style="left:700px; top:330px"><div class="tag">V <span class="dim">4×3</span></div><div id="mV"></div></div>
+      <div class="slab" id="so" style="left:700px; top:600px"><div class="tag">out = A·V</div><div id="mO"></div></div>
+    </div>
+  </div>
+
+  <a class="back-link" href="index.html">&larr; style lab</a>
+  <button class="replay" id="replayBtn">↻ replay</button>
+</div>
+
+<script src="../vendor/gsap.min.js"></script>
+<script src="shared/attn.js"></script>
+<script src="shared/stage.js"></script>
+<script>
+  ATTN.buildMatrix(document.getElementById("mQ"), ATTN.Q, { digits: 1 });
+  ATTN.buildMatrix(document.getElementById("mK"), ATTN.K, { digits: 1 });
+  ATTN.buildMatrix(document.getElementById("mKT"), ATTN.KT, { digits: 1 });
+  ATTN.buildMatrix(document.getElementById("mS"), ATTN.S, {
+    colorFn: function (x) { return ATTN.scoreColor(x, 1.7); }
+  });
+  ATTN.buildMatrix(document.getElementById("mA"), ATTN.A, {
+    colorFn: ATTN.weightColor, inkFn: ATTN.inkFor
+  });
+  ATTN.buildMatrix(document.getElementById("mO"), ATTN.O, {});
+
+  var banner = document.getElementById("banner");
+  function say(t) { return function () { banner.textContent = t; banner.style.opacity = t ? 1 : 0; }; }
+
+  var tl = gsap.timeline({ repeat: -1, repeatDelay: 2.5 });
+
+  tl.set("#skt, #sS, #sA, #so", { autoAlpha: 0 })
+    .set("#sv", { autoAlpha: 0.25, x: 160 })
+    .set("#sk", { autoAlpha: 0, x: -80, y: -60 })
+    .set("#sq", { autoAlpha: 0, x: -160 })
+    .call(say("the three projections arrive…"))
+    .to("#sq", { autoAlpha: 1, x: 0, duration: 0.7, ease: "power3.out" })
+    .to("#sk", { autoAlpha: 1, x: 0, y: 0, duration: 0.7, ease: "power3.out" }, "-=0.45")
+
+    .call(say("K flips into Kᵀ — keys become columns"))
+    .to("#sk", { rotation: -90, scale: 0.85, duration: 0.8, ease: "power2.inOut" }, "+=0.6")
+    .to("#sk", { autoAlpha: 0, duration: 0.25 }, "-=0.2")
+    .to("#skt", { autoAlpha: 1, duration: 0.35 }, "<")
+
+    .call(say("Q slides against Kᵀ: 16 dot products at once"))
+    .to("#sq", { x: 30, duration: 0.5, ease: "power2.inOut" }, "+=0.4")
+    .fromTo("#sS", { autoAlpha: 0, scale: 0.7 }, { autoAlpha: 1, scale: 1, duration: 0.6, ease: "back.out(1.6)" })
+    .from("#mS .cell", { autoAlpha: 0, duration: 0.35, stagger: { each: 0.04, grid: [4, 4], from: "edges" } })
+
+    .call(say("softmax sweeps each row — scores → weights"))
+    .to("#sS", { autoAlpha: 0, duration: 0.8 }, "+=0.8")
+    .fromTo("#sA", { autoAlpha: 0 }, { autoAlpha: 1, duration: 0.8 }, "<")
+
+    .call(say("V glides in; every output row is a weighted mix of value rows"))
+    .to("#sv", { autoAlpha: 1, x: 0, duration: 0.7, ease: "power3.out" }, "+=0.5")
+    .fromTo("#so", { autoAlpha: 0, z: -120 }, { autoAlpha: 1, z: 60, duration: 0.9, ease: "power2.out" }, "+=0.4")
+    .to("#so", { z: 40, duration: 1.4, yoyo: true, repeat: 1, ease: "sine.inOut" })
+    .call(say(""));
+
+  document.getElementById("replayBtn").onclick = function () { tl.restart(); };
+</script>
+</body>
+</html>

@@ -1,0 +1,93 @@
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0; height: 100%;
+  background: #0b0d12;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  color: #e8eaf0;
+  overflow: hidden;
+}
+
+/* role colors (validated categorical palette, dark surface) */
+:root {
+  --c-q: #3987e5;   /* queries  */
+  --c-k: #199e70;   /* keys     */
+  --c-v: #c98500;   /* values   */
+  --c-o: #9085e9;   /* output   */
+  --surface: #12141a;
+  --panel: #1b1e27;
+  --line: #2a2e3b;
+  --ink-2: #9aa1b5;
+}
+
+.stage {
+  position: absolute; left: 50%; top: 50%;
+  width: 1280px; height: 720px;
+  transform: translate(-50%, -50%);
+  background: var(--surface);
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.slide-title {
+  position: absolute; top: 28px; left: 44px;
+  font-size: 30px; font-weight: 650; letter-spacing: -0.01em;
+}
+.slide-sub { position: absolute; top: 70px; left: 45px; font-size: 15px; color: var(--ink-2); }
+
+.variant-tag {
+  position: absolute; top: 32px; right: 44px;
+  font-size: 12px; color: var(--ink-2);
+  border: 1px solid var(--line); border-radius: 999px; padding: 4px 12px;
+}
+
+.back-link {
+  position: absolute; bottom: 20px; left: 44px; z-index: 5;
+  font-size: 13px; color: var(--ink-2); text-decoration: none;
+}
+.back-link:hover { color: #e8eaf0; }
+
+.replay {
+  position: absolute; bottom: 16px; right: 44px; z-index: 5;
+  background: var(--panel); color: #e8eaf0;
+  border: 1px solid var(--line); border-radius: 8px;
+  padding: 6px 14px; font-size: 13px; cursor: pointer;
+}
+.replay:hover { background: #262b38; }
+
+/* ---- matrices ---- */
+.matrix {
+  display: grid; gap: 3px;
+  padding: 8px; border-radius: 10px;
+  background: var(--panel);
+  width: max-content;
+}
+.cell {
+  min-width: 52px; height: 40px;
+  display: flex; align-items: center; justify-content: center;
+  font-family: ui-monospace, "SF Mono", Menlo, monospace;
+  font-size: 14px;
+  border-radius: 6px;
+  background: #232836;
+  color: #c7cce0;
+}
+.cell.small { min-width: 42px; height: 32px; font-size: 12px; }
+
+.m-label {
+  font-size: 15px; font-weight: 600; margin-bottom: 6px;
+  display: flex; align-items: center; gap: 8px;
+}
+.m-label .dim { font-weight: 400; font-size: 12px; color: var(--ink-2); }
+.swatch { width: 12px; height: 12px; border-radius: 3px; display: inline-block; }
+
+.tok {
+  font-size: 14px; font-weight: 600;
+  padding: 6px 12px; border-radius: 8px;
+  background: var(--panel); border: 1px solid var(--line);
+}
+
+.op-chip {
+  font-family: ui-monospace, monospace; font-size: 14px; color: var(--ink-2);
+  border: 1px dashed var(--line); border-radius: 8px; padding: 6px 10px;
+  background: rgba(27, 30, 39, 0.6);
+}

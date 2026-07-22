@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Attention v5 — Formula first</title>
+<link rel="stylesheet" href="shared/slide.css">
+<style>
+  #formula {
+    position: absolute; top: 150px; width: 100%; text-align: center;
+    font-size: 44px; font-family: "STIX Two Math", "Cambria Math", Georgia, serif;
+  }
+  #formula .part { transition: all 0.5s; opacity: 0.45; display: inline-block; padding: 4px 10px; border-radius: 12px; }
+  #formula .part.lit { opacity: 1; transform: scale(1.12); background: rgba(47,214,176,0.12); box-shadow: 0 0 30px rgba(47,214,176,0.15); }
+  #formula sub { font-size: 24px; }
+  .vig {
+    position: absolute; left: 50%; top: 280px; transform: translateX(-50%) translateY(24px);
+    width: 900px; height: 330px; opacity: 0; transition: opacity 0.5s, transform 0.5s;
+    pointer-events: none;
+  }
+  .vig.on { opacity: 1; transform: translateX(-50%) translateY(0); }
+  .vig .caption { position: absolute; bottom: -10px; width: 100%; text-align: center; font-size: 15px; color: var(--ink-2); }
+
+  /* vignette 1: QK^T */
+  #v1 .mrow { display: flex; gap: 26px; align-items: center; justify-content: center; }
+  #v1 .cell { transition: transform 0.35s, opacity 0.35s; }
+  #v1 .cell.wait { transform: scale(0.2); opacity: 0; }
+  .osym { font-size: 34px; color: var(--ink-2); }
+
+  /* vignette 2: scaling comparison */
+  #v2 .cols { display: flex; gap: 60px; justify-content: center; }
+  #v2 .col h3 { font-size: 16px; margin: 0 0 12px; text-align: center; font-weight: 600; }
+  #v2 .brow { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+  #v2 .brow .who { width: 48px; text-align: right; font-size: 13px; color: var(--ink-2); }
+  #v2 .b { height: 20px; width: 0; border-radius: 4px; background: #d95926; transition: width 0.8s cubic-bezier(0.22, 1, 0.36, 1); }
+  #v2 .col.scaled .b { background: #2fd6b0; }
+  #v2 .bval { font-size: 12px; font-family: ui-monospace, monospace; color: #c7cce0; }
+
+  /* vignette 3: softmax rows */
+  #v3 .stack { display: flex; flex-direction: column; gap: 10px; align-items: center; }
+  #v3 .unit { display: flex; width: 640px; height: 34px; border-radius: 7px; overflow: hidden; background: #10131a; }
+  #v3 .seg { border-right: 2px solid var(--surface); width: 0; transition: width 0.8s cubic-bezier(0.22, 1, 0.36, 1); display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 600; color: #0c1116; overflow: hidden; }
+  #v3 .rowtag { font-size: 13px; color: var(--ink-2); width: 52px; }
+  #v3 .unitrow { display: flex; align-items: center; gap: 12px; }
+
+  /* vignette 4: xV blend */
+  #v4 .vrows { display: flex; flex-direction: column; gap: 8px; align-items: center; }
+  #v4 .vrow { display: flex; gap: 6px; align-items: center; transition: opacity 0.6s, transform 0.9s cubic-bezier(0.22, 1, 0.36, 1); }
+  #v4 .vrow .cell { border: 1.5px solid var(--c-v); }
+  #v4 .w { font-family: ui-monospace, monospace; font-size: 14px; color: #2fd6b0; width: 70px; }
+  #v4.go .vrow { opacity: 0; transform: translateY(-40px) scale(0.7); }
+  #v4 .orow { display: flex; gap: 6px; margin-top: 18px; opacity: 0; transform: scale(0.6); transition: all 0.7s cubic-bezier(0.34, 1.56, 0.64, 1) 0.75s; }
+  #v4 .orow .cell { border: 2px solid var(--c-o); font-weight: 700; }
+  #v4.go .orow { opacity: 1; transform: scale(1); }
+</style>
+</head>
+<body>
+<div class="stage">
+  <div class="slide-title">One line, four ideas</div>
+  <div class="variant-tag">style 5 · formula first</div>
+
+  <div id="formula">
+    Attention(Q, K, V) = <span class="part" id="pSoft">softmax</span><span class="part" id="pParen">(</span><span class="part" id="pQK">QKᵀ</span><span class="part" id="pScale">/ √d<sub>k</sub></span><span class="part" id="pParen2">)</span><span class="part" id="pV">V</span>
+  </div>
+
+  <div class="vig" id="v1">
+    <div class="mrow">
+      <div><div class="m-label"><span class="swatch" style="background:var(--c-q)"></span>Q</div><div id="v1q"></div></div>
+      <div class="osym">×</div>
+      <div><div class="m-label"><span class="swatch" style="background:var(--c-k)"></span>Kᵀ</div><div id="v1kt"></div></div>
+      <div class="osym">=</div>
+      <div><div class="m-label">S <span class="dim">4×4 similarities</span></div><div id="v1s"></div></div>
+    </div>
+    <div class="caption">every entry: how strongly query i matches key j (a dot product)</div>
+  </div>
+
+  <div class="vig" id="v2">
+    <div class="cols">
+      <div class="col raw">
+        <h3>softmax(QKᵀ) — unscaled</h3>
+        <div id="v2raw"></div>
+      </div>
+      <div class="col scaled">
+        <h3>softmax(QKᵀ/√d<sub>k</sub>) — scaled</h3>
+        <div id="v2sc"></div>
+      </div>
+    </div>
+    <div class="caption">dot-product variance grows with d<sub>k</sub> → unscaled logits saturate softmax and kill the gradient (here d<sub>k</sub>=3; at 64 it's drastic)</div>
+  </div>
+
+  <div class="vig" id="v3">
+    <div class="stack" id="v3stack"></div>
+    <div class="caption">each query row becomes a probability distribution over keys — rows sum to exactly 1</div>
+  </div>
+
+  <div class="vig" id="v4">
+    <div class="vrows" id="v4rows"></div>
+    <div class="caption">output row = Σ<sub>j</sub> A<sub>ij</sub> · v<sub>j</sub> — a convex combination of value rows (query “lifts” shown)</div>
+  </div>
+
+  <a class="back-link" href="index.html">&larr; style lab</a>
+  <button class="replay" id="replayBtn">↻ replay</button>
+</div>
+
+<script src="shared/attn.js"></script>
+<script src="shared/stage.js"></script>
+<script>
+  // vignette 1
+  ATTN.buildMatrix(document.getElementById("v1q"), ATTN.Q, { cls: "small", digits: 1 });
+  ATTN.buildMatrix(document.getElementById("v1kt"), ATTN.KT, { cls: "small", digits: 1 });
+  var v1s = ATTN.buildMatrix(document.getElementById("v1s"), ATTN.Sraw, {
+    cls: "small", colorFn: function (x) { return ATTN.scoreColor(x, 3); }
+  });
+  var v1cells = [].slice.call(v1s.children);
+
+  // vignette 2: bars for query "boxes" (row 3), raw vs scaled softmax
+  function softBars(host, logits) {
+    var w = ATTN.softmaxRow(logits);
+    ATTN.tokens.forEach(function (t, j) {
+      var r = document.createElement("div");
+      r.className = "brow";
+      r.innerHTML = '<div class="who">' + t + '</div><div class="b" data-w="' + w[j] + '"></div><div class="bval">' + ATTN.fmt(w[j]) + "</div>";
+      host.appendChild(r);
+    });
+  }
+  softBars(document.getElementById("v2raw"), ATTN.Sraw[3]);
+  softBars(document.getElementById("v2sc"), ATTN.S[3]);
+
+  // vignette 3: all four unit bars
+  var v3stack = document.getElementById("v3stack");
+  ATTN.A.forEach(function (row, i) {
+    var wrap = document.createElement("div");
+    wrap.className = "unitrow";
+    var tag = document.createElement("div"); tag.className = "rowtag"; tag.textContent = ATTN.tokens[i];
+    var unit = document.createElement("div"); unit.className = "unit";
+    row.forEach(function (w, j) {
+      var seg = document.createElement("div");
+      seg.className = "seg"; seg.dataset.w = w;
+      seg.style.background = ATTN.weightColor(0.35 + 0.16 * j);
+      seg.textContent = ATTN.fmt(w);
+      unit.appendChild(seg);
+    });
+    wrap.appendChild(tag); wrap.appendChild(unit);
+    v3stack.appendChild(wrap);
+  });
+
+  // vignette 4: weighted V rows collapse into output (query row 2, "lifts")
+  var QI = 2;
+  var v4rows = document.getElementById("v4rows");
+  ATTN.V.forEach(function (vrow, j) {
+    var w = ATTN.A[QI][j];
+    var d = document.createElement("div");
+    d.className = "vrow";
+    d.style.opacity = 0.35 + w * 0.65;
+    d.innerHTML = '<div class="w">' + ATTN.fmt(w) + " ×</div>";
+    var m = document.createElement("div");
+    ATTN.buildMatrix(m, [vrow], { cls: "small", digits: 1 });
+    d.appendChild(m);
+    v4rows.appendChild(d);
+  });
+  var orow = document.createElement("div");
+  orow.className = "orow";
+  ATTN.buildMatrix(orow, [ATTN.O[QI]], {});
+  document.getElementById("v4").appendChild(orow);
+  document.getElementById("v4").insertBefore(orow, document.querySelector("#v4 .caption"));
+
+  // ---- stepper ----
+  var steps = [
+    { part: "pQK", vig: "v1", dur: 5200, enter: function () {
+        v1cells.forEach(function (c, n) {
+          c.classList.add("wait");
+          setTimeout(function () { c.classList.remove("wait"); }, 400 + n * 90);
+        });
+      } },
+    { part: "pScale", vig: "v2", dur: 5200, enter: function () {
+        document.querySelectorAll("#v2 .b").forEach(function (b) {
+          b.style.width = "0px";
+          setTimeout(function () { b.style.width = b.dataset.w * 260 + "px"; }, 350);
+        });
+      } },
+    { part: "pSoft", vig: "v3", dur: 5200, enter: function () {
+        document.querySelectorAll("#v3 .seg").forEach(function (s) {
+          s.style.width = "0px";
+          setTimeout(function () { s.style.width = s.dataset.w * 640 + "px"; }, 350);
+        });
+      } },
+    { part: "pV", vig: "v4", dur: 5600, enter: function () {
+        var v4 = document.getElementById("v4");
+        v4.classList.remove("go");
+        setTimeout(function () { v4.classList.add("go"); }, 1600);
+      } },
+  ];
+
+  var idx = -1, timer = null;
+  function next() {
+    idx = (idx + 1) % steps.length;
+    var s = steps[idx];
+    document.querySelectorAll("#formula .part").forEach(function (p) { p.classList.remove("lit"); });
+    document.querySelectorAll(".vig").forEach(function (v) { v.classList.remove("on"); });
+    document.getElementById(s.part).classList.add("lit");
+    var vig = document.getElementById(s.vig);
+    vig.classList.add("on");
+    s.enter();
+    timer = setTimeout(next, s.dur);
+  }
+  next();
+  document.getElementById("replayBtn").onclick = function () {
+    clearTimeout(timer); idx = -1; next();
+  };
+</script>
+</body>
+</html>
