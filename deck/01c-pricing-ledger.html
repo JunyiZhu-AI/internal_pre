@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The K3 pricing paradox — the ledger</title>
+<link rel="stylesheet" href="shared/deck.css">
+<style>
+  .ledger {
+    position: absolute; background: var(--panel); border: 1px solid var(--line);
+    border-radius: 14px; padding: 14px 16px;
+  }
+  .ledger h3 { margin: 0 0 10px; font-size: 15px; }
+  .ledger h3 .note { font-size: 11px; color: var(--ink-2); font-weight: 400; margin-left: 8px; }
+  .lrow { display: flex; gap: 3px; margin-bottom: 3px; opacity: 0; position: relative; }
+  .lcell {
+    height: 34px; display: flex; align-items: center; justify-content: center;
+    font-family: ui-monospace, monospace; font-size: 12.5px;
+    background: #232836; border-radius: 6px; color: #c7cce0; position: relative;
+  }
+  .lcell.lab { justify-content: flex-start; padding-left: 10px; font-family: inherit; font-size: 12px; color: var(--ink-2); background: transparent; }
+  .lcell.hd { font-weight: 700; font-family: inherit; font-size: 12.5px; color: #fff; }
+  .lcell.win { color: #fff; font-weight: 700; }
+  #rate .lcell.lab { width: 158px; } #rate .lcell:not(.lab) { width: 118px; }
+  #perf .lcell.lab { width: 208px; } #perf .lcell:not(.lab) { width: 86px; }
+  .lrow .tag { position: absolute; right: 0; top: 9px; font-size: 9px; padding: 1px 6px; border-radius: 999px; }
+  .tag.independent { background: rgba(47,214,176,0.12); color: var(--accent); }
+  .tag.vendor-run { background: rgba(201,133,0,0.14); color: #e0a935; }
+  .tag.arena { background: rgba(144,133,233,0.14); color: var(--c-o); }
+  #k3glow {
+    position: absolute; border: 2px solid var(--accent); border-radius: 9px;
+    pointer-events: none; opacity: 0; box-shadow: 0 0 18px rgba(47,214,176,0.25);
+  }
+  #taskrow .lcell:not(.lab) { background: #10131a; border: 1px solid var(--line); font-weight: 700; font-size: 13.5px; }
+  #convpulse {
+    position: absolute; border: 2px solid var(--accent); border-radius: 9px; opacity: 0;
+    pointer-events: none; box-shadow: 0 0 20px rgba(47,214,176,0.3);
+  }
+  .callout {
+    position: absolute; font-size: 12.5px; font-family: ui-monospace, monospace;
+    color: var(--accent); background: rgba(47,214,176,0.07);
+    border: 1px solid rgba(47,214,176,0.35); border-radius: 8px; padding: 6px 11px; opacity: 0;
+  }
+  .callout.amber { color: #e0a935; background: rgba(201,133,0,0.08); border-color: rgba(201,133,0,0.4); }
+  #fn3 { position: absolute; left: 44px; top: 660px; width: 620px; font-size: 10px; color: #6b7284; line-height: 1.45; opacity: 0; }
+  #quote3 {
+    position: absolute; left: 46px; top: 595px; width: 600px;
+    font-size: 14.5px; font-style: italic; color: #c7cce0; opacity: 0; line-height: 1.5;
+  }
+  #quote3 .by { font-size: 11.5px; color: var(--ink-2); font-style: normal; }
+  #qs3 { position: absolute; right: 44px; top: 452px; width: 520px; display: flex; flex-direction: column; gap: 8px; }
+  .qchip {
+    background: var(--panel); border: 1px solid var(--line); border-left: 3px solid var(--accent);
+    border-radius: 8px; padding: 8px 12px; font-size: 12.5px; opacity: 0;
+  }
+  .qchip .qn { color: var(--accent); font-weight: 700; margin-right: 6px; font-family: ui-monospace, monospace; }
+  .qbadge {
+    position: absolute; width: 17px; height: 17px; border-radius: 50%;
+    background: var(--accent); color: #0c1116; font-weight: 800; font-size: 12px;
+    display: flex; align-items: center; justify-content: center; opacity: 0; z-index: 6;
+  }
+  #promise3 { position: absolute; right: 44px; top: 610px; width: 520px; font-size: 14px; color: var(--accent); font-weight: 600; opacity: 0; }
+</style>
+</head>
+<body>
+<div class="stage">
+  <div class="slide-title">Half the price. The same bill.</div>
+  <div class="slide-sub">two tables, one paradox — July 2026</div>
+
+  <div class="ledger" id="rate" style="left:44px; top:112px; width:560px">
+    <h3>Rate card <span class="note">official, per 1M tokens</span></h3>
+    <div id="raterows"></div>
+  </div>
+  <div id="k3glow"></div>
+  <div id="convpulse"></div>
+
+  <div class="ledger" id="perf" style="right:44px; top:112px; width:560px; opacity:0">
+    <h3>Performance <span class="note">July 2026</span></h3>
+    <div id="perfrows"></div>
+  </div>
+
+  <div class="callout" id="co1" style="left:46px; top:528px; width:250px">per token: −40% vs Sol,<br>−70% vs Fable — “a steal”</div>
+  <div class="callout amber" id="co2" style="left:330px; top:528px; width:274px">per task: ≈ even vs Sol<br>(2× tokens, 2–4× slower decode)</div>
+
+  <div id="quote3"></div>
+  <div id="qs3"></div>
+  <div id="fn3"></div>
+  <div id="promise3"></div>
+</div>
+
+<script src="../vendor/gsap.min.js"></script>
+<script src="shared/pricing.js"></script>
+<script src="shared/manifest.js"></script>
+<script src="shared/deck.js"></script>
+<script>
+  var M = PRICING.models, $ = PRICING.fmt$;
+
+  function row(cells, opts) {
+    opts = opts || {};
+    var d = document.createElement("div");
+    d.className = "lrow";
+    if (opts.id) d.id = opts.id;
+    cells.forEach(function (c, i) {
+      var e = document.createElement("div");
+      e.className = "lcell" + (i === 0 ? " lab" : "") + (opts.hd ? " hd" : "") +
+        (opts.win === i - 1 ? " win" : "");
+      e.innerHTML = c;
+      if (opts.hd && i > 0) e.style.color = M[i - 1].color;
+      d.appendChild(e);
+    });
+    if (opts.tag) d.innerHTML += '<span class="tag ' + opts.tag + '">' + opts.tag.slice(0, 6) + "</span>";
+    return d;
+  }
+
+  var rr = document.getElementById("raterows");
+  rr.appendChild(row(["", M[0].name, M[1].name, M[2].name], { hd: true }));
+  rr.appendChild(row(["input"].concat(M.map(function (m) { return $(m.input); })), { win: 0 }));
+  rr.appendChild(row(["cached input"].concat(M.map(function (m) { return $(m.cached); })), { win: 0, id: "row-cached" }));
+  rr.appendChild(row(["output (incl. reasoning)"].concat(M.map(function (m) { return $(m.output); })), { win: 0, id: "row-output" }));
+  rr.appendChild(row(["context window"].concat(M.map(function (m) { return m.ctx; })), {}));
+  rr.appendChild(row(["open weights"].concat(M.map(function (m) { return m.open; })), { win: 0, id: "row-open" }));
+  rr.appendChild(row(["<b>measured $/task</b>"].concat(M.map(function (m) { return $(m.task); })), { win: 0, id: "taskrow" }));
+
+  var pr = document.getElementById("perfrows");
+  pr.appendChild(row(["", "K3", "Sol", "Fable 5"], { hd: true }));
+  PRICING.bench.forEach(function (b) {
+    var vals = b.max ? b.vals.map(function (v) { return v.toFixed(1); }) : b.vals;
+    pr.appendChild(row([b.label].concat(vals), { win: b.best, tag: b.src }));
+  });
+
+  document.getElementById("quote3").innerHTML = PRICING.quote + ' <span class="by">' + PRICING.quoteBy + "</span>";
+  var qs3 = document.getElementById("qs3");
+  PRICING.questions.forEach(function (q, i) {
+    qs3.innerHTML += '<div class="qchip" id="q' + i + '"><span class="qn">Q' + (i + 1) + "</span>" + q + "</div>";
+  });
+  document.getElementById("fn3").textContent = PRICING.footnote;
+  document.getElementById("promise3").textContent = "Promise: " + PRICING.promise;
+
+  // ? badges pinned next to rate-card rows (positions relative to stage)
+  function badge(id, x, y) {
+    var b = document.createElement("div");
+    b.className = "qbadge"; b.id = id;
+    b.style.left = x + "px"; b.style.top = y + "px";
+    document.querySelector(".stage").appendChild(b);
+  }
+  // rate ledger at (44,112): padding 14/16, title ~26, rows 37px pitch from ~152
+  badge("qb1", 585, 275); // output row
+  badge("qb2", 585, 238); // cached row
+  badge("qb3", 330, 148); // K3 column header
+
+  var tl = gsap.timeline({ paused: true });
+
+  // step 1: rate card rows cascade; K3 column glows
+  tl.fromTo("#rate", { opacity: 0, y: 24 }, { opacity: 1, y: 0, duration: 0.5, ease: "power3.out" })
+    .fromTo("#rate .lrow:not(#taskrow)", { opacity: 0, x: -14 }, { opacity: 1, x: 0, duration: 0.32, stagger: 0.09 }, "-=0.2")
+    .call(function () {
+      var g = document.getElementById("k3glow");
+      g.style.left = "218px"; g.style.top = "146px"; g.style.width = "126px"; g.style.height = "225px";
+    })
+    .fromTo("#k3glow", { opacity: 0 }, { opacity: 1, duration: 0.4 });
+  DECK.markStep(tl);
+
+  // step 2: performance table — near-tie, with provenance tags
+  tl.fromTo("#perf", { opacity: 0, x: 40 }, { opacity: 1, x: 0, duration: 0.5, ease: "power3.out" })
+    .fromTo("#perf .lrow", { opacity: 0, x: 14 }, { opacity: 1, x: 0, duration: 0.3, stagger: 0.08 }, "-=0.2")
+    .fromTo("#fn3", { opacity: 0 }, { opacity: 1, duration: 0.4 });
+  DECK.markStep(tl);
+
+  // step 3: per-token verdict callout
+  tl.fromTo("#co1", { opacity: 0, scale: 0.7 }, { opacity: 1, scale: 1, duration: 0.4, ease: "back.out(1.8)" });
+  DECK.markStep(tl);
+
+  // step 4: the measured row — paradox lands
+  tl.fromTo("#taskrow", { opacity: 0, y: 16 }, { opacity: 1, y: 0, duration: 0.5, ease: "power2.out" })
+    .call(function () {
+      var c = document.getElementById("convpulse");
+      c.style.left = "215px"; c.style.top = "379px"; c.style.width = "252px"; c.style.height = "44px";
+    })
+    .fromTo("#convpulse", { opacity: 0, scale: 1.2 }, { opacity: 1, scale: 1, duration: 0.45, ease: "power3.out" })
+    .fromTo("#co2", { opacity: 0, scale: 0.7 }, { opacity: 1, scale: 1, duration: 0.4, ease: "back.out(1.8)" })
+    .fromTo("#quote3", { opacity: 0, y: 10 }, { opacity: 1, y: 0, duration: 0.5 });
+  DECK.markStep(tl);
+
+  // steps 5-7: questions with pinned ? badges
+  for (var i = 0; i < 3; i++) {
+    tl.fromTo("#q" + i, { opacity: 0, y: 14 }, { opacity: 1, y: 0, duration: 0.4, ease: "power2.out" })
+      .fromTo("#qb" + (i + 1), { opacity: 0, scale: 0 }, { opacity: 1, scale: 1, duration: 0.35, ease: "back.out(2.5)" }, "-=0.15");
+    DECK.markStep(tl);
+  }
+
+  // step 8: promise
+  tl.fromTo("#promise3", { opacity: 0 }, { opacity: 1, duration: 0.6 });
+
+  DECK.register(tl, {});
+</script>
+</body>
+</html>

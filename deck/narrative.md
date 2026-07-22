@@ -11,7 +11,60 @@ loop (auto-plays all steps, for rehearsal or hallway mode). F = fullscreen.
 
 ---
 
-## Page 01 — QKᵀ: where attention scores come from
+## Page 01 — Half the price. The same bill. (K3 pricing paradox)
+
+*The same 8 beats drive all three candidate variants (a: receipts, b: equation,
+c: ledger); the bracketed cue names what moves on screen in each.*
+
+**Load:** title only.
+
+1. **[a: receipts print · b: price bars · c: rate table cascades]** "In July,
+   Moonshot launched Kimi K3 at three dollars in, fifteen out — half of GPT-5.6
+   Sol's rate card, a third of Fable 5's. A Chinese lab pricing *at* flagship
+   rates was itself the news. On paper: frontier capability at a discount."
+
+2. **[a/c: benchmark panel, near-tie · b: (comes 4th)]** "And the capability
+   story holds up — mostly. On the independent numbers, it's a near-tie at the
+   top: two to three points of AA index, a few points of SWE-bench. The
+   agentic rows are vendor-run — each model in its own harness — so hold them
+   more loosely; the tension between those two kinds of numbers is part of
+   tonight's story."
+
+3. **[a: −40%/−70% stamps · b: tokens-per-task bars · c: per-token callout]**
+   "So per *token*, K3 is a steal: forty percent under Sol, seventy under
+   Fable." *(variant b: "But watch the second line: on the same agentic task,
+   K3 generates about twice the tokens Sol does — and decodes two to four
+   times slower.")*
+
+4. **[all: the convergence — measured $/task lands, K3 ≈ Sol]** "Then
+   developers ran real workloads, and something odd happened: the bills came
+   out nearly identical. Ninety-four cents a task versus a dollar four. K3
+   talks twice as much, at half the rate — Theo Browne's viral verdict:
+   'Price evens out.' Though note — against Fable it genuinely *is* three
+   times cheaper per task."
+
+5. **[Q1 appears, ? lands on output price]** "So here's the first question
+   this rate card begs: why is output five times the price of input — for
+   *every* vendor? That ratio is suspiciously universal."
+
+6. **[Q2 appears, ? lands on cached input]** "Second: why does a cache hit
+   cost ten times less than a miss? Ninety percent off, from all three
+   vendors, again."
+
+7. **[Q3 appears, ? lands on K3 column]** "And third: what does it take to
+   *afford* three-and-fifteen? K3's answer is 2.8 trillion parameters, a new
+   attention mechanism, a million tokens of context. Why those choices —
+   what physics connects this architecture to this price?"
+
+8. **[promise]** "That's the talk: token cost is physics, not marketing. By
+   the end, every number on this slide will be explainable from first
+   principles — and we'll come back and read this table again."
+
+*(final click → next page)*
+
+---
+
+## Template page — QKᵀ: where attention scores come from
 
 **Load:** title only; empty score grid awaits.
 
