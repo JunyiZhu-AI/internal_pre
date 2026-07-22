@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Test: Framer Motion (React)</title>
+<link rel="stylesheet" href="shared/styles.css">
+</head>
+<body>
+<a class="back" href="index.html">&larr; back to hub</a>
+<h1>Test: <span class="tech">Framer Motion</span> (pre-built React bundle <code>dist/framer-demo.js</code>)</h1>
+<div id="errbar"></div>
+<p id="summary"></p>
+
+<div class="card" data-check="framer-mount">
+  <h2>React mounts + components render</h2>
+  <p class="desc">React 19 + Framer Motion compiled to a single static JS file — no build step needed on the deploy side.</p>
+  <span class="badge">PENDING</span>
+</div>
+
+<div class="card" data-check="framer-loop">
+  <h2>Animations run</h2>
+  <p class="desc">A looping <code>motion.div</code>, a draggable box with hover/tap scaling, and an <code>AnimatePresence</code> enter/exit toggle.</p>
+  <span class="badge">PENDING</span>
+  <div class="stage" id="react-root"></div>
+</div>
+
+<script src="shared/harness.js"></script>
+<script src="dist/framer-demo.js"></script>
+<script>
+  // If the bundle itself was blocked, nothing will have reported by now.
+  setTimeout(function () {
+    var b = document.querySelector('[data-check="framer-mount"] .badge');
+    if (b && b.textContent === "PENDING") {
+      reportFail("framer-mount", "bundle never executed — script blocked or failed to load");
+      reportFail("framer-loop", "skipped");
+    }
+  }, 3000);
+</script>
+</body>
+</html>

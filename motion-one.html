@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Test: Motion (Motion One)</title>
+<link rel="stylesheet" href="shared/styles.css">
+<style>
+  .m-counter { font-family: ui-monospace, monospace; font-size: 2rem; color: #38cbb2; }
+</style>
+</head>
+<body>
+<a class="back" href="index.html">&larr; back to hub</a>
+<h1>Test: <span class="tech">Motion</span> (vendored UMD <code>vendor/motion.min.js</code>)</h1>
+<div id="errbar"></div>
+<p id="summary"></p>
+
+<div class="card" data-check="motion-load">
+  <h2>Library loads</h2>
+  <p class="desc">Checks that <code>window.Motion.animate</code> exists. Motion drives DOM animation via the Web Animations API (WAAPI).</p>
+  <span class="badge">PENDING</span>
+</div>
+
+<div class="card" data-check="motion-dom">
+  <h2>DOM keyframes (WAAPI-backed)</h2>
+  <p class="desc"><code>Motion.animate(el, keyframes, { repeat: Infinity })</code> — also proves the browser's WAAPI works.</p>
+  <span class="badge">PENDING</span>
+  <div class="stage"><div class="box" id="mBox"></div></div>
+</div>
+
+<div class="card" data-check="motion-spring">
+  <h2>Spring physics</h2>
+  <p class="desc">A box snapping left/right every 1.5s with <code>type: "spring"</code>.</p>
+  <span class="badge">PENDING</span>
+  <div class="stage"><div class="box box-spring" id="mSpring"></div></div>
+</div>
+
+<div class="card" data-check="motion-value">
+  <h2>Animated value (JS-driven counter)</h2>
+  <p class="desc"><code>animate(0, 2026, { onUpdate })</code> writing into a text node — the "big number counts up" slide trick.</p>
+  <span class="badge">PENDING</span>
+  <div class="stage"><span class="m-counter" id="mCounter">0</span></div>
+</div>
+
+<script src="shared/harness.js"></script>
+<script src="vendor/motion.min.js"></script>
+<script>
+  if (window.Motion && typeof Motion.animate === "function") {
+    reportPass("motion-load", "Motion.animate is available");
+
+    try {
+      Motion.animate(
+        "#mBox",
+        { transform: ["translateX(0) rotate(0deg)", "translateX(220px) rotate(180deg)", "translateX(0) rotate(360deg)"],
+          borderRadius: ["12%", "50%", "12%"] },
+        { duration: 3, repeat: Infinity, ease: "easeInOut" }
+      );
+      var mb = document.getElementById("mBox");
+      setTimeout(function () {
+        var t1 = getComputedStyle(mb).transform;
+        setTimeout(function () {
+          var t2 = getComputedStyle(mb).transform;
+          if (t1 !== t2) {
+            reportPass("motion-dom", "element transform is changing");
+          } else {
+            reportFail("motion-dom", "element transform is not changing");
+          }
+        }, 700);
+      }, 400);
+    } catch (e) { reportFail("motion-dom", e.message); }
+
+    try {
+      var flip = false;
+      setInterval(function () {
+        flip = !flip;
+        Motion.animate("#mSpring", { x: flip ? 220 : 0 }, { type: "spring", stiffness: 250, damping: 12 });
+      }, 1500);
+      Motion.animate("#mSpring", { x: 220 }, { type: "spring", stiffness: 250, damping: 12 });
+      setTimeout(function () { reportPass("motion-spring", "spring animations dispatched"); }, 800);
+    } catch (e) { reportFail("motion-spring", e.message); }
+
+    try {
+      var counter = document.getElementById("mCounter");
+      var reported = false;
+      function runCounter() {
+        Motion.animate(0, 2026, {
+          duration: 2.5,
+          ease: "circOut",
+          onUpdate: function (v) {
+            counter.textContent = Math.round(v);
+            if (!reported) { reported = true; reportPass("motion-value", "onUpdate is firing"); }
+          }
+        });
+      }
+      runCounter();
+      setInterval(runCounter, 4000);
+    } catch (e) { reportFail("motion-value", e.message); }
+  } else {
+    reportFail("motion-load", "window.Motion is undefined — script blocked or failed to load");
+    reportFail("motion-dom", "skipped");
+    reportFail("motion-spring", "skipped");
+    reportFail("motion-value", "skipped");
+  }
+</script>
+</body>
+</html>

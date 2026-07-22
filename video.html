@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Test: video assets</title>
+<link rel="stylesheet" href="shared/styles.css">
+</head>
+<body>
+<a class="back" href="index.html">&larr; back to hub</a>
+<h1>Test: <span class="tech">&lt;video&gt;</span> with static .mp4 / .webm assets</h1>
+<div id="errbar"></div>
+<p id="summary"></p>
+
+<div class="card" data-check="video-autoplay">
+  <h2>Autoplay background video (muted, looped)</h2>
+  <p class="desc">The slide-background pattern: <code>autoplay muted loop playsinline</code>, with <code>.webm</code> preferred and <code>.mp4</code> fallback. Browsers only allow autoplay when muted.</p>
+  <span class="badge">PENDING</span>
+  <div class="stage">
+    <video id="vAuto" autoplay muted loop playsinline width="480">
+      <source src="assets/test-video.webm" type="video/webm">
+      <source src="assets/test-video.mp4" type="video/mp4">
+    </video>
+  </div>
+</div>
+
+<div class="card" data-check="video-controls">
+  <h2>Click-to-play with controls and audio</h2>
+  <p class="desc">mp4 with an audio track (440&nbsp;Hz tone). PASS here means the file loaded and is playable; press play to check audio.</p>
+  <span class="badge">PENDING</span>
+  <div class="stage">
+    <video id="vCtrl" controls preload="auto" width="480">
+      <source src="assets/test-video.mp4" type="video/mp4">
+    </video>
+  </div>
+</div>
+
+<script src="shared/harness.js"></script>
+<script>
+  var vAuto = document.getElementById("vAuto");
+  vAuto.addEventListener("playing", function () {
+    var src = vAuto.currentSrc.split("/").pop();
+    reportPass("video-autoplay", "playing " + src);
+  }, { once: true });
+  vAuto.addEventListener("error", function () {
+    reportFail("video-autoplay", "media error — asset missing or codec unsupported");
+  }, true);
+
+  var vCtrl = document.getElementById("vCtrl");
+  vCtrl.addEventListener("canplay", function () {
+    reportPass("video-controls", "mp4 loaded and decodable");
+  }, { once: true });
+  vCtrl.addEventListener("error", function () {
+    reportFail("video-controls", "media error — asset missing or codec unsupported");
+  }, true);
+</script>
+</body>
+</html>

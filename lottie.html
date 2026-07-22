@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Test: Lottie</title>
+<link rel="stylesheet" href="shared/styles.css">
+<style>
+  .lottie-holder { width: 220px; height: 220px; }
+</style>
+</head>
+<body>
+<a class="back" href="index.html">&larr; back to hub</a>
+<h1>Test: <span class="tech">Lottie</span> (vendored <code>vendor/lottie.min.js</code>)</h1>
+<div id="errbar"></div>
+<p id="summary"></p>
+
+<div class="card" data-check="lottie-load">
+  <h2>Library loads</h2>
+  <p class="desc">Checks that <code>window.lottie</code> exists.</p>
+  <span class="badge">PENDING</span>
+</div>
+
+<div class="card" data-check="lottie-inline">
+  <h2>Play from inline JSON (animationData)</h2>
+  <p class="desc">The animation JSON is embedded in this HTML file, so this tests lottie-web itself, independent of any fetch/XHR policy.</p>
+  <span class="badge">PENDING</span>
+  <div class="stage"><div class="lottie-holder" id="lotInline"></div></div>
+</div>
+
+<div class="card" data-check="lottie-path">
+  <h2>Play from JSON file (path)</h2>
+  <p class="desc">Loads <code>assets/lottie-demo.json</code> via XHR — the usual production setup. If inline passes but this fails, the host blocks fetching JSON assets (or serves them with a broken MIME type).</p>
+  <span class="badge">PENDING</span>
+  <div class="stage"><div class="lottie-holder" id="lotPath"></div></div>
+</div>
+
+<script id="lottie-data" type="application/json">{"v":"5.7.4","fr":30,"ip":0,"op":90,"w":300,"h":300,"nm":"vendor-test","ddd":0,"assets":[],"layers":[{"ddd":0,"ind":1,"ty":4,"nm":"square","sr":1,"ks":{"o":{"a":0,"k":100},"r":{"a":1,"k":[{"t":0,"s":[0],"e":[360],"i":{"x":[0.42],"y":[0]},"o":{"x":[0.58],"y":[1]}},{"t":90,"s":[360]}]},"p":{"a":0,"k":[150,150,0]},"a":{"a":0,"k":[0,0,0]},"s":{"a":1,"k":[{"t":0,"s":[100,100,100],"e":[55,55,100],"i":{"x":[0.42],"y":[0]},"o":{"x":[0.58],"y":[1]}},{"t":45,"s":[55,55,100],"e":[100,100,100],"i":{"x":[0.42],"y":[0]},"o":{"x":[0.58],"y":[1]}},{"t":90,"s":[100,100,100]}]}},"ao":0,"shapes":[{"ty":"gr","nm":"sq-group","it":[{"ty":"rc","d":1,"s":{"a":0,"k":[130,130]},"p":{"a":0,"k":[0,0]},"r":{"a":0,"k":26}},{"ty":"fl","c":{"a":0,"k":[0.219,0.796,0.698,1]},"o":{"a":0,"k":100}},{"ty":"tr","p":{"a":0,"k":[0,0]},"a":{"a":0,"k":[0,0]},"s":{"a":0,"k":[100,100]},"r":{"a":0,"k":0},"o":{"a":0,"k":100}}]}],"ip":0,"op":90,"st":0},{"ddd":0,"ind":2,"ty":4,"nm":"orbit-dot","sr":1,"ks":{"o":{"a":0,"k":100},"r":{"a":1,"k":[{"t":0,"s":[0],"e":[-360],"i":{"x":[0.5],"y":[0.5]},"o":{"x":[0.5],"y":[0.5]}},{"t":90,"s":[-360]}]},"p":{"a":0,"k":[150,150,0]},"a":{"a":0,"k":[0,0,0]},"s":{"a":0,"k":[100,100,100]}},"ao":0,"shapes":[{"ty":"gr","nm":"dot-group","it":[{"ty":"el","d":1,"s":{"a":0,"k":[28,28]},"p":{"a":0,"k":[110,0]}},{"ty":"fl","c":{"a":0,"k":[0.976,0.658,0.145,1]},"o":{"a":0,"k":100}},{"ty":"tr","p":{"a":0,"k":[0,0]},"a":{"a":0,"k":[0,0]},"s":{"a":0,"k":[100,100]},"r":{"a":0,"k":0},"o":{"a":0,"k":100}}]}],"ip":0,"op":90,"st":0}]}</script>
+<script src="shared/harness.js"></script>
+<script src="vendor/lottie.min.js"></script>
+<script>
+  if (window.lottie) {
+    reportPass("lottie-load", "lottie-web v" + (lottie.version || "?"));
+
+    try {
+      var data = JSON.parse(document.getElementById("lottie-data").textContent);
+      var animInline = lottie.loadAnimation({
+        container: document.getElementById("lotInline"),
+        renderer: "svg", loop: true, autoplay: true,
+        animationData: data
+      });
+      animInline.addEventListener("DOMLoaded", function () {
+        reportPass("lottie-inline", "SVG rendered, playing");
+      });
+    } catch (e) { reportFail("lottie-inline", e.message); }
+
+    var animPath = lottie.loadAnimation({
+      container: document.getElementById("lotPath"),
+      renderer: "svg", loop: true, autoplay: true,
+      path: "assets/lottie-demo.json"
+    });
+    animPath.addEventListener("DOMLoaded", function () {
+      reportPass("lottie-path", "JSON fetched, SVG rendered, playing");
+    });
+    animPath.addEventListener("data_failed", function () {
+      reportFail("lottie-path", "could not fetch assets/lottie-demo.json");
+    });
+  } else {
+    reportFail("lottie-load", "window.lottie is undefined — script blocked or failed to load");
+    reportFail("lottie-inline", "skipped");
+    reportFail("lottie-path", "skipped");
+  }
+</script>
+</body>
+</html>

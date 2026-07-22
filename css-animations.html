@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Test: CSS animations &amp; transitions</title>
+<link rel="stylesheet" href="shared/styles.css">
+<style>
+  @keyframes spin-pulse {
+    0%   { transform: rotate(0deg) scale(1); border-radius: 12%; }
+    50%  { transform: rotate(180deg) scale(0.7); border-radius: 50%; }
+    100% { transform: rotate(360deg) scale(1); border-radius: 12%; }
+  }
+  .kf-box { animation: spin-pulse 2.5s ease-in-out infinite; }
+
+  .tr-box { transition: transform 0.8s cubic-bezier(0.34, 1.56, 0.64, 1), background 0.8s; }
+  .tr-box.moved { transform: translateX(200px) rotate(90deg); background: #ef5350; }
+
+  @keyframes slide-in {
+    from { opacity: 0; transform: translateY(30px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  .stagger-item {
+    display: inline-block; width: 40px; height: 40px; margin-right: 8px;
+    border-radius: 8px; background: #2f7cf6;
+    opacity: 0;
+    animation: slide-in 0.6s ease-out forwards;
+  }
+</style>
+</head>
+<body>
+<a class="back" href="index.html">&larr; back to hub</a>
+<h1>Test: <span class="tech">CSS animations &amp; transitions</span></h1>
+<div id="errbar"></div>
+<p id="summary"></p>
+
+<div class="card" data-check="css-keyframes">
+  <h2>@keyframes infinite loop</h2>
+  <p class="desc">A box spinning and pulsing forever via <code>@keyframes</code>. Needs zero JS — if this moves, keyframes work.</p>
+  <span class="badge">PENDING</span>
+  <div class="stage"><div class="box kf-box"></div></div>
+</div>
+
+<div class="card" data-check="css-transition">
+  <h2>CSS transition (auto-toggled)</h2>
+  <p class="desc">JS toggles a class every 1.5s; the movement itself is a pure CSS <code>transition</code> with a springy cubic-bezier.</p>
+  <span class="badge">PENDING</span>
+  <div class="stage"><div class="box tr-box" id="trBox"></div></div>
+</div>
+
+<div class="card" data-check="css-stagger">
+  <h2>Staggered entrance via animation-delay</h2>
+  <p class="desc">Five items sliding in with increasing <code>animation-delay</code> — the classic slide-bullet reveal, no library.</p>
+  <span class="badge">PENDING</span>
+  <div class="stage" id="staggerStage"></div>
+</div>
+
+<script src="shared/harness.js"></script>
+<script>
+  // Keyframes: the browser fires animationstart if the animation actually runs.
+  var kf = document.querySelector(".kf-box");
+  kf.addEventListener("animationstart", function () {
+    reportPass("css-keyframes", "animationstart fired");
+  }, { once: true });
+
+  // Transition: toggle a class and listen for transitionend.
+  var tr = document.getElementById("trBox");
+  tr.addEventListener("transitionend", function () {
+    reportPass("css-transition", "transitionend fired");
+  }, { once: true });
+  setInterval(function () { tr.classList.toggle("moved"); }, 1500);
+  setTimeout(function () { tr.classList.add("moved"); }, 100);
+
+  // Stagger: build items with increasing delays, restart the set every 3s.
+  var stage = document.getElementById("staggerStage");
+  function runStagger() {
+    stage.innerHTML = "";
+    for (var i = 0; i < 5; i++) {
+      var d = document.createElement("div");
+      d.className = "stagger-item";
+      d.style.animationDelay = (i * 0.15) + "s";
+      d.addEventListener("animationend", function () {
+        reportPass("css-stagger", "staggered items animated");
+      }, { once: true });
+      stage.appendChild(d);
+    }
+  }
+  runStagger();
+  setInterval(runStagger, 3000);
+</script>
+</body>
+</html>

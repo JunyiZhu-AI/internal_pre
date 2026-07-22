@@ -1,0 +1,29 @@
+{
+  "name": "internal_pre",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/JunyiZhu-AI/internal_pre.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/JunyiZhu-AI/internal_pre/issues"
+  },
+  "homepage": "https://github.com/JunyiZhu-AI/internal_pre#readme",
+  "devDependencies": {
+    "animejs": "^4.5.0",
+    "esbuild": "^0.28.1",
+    "framer-motion": "^12.42.2",
+    "puppeteer-core": "^25.3.0",
+    "react": "^19.2.8",
+    "react-dom": "^19.2.8"
+  }
+}

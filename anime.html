@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Test: Anime.js</title>
+<link rel="stylesheet" href="shared/styles.css">
+<style>
+  .a-dot { width: 28px; height: 28px; border-radius: 50%; background: #ab47bc; display: inline-block; margin-right: 10px; }
+</style>
+</head>
+<body>
+<a class="back" href="index.html">&larr; back to hub</a>
+<h1>Test: <span class="tech">Anime.js v4</span> (vendored bundle <code>vendor/anime.iife.min.js</code>)</h1>
+<div id="errbar"></div>
+<p id="summary"></p>
+
+<div class="card" data-check="anime-load">
+  <h2>Library loads</h2>
+  <p class="desc">Checks that the bundled global <code>anime.animate</code> exists.</p>
+  <span class="badge">PENDING</span>
+</div>
+
+<div class="card" data-check="anime-tween">
+  <h2>Alternating tween</h2>
+  <p class="desc"><code>animate()</code> moving and rotating a box, looping with <code>alternate</code>.</p>
+  <span class="badge">PENDING</span>
+  <div class="stage"><div class="box" id="aBox"></div></div>
+</div>
+
+<div class="card" data-check="anime-stagger">
+  <h2>Staggered wave</h2>
+  <p class="desc">Five dots bouncing with <code>stagger(120)</code> delays.</p>
+  <span class="badge">PENDING</span>
+  <div class="stage">
+    <span class="a-dot"></span><span class="a-dot"></span><span class="a-dot"></span><span class="a-dot"></span><span class="a-dot"></span>
+  </div>
+</div>
+
+<script src="shared/harness.js"></script>
+<script src="vendor/anime.iife.min.js"></script>
+<script>
+  if (window.anime && typeof anime.animate === "function") {
+    reportPass("anime-load", "anime.animate is available");
+
+    var reported = false;
+    anime.animate("#aBox", {
+      x: 220,
+      rotate: "1turn",
+      borderRadius: "50%",
+      duration: 1500,
+      loop: true,
+      alternate: true,
+      ease: "inOutQuad",
+      onUpdate: function () {
+        if (!reported) { reported = true; reportPass("anime-tween", "tween is updating"); }
+      }
+    });
+
+    anime.animate(".a-dot", {
+      y: [0, -24, 0],
+      duration: 900,
+      delay: anime.stagger(120),
+      loop: true,
+      loopDelay: 400,
+      ease: "inOutSine",
+      onLoop: function () { reportPass("anime-stagger", "stagger loop completed"); }
+    });
+    // Belt-and-braces: also confirm a dot is visibly moving.
+    setTimeout(function () {
+      var dot = document.querySelector(".a-dot");
+      var t1 = getComputedStyle(dot).transform;
+      setTimeout(function () {
+        if (getComputedStyle(dot).transform !== t1) {
+          reportPass("anime-stagger", "dots are moving");
+        }
+      }, 400);
+    }, 300);
+  } else {
+    reportFail("anime-load", "global anime bundle missing — script blocked or failed to load");
+    reportFail("anime-tween", "skipped");
+    reportFail("anime-stagger", "skipped");
+  }
+</script>
+</body>
+</html>

@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Test: GSAP</title>
+<link rel="stylesheet" href="shared/styles.css">
+<style>
+  .g-dot { width: 28px; height: 28px; border-radius: 50%; background: #f9a825; display: inline-block; margin-right: 10px; }
+</style>
+</head>
+<body>
+<a class="back" href="index.html">&larr; back to hub</a>
+<h1>Test: <span class="tech">GSAP</span> (vendored <code>vendor/gsap.min.js</code>)</h1>
+<div id="errbar"></div>
+<p id="summary"></p>
+
+<div class="card" data-check="gsap-load">
+  <h2>Library loads</h2>
+  <p class="desc">Checks that <code>window.gsap</code> exists after loading the local script file.</p>
+  <span class="badge">PENDING</span>
+</div>
+
+<div class="card" data-check="gsap-tween">
+  <h2>Looping tween</h2>
+  <p class="desc"><code>gsap.to()</code> with yoyo repeat — position, rotation and border-radius at once.</p>
+  <span class="badge">PENDING</span>
+  <div class="stage"><div class="box" id="gBox"></div></div>
+</div>
+
+<div class="card" data-check="gsap-timeline">
+  <h2>Timeline with stagger</h2>
+  <p class="desc">A repeating <code>gsap.timeline()</code> bouncing five dots with <code>stagger: 0.1</code> — the pattern you'd use to reveal slide bullets.</p>
+  <span class="badge">PENDING</span>
+  <div class="stage">
+    <span class="g-dot"></span><span class="g-dot"></span><span class="g-dot"></span><span class="g-dot"></span><span class="g-dot"></span>
+  </div>
+</div>
+
+<script src="shared/harness.js"></script>
+<script src="vendor/gsap.min.js"></script>
+<script>
+  if (window.gsap) {
+    reportPass("gsap-load", "gsap v" + gsap.version);
+
+    gsap.to("#gBox", {
+      x: 220, rotation: 360, borderRadius: "50%",
+      duration: 1.5, ease: "power2.inOut",
+      repeat: -1, yoyo: true,
+      onUpdate: function once() {
+        reportPass("gsap-tween", "tween is updating");
+        this.eventCallback("onUpdate", null);
+      }
+    });
+
+    var tl = gsap.timeline({ repeat: -1, repeatDelay: 0.4 });
+    tl.to(".g-dot", { y: -24, duration: 0.3, stagger: 0.1, ease: "power2.out" })
+      .to(".g-dot", { y: 0, duration: 0.3, stagger: 0.1, ease: "bounce.out" })
+      .call(function () { reportPass("gsap-timeline", "timeline cycle completed"); });
+  } else {
+    reportFail("gsap-load", "window.gsap is undefined — script blocked or failed to load");
+    reportFail("gsap-tween", "skipped");
+    reportFail("gsap-timeline", "skipped");
+  }
+</script>
+</body>
+</html>

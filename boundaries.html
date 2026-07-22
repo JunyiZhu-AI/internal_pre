@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Test: platform boundaries</title>
+<link rel="stylesheet" href="shared/styles.css">
+</head>
+<body>
+<a class="back" href="index.html">&larr; back to hub</a>
+<h1>Test: <span class="tech">platform boundaries</span></h1>
+<p class="desc" style="color:#9aa1b5">These checks verify the limits you were told about. Here, <b>PASS = the feature works on this host</b> — so for the worker checks, a FAIL just confirms what your colleague said, it's not a problem.</p>
+<div id="errbar"></div>
+<p id="summary"></p>
+
+<div class="card" data-check="worker-file">
+  <h2>Web Worker from a file (expected: not supported)</h2>
+  <p class="desc">Spawns <code>shared/worker.js</code> and waits for a message round-trip.</p>
+  <span class="badge">PENDING</span>
+</div>
+
+<div class="card" data-check="worker-blob">
+  <h2>Web Worker from an inline Blob (expected: not supported)</h2>
+  <p class="desc">Same test but the worker code is created in-page via <code>Blob</code> + <code>createObjectURL</code> — sometimes one of the two is blocked (CSP <code>worker-src</code>) while the other works.</p>
+  <span class="badge">PENDING</span>
+</div>
+
+<div class="card" data-check="fetch-static">
+  <h2>fetch() a static JSON asset (expected: works)</h2>
+  <p class="desc">Fetches <code>assets/lottie-demo.json</code>. Slides often lazy-load data this way; Lottie needs it too.</p>
+  <span class="badge">PENDING</span>
+</div>
+
+<div class="card" data-check="fetch-external">
+  <h2>fetch() an external URL (informational)</h2>
+  <p class="desc">Fetches <code>https://unpkg.com</code>. Tells you whether the deployed page may use public CDNs / external APIs, or whether everything must be vendored (as this repo does).</p>
+  <span class="badge">PENDING</span>
+</div>
+
+<div class="card" data-check="eventsource">
+  <h2>EventSource / streaming (expected: not supported)</h2>
+  <p class="desc">Opens an <code>EventSource</code> to a relative endpoint. With no server backend this must fail — confirming animations must be client-side only.</p>
+  <span class="badge">PENDING</span>
+</div>
+
+<script src="shared/harness.js"></script>
+<script>
+  // 1. Worker from file
+  try {
+    var w1 = new Worker("shared/worker.js");
+    var t1 = setTimeout(function () { reportFail("worker-file", "no response in 3s"); w1.terminate(); }, 3000);
+    w1.onmessage = function (e) {
+      clearTimeout(t1);
+      reportPass("worker-file", "round-trip OK (21 → " + e.data.computed + ")");
+      w1.terminate();
+    };
+    w1.onerror = function (e) {
+      clearTimeout(t1);
+      reportFail("worker-file", e.message || "worker error event");
+    };
+    w1.postMessage(21);
+  } catch (e) { reportFail("worker-file", e.message); }
+
+  // 2. Worker from blob
+  try {
+    var blob = new Blob(["self.onmessage=function(e){self.postMessage(e.data*2)}"], { type: "text/javascript" });
+    var w2 = new Worker(URL.createObjectURL(blob));
+    var t2 = setTimeout(function () { reportFail("worker-blob", "no response in 3s"); w2.terminate(); }, 3000);
+    w2.onmessage = function (e) {
+      clearTimeout(t2);
+      reportPass("worker-blob", "round-trip OK (21 → " + e.data + ")");
+      w2.terminate();
+    };
+    w2.onerror = function (e) {
+      clearTimeout(t2);
+      reportFail("worker-blob", e.message || "worker error event");
+    };
+    w2.postMessage(21);
+  } catch (e) { reportFail("worker-blob", e.message); }
+
+  // 3. fetch static asset
+  fetch("assets/lottie-demo.json")
+    .then(function (r) { if (!r.ok) throw new Error("HTTP " + r.status); return r.json(); })
+    .then(function (j) { reportPass("fetch-static", "got JSON, " + j.layers.length + " layers"); })
+    .catch(function (e) { reportFail("fetch-static", e.message); });
+
+  // 4. fetch external
+  fetch("https://unpkg.com", { mode: "no-cors" })
+    .then(function () { reportPass("fetch-external", "external request went through (opaque)"); })
+    .catch(function (e) { reportFail("fetch-external", "blocked: " + e.message); });
+
+  // 5. EventSource
+  try {
+    var es = new EventSource("stream-endpoint");
+    var t5 = setTimeout(function () { reportFail("eventsource", "no events in 3s"); es.close(); }, 3000);
+    es.onopen = function () { clearTimeout(t5); reportPass("eventsource", "connection opened (unexpected!)"); es.close(); };
+    es.onerror = function () { clearTimeout(t5); reportFail("eventsource", "connection failed (expected — no backend)"); es.close(); };
+  } catch (e) { reportFail("eventsource", e.message); }
+</script>
+</body>
+</html>

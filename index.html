@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Animation capability test suite</title>
+<link rel="stylesheet" href="shared/styles.css">
+<style>
+  @keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-8px); } }
+  .logo { display: inline-block; animation: float 2.5s ease-in-out infinite; }
+</style>
+</head>
+<body>
+<h1><span class="logo">🎞️</span> Animation capability test suite</h1>
+<p style="color:#9aa1b5; max-width: 720px">
+  Each page below exercises one animation technology using only static files —
+  all libraries are vendored locally, so nothing depends on a CDN. Open each page on the
+  deployed host: every demo shows a <code>PASS</code> / <code>FAIL</code> badge, and anything
+  that silently never runs is flagged as <code>NO SIGNAL</code> after 5 seconds.
+  If a page is entirely blank or unstyled, the host is likely blocking local JS/CSS files — that
+  itself is a finding.
+</p>
+
+<div class="grid">
+  <a class="card" href="css-animations.html">
+    <h2>CSS animations &amp; transitions</h2>
+    <p class="desc">@keyframes loops, transitions, staggered entrances. No JS needed for the visuals.</p>
+    <p class="expect">Expected: works</p>
+  </a>
+  <a class="card" href="gsap.html">
+    <h2>GSAP</h2>
+    <p class="desc">Tweens, timelines, staggers via vendored gsap.min.js.</p>
+    <p class="expect">Expected: works</p>
+  </a>
+  <a class="card" href="anime.html">
+    <h2>Anime.js v4</h2>
+    <p class="desc">Tweens and staggered waves via a locally bundled build.</p>
+    <p class="expect">Expected: works</p>
+  </a>
+  <a class="card" href="motion-one.html">
+    <h2>Motion (Motion One)</h2>
+    <p class="desc">WAAPI-backed keyframes, springs, animated values.</p>
+    <p class="expect">Expected: works</p>
+  </a>
+  <a class="card" href="framer-motion.html">
+    <h2>Framer Motion (React)</h2>
+    <p class="desc">Pre-built React bundle — loops, drag, AnimatePresence.</p>
+    <p class="expect">Expected: works</p>
+  </a>
+  <a class="card" href="lottie.html">
+    <h2>Lottie</h2>
+    <p class="desc">lottie-web playing JSON — inline and fetched from a file.</p>
+    <p class="expect">Expected: works</p>
+  </a>
+  <a class="card" href="video.html">
+    <h2>Video assets</h2>
+    <p class="desc">Muted autoplay background video + click-to-play with audio (.webm / .mp4).</p>
+    <p class="expect">Expected: works</p>
+  </a>
+  <a class="card" href="boundaries.html">
+    <h2>Platform boundaries</h2>
+    <p class="desc">Web Workers, fetch of static assets, external requests, streaming.</p>
+    <p class="expect">Expected: workers &amp; streaming FAIL (that's the point)</p>
+  </a>
+</div>
+</body>
+</html>
