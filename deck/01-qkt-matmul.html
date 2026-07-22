@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>QKᵀ — where attention scores come from</title>
+<link rel="stylesheet" href="shared/deck.css">
+<style>
+  .mwrap { position: absolute; }
+  #mS .cell, #mQ .cell, #mKT .cell { min-width: 58px; height: 46px; font-size: 15px; }
+  .hl {
+    position: absolute; border-radius: 8px; pointer-events: none; opacity: 0;
+    border: 2.5px solid; z-index: 3;
+  }
+  #hlRow { border-color: var(--c-q); background: rgba(57,135,229,0.12); }
+  #hlCol { border-color: var(--c-k); background: rgba(25,158,112,0.12); }
+  #eq {
+    position: absolute; left: 50%; top: 620px; transform: translateX(-50%);
+    font-family: ui-monospace, monospace; font-size: 21px; color: #e8eaf0;
+    background: var(--panel); border: 1px solid var(--line); border-radius: 10px;
+    padding: 12px 22px; white-space: nowrap; opacity: 0;
+  }
+  #eq .tq { color: var(--c-q); } #eq .tk { color: var(--accent); }
+  .phase-chip {
+    position: absolute; font-family: ui-monospace, monospace; font-size: 18px;
+    background: var(--panel); border: 1px solid var(--line); border-radius: 10px;
+    padding: 10px 18px; opacity: 0; z-index: 4;
+  }
+  #sLabel { position: absolute; font-size: 16px; font-weight: 600; white-space: nowrap; }
+  .tok-col { position: absolute; display: flex; flex-direction: column; gap: 20px; }
+  .tok-row { position: absolute; display: flex; gap: 7px; }
+  .tok.mini { font-size: 12px; padding: 4px 8px; min-width: 56px; text-align: center; }
+</style>
+</head>
+<body>
+<div class="stage">
+  <div class="slide-title">QKᵀ — where attention scores come from</div>
+  <div class="slide-sub">score(i, j) = ⟨query row i, key column j⟩ &nbsp;·&nbsp; then ÷√d<sub>k</sub>, softmax</div>
+
+  <div class="mwrap" id="wKT" style="left:470px; top:110px">
+    <div class="m-label"><span class="swatch" style="background:var(--c-k)"></span>Kᵀ <span class="dim">3×4</span></div>
+    <div id="mKT"></div>
+  </div>
+  <div class="mwrap" id="wQ" style="left:170px; top:300px">
+    <div class="m-label"><span class="swatch" style="background:var(--c-q)"></span>Q <span class="dim">4×3</span></div>
+    <div id="mQ"></div>
+  </div>
+  <div class="mwrap" id="wS" style="left:470px; top:300px">
+    <div id="sLabel" style="top:218px; left:2px">S = QKᵀ</div>
+    <div id="mS"></div>
+  </div>
+
+  <div class="tok-col" id="tokLeft" style="left:88px; top:344px"></div>
+  <div class="tok-row" id="tokTop" style="left:478px; top:76px"></div>
+
+  <div class="hl" id="hlRow"></div>
+  <div class="hl" id="hlCol"></div>
+  <div id="eq"></div>
+  <div class="phase-chip" id="chipScale" style="left:790px; top:330px">÷ √d<sub>k</sub> = ÷ 1.73</div>
+  <div class="phase-chip" id="chipSoft" style="left:790px; top:390px">softmax(row)</div>
+</div>
+
+<script src="../vendor/gsap.min.js"></script>
+<script src="shared/attn.js"></script>
+<script src="shared/manifest.js"></script>
+<script src="shared/deck.js"></script>
+<script>
+  var mQ = ATTN.buildMatrix(document.getElementById("mQ"), ATTN.Q, { digits: 1 });
+  var mKT = ATTN.buildMatrix(document.getElementById("mKT"), ATTN.KT, { digits: 1 });
+  var mS = ATTN.buildMatrix(document.getElementById("mS"), ATTN.Sraw, {});
+
+  ATTN.tokens.forEach(function (t) {
+    var a = document.createElement("div"); a.className = "tok mini"; a.textContent = t;
+    document.getElementById("tokLeft").appendChild(a);
+    var b = document.createElement("div"); b.className = "tok mini"; b.textContent = t;
+    document.getElementById("tokTop").appendChild(b);
+  });
+
+  var sCells = [].slice.call(mS.children);
+  function sCell(i, j) { return sCells[i * 4 + j]; }
+
+  function rowRect(i) {
+    return { left: 170 + 4, top: 300 + 27 + 4 + i * 49, width: 58 * 3 + 3 * 2 + 8, height: 46 + 8 };
+  }
+  function colRect(j) {
+    return { left: 470 + 4 + j * 61, top: 110 + 27 + 4, width: 58 + 8, height: 46 * 3 + 3 * 2 + 8 };
+  }
+  var hlRow = document.getElementById("hlRow"), hlCol = document.getElementById("hlCol");
+  var eq = document.getElementById("eq");
+
+  function eqHTML(i, j) {
+    var parts = [];
+    for (var k = 0; k < 3; k++) {
+      var q = ATTN.fmt(ATTN.Q[i][k], 1), kv = ATTN.fmt(ATTN.KT[k][j], 1);
+      parts.push('<span class="tq">' + q + '</span>·<span class="tk">' + (kv < 0 ? "(" + kv + ")" : kv) + "</span>");
+    }
+    return parts.join(" + ") + " = <b>" + ATTN.fmt(ATTN.Sraw[i][j]) + "</b>";
+  }
+  function place(el, r) { el.style.left = r.left + "px"; el.style.top = r.top + "px"; el.style.width = r.width + "px"; el.style.height = r.height + "px"; }
+
+  function clearBoard() {
+    sCells.forEach(function (c) { c.textContent = ""; c.style.background = ""; c.style.color = ""; });
+    document.getElementById("sLabel").textContent = "S = QKᵀ";
+    gsap.set("#chipScale, #chipSoft, #eq, #hlRow, #hlCol", { opacity: 0 });
+  }
+  clearBoard();
+
+  var tl = gsap.timeline({ paused: true });
+
+  // -- step 1: the two operands arrive --------------------------------------
+  tl.from("#wQ, #wKT, #tokLeft .tok, #tokTop .tok",
+    { opacity: 0, y: 16, duration: 0.45, stagger: 0.05, ease: "power2.out" });
+  DECK.markStep(tl);
+
+  // -- step 2: first cell, slow, with the arithmetic ------------------------
+  function fillCell(i, j, n) {
+    var slow = n === 0 ? 1.2 : n === 1 ? 0.6 : 0;
+    var d = n < 2 ? 0.45 : 0.11;
+    tl.call(function () {
+      place(hlRow, rowRect(i)); place(hlCol, colRect(j));
+      if (n < 2) eq.innerHTML = eqHTML(i, j);
+    })
+      .to([hlRow, hlCol], { opacity: 1, duration: 0.12 }, "<");
+    if (n < 2) tl.to(eq, { opacity: 1, duration: 0.25 }, "<").to({}, { duration: slow });
+    tl.call(function () { sCell(i, j).textContent = ATTN.fmt(ATTN.Sraw[i][j]); })
+      .fromTo(sCell(i, j), { scale: 0.3, opacity: 0 }, { scale: 1, opacity: 1, duration: d, ease: "back.out(2)" });
+  }
+
+  var order = [];
+  for (var i = 0; i < 4; i++) for (var j = 0; j < 4; j++) order.push([i, j]);
+
+  fillCell(0, 0, 0);
+  DECK.markStep(tl);
+
+  // -- step 3: second cell, quicker -----------------------------------------
+  fillCell(0, 1, 1);
+  tl.to(eq, { opacity: 0, duration: 0.25 });
+  DECK.markStep(tl);
+
+  // -- step 4: the remaining 14 cells cascade -------------------------------
+  order.slice(2).forEach(function (ij, n) { fillCell(ij[0], ij[1], n + 2); });
+  tl.to([hlRow, hlCol], { opacity: 0, duration: 0.2 });
+  DECK.markStep(tl);
+
+  // -- step 5: divide by sqrt(d_k) ------------------------------------------
+  var scaleState = { t: 0 };
+  tl.to("#chipScale", { opacity: 1, duration: 0.3, ease: "power2.out" })
+    .call(function () { document.getElementById("sLabel").innerHTML = "S = QKᵀ / √d<sub>k</sub>"; })
+    .to(scaleState, {
+      t: 1, duration: 0.9, ease: "power2.inOut",
+      onUpdate: function () {
+        order.forEach(function (ij) {
+          var raw = ATTN.Sraw[ij[0]][ij[1]], sc = ATTN.S[ij[0]][ij[1]];
+          sCell(ij[0], ij[1]).textContent = ATTN.fmt(raw + (sc - raw) * scaleState.t);
+        });
+      }
+    });
+  DECK.markStep(tl);
+
+  // -- step 6: softmax, row by row ------------------------------------------
+  tl.to("#chipSoft", { opacity: 1, duration: 0.3 })
+    .call(function () { document.getElementById("sLabel").textContent = "A = softmax(S) — rows sum to 1"; });
+  for (var r = 0; r < 4; r++) {
+    (function (r) {
+      var st = { t: 0 };
+      tl.to(st, {
+        t: 1, duration: 0.55, ease: "power2.inOut",
+        onUpdate: function () {
+          for (var j = 0; j < 4; j++) {
+            var from = ATTN.S[r][j], to = ATTN.A[r][j];
+            var c = sCell(r, j);
+            c.textContent = ATTN.fmt(from + (to - from) * st.t);
+            c.style.background = ATTN.weightColor(to * st.t);
+            c.style.color = ATTN.inkFor(to * st.t);
+          }
+        }
+      }, "+=0.1");
+    })(r);
+  }
+
+  DECK.register(tl, {
+    reset: function () {
+      scaleState.t = 0;
+      clearBoard();
+    }
+  });
+</script>
+</body>
+</html>
