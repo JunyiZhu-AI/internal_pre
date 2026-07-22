@@ -6,8 +6,8 @@
         where fn restores any DOM state changed via .call() (may be omitted).
    Controls:
      click / Space / ArrowRight / PageDown : next step (at end: next page)
-     ArrowLeft / PageUp                    : previous page
-     on-screen arrows                      : previous / next page
+     ArrowLeft / PageUp                    : previous step (instant, no motion)
+     on-screen arrow icons                 : previous / next page
      loop button : play all steps continuously, looping
      reset button: back to the page's initial state (also turns loop off)
      F           : fullscreen
@@ -40,7 +40,7 @@ var DECK = (function () {
     var bar = document.createElement("div");
     bar.id = "deck-controls";
     bar.innerHTML =
-      '<button class="dbtn" id="dk-prev" title="previous page (←)">' + ICONS.prev + "</button>" +
+      '<button class="dbtn" id="dk-prev" title="previous page">' + ICONS.prev + "</button>" +
       '<div class="dpage" id="dk-page"></div>' +
       '<button class="dbtn" id="dk-next" title="next page">' + ICONS.next + "</button>" +
       '<div class="dsep"></div>' +
@@ -116,6 +116,21 @@ var DECK = (function () {
     updateUI();
   }
 
+  function prevStep() {
+    if (!tl) return;
+    if (looping) { looping = false; ui.loop && ui.loop.classList.remove("on"); }
+    var now = tl.time();
+    var target = 0;
+    for (var i = 0; i < pauseTimes.length; i++) {
+      if (pauseTimes[i] < now - 0.05) target = pauseTimes[i];
+    }
+    // rebuild from the start so .call() DOM mutations are correctly re-applied
+    if (resetFn) resetFn();
+    tl.pause(0);
+    if (target > 0) tl.seek(target, false);
+    updateUI();
+  }
+
   function reset(andPlay) {
     if (!tl) return;
     if (!andPlay) { looping = false; ui.loop && ui.loop.classList.remove("on"); }
@@ -151,7 +166,7 @@ var DECK = (function () {
     if (e.key === " " || e.key === "ArrowRight" || e.key === "PageDown") {
       e.preventDefault(); advance();
     } else if (e.key === "ArrowLeft" || e.key === "PageUp") {
-      e.preventDefault(); prevPage();
+      e.preventDefault(); prevStep();
     } else if (e.key === "f" || e.key === "F") {
       if (document.fullscreenElement) document.exitFullscreen();
       else document.documentElement.requestFullscreen();
@@ -161,7 +176,8 @@ var DECK = (function () {
   document.addEventListener("DOMContentLoaded", function () { buildControls(); fit(); });
 
   return {
-    register: register, markStep: markStep, advance: advance, reset: reset,
+    register: register, markStep: markStep, advance: advance,
+    prevStep: prevStep, reset: reset,
     _tl: function () { return tl; },   // for automated tests
   };
 })();

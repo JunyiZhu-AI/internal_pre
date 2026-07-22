@@ -5,9 +5,10 @@ the motion that follows illustrates what you just said (or click first and speak
 over the motion; each step is short enough for either). "Load" is what's on screen
 before any click.
 
-Controls reminder: click / Space / → / PageDown = next step; last step's click goes
-to the next page. ← / PageUp = previous page. Bottom-right: page arrows, restart,
-loop (auto-plays all steps, for rehearsal or hallway mode). F = fullscreen.
+Controls reminder: click / Space / → / PageDown = next step; the click after the
+last step goes to the next page. ← / PageUp = back one step (instant). Page
+switching is via the on-screen arrow icons only. Bottom-right: page arrows,
+restart, loop (auto-plays all steps, for rehearsal or hallway mode). F = fullscreen.
 
 ---
 
