@@ -203,7 +203,7 @@ back at the two machines it names.*
 
 **Load:** title only.
 
-1. **[pipeline builds; price tag pins onto a token chip]** "The whole model
+1. **[pipeline builds]** "The whole model
    is a short pipeline: text, tokenizer, embeddings, N identical blocks, LM
    head, a distribution over the next token. Two things to notice. The
    token is the atomic unit of everything tonight — compute, memory, and

@@ -18,7 +18,6 @@
   #stack i:nth-child(2) { transform: translate(4px,-4px); }
   #stack i:nth-child(3) { transform: translate(8px,-8px); }
   #stack .nx { position: absolute; inset: 0; transform: translate(8px,-8px); display: flex; align-items: center; justify-content: center; font: 700 10.5px ui-monospace, monospace; color: #9aa1b5; z-index: 2; }
-  #price { position: absolute; opacity: 0; z-index: 12; }
 
   #map { position: absolute; left: 350px; top: 196px; display: flex; align-items: center; gap: 6px; opacity: 0; }
   #map .mod { font-size: 10px; }
@@ -68,7 +67,6 @@
   <div class="slide-sub">tokenize → embed → N identical blocks → next token. Inside each block: two machines.</div>
 
   <div id="pipe"></div>
-  <div id="price" class="ta-price"></div>
   <svg id="wires" width="1280" height="720"></svg>
   <div id="maplab">inside one block:</div>
   <div id="map">
@@ -151,7 +149,6 @@
   document.getElementById("flashtag").textContent = TA.flashTag;
   document.getElementById("moetag").textContent = TA.moeTag;
   document.getElementById("caption").textContent = TA.caption;
-  document.getElementById("price").textContent = TA.price;
 
   var pipe = document.getElementById("pipe");
   function add(html) { pipe.insertAdjacentHTML("beforeend", html); return pipe.lastElementChild; }
@@ -209,15 +206,7 @@
   var tl = gsap.timeline({ paused: true });
 
   // step 1: pipeline + billing unit
-  tl.to("#pipe > *", { opacity: 1, duration: 0.22, stagger: 0.05, ease: "power1.out" })
-    .call(function () {
-      var chips = pipe.querySelectorAll(".ta-chip");
-      var target = chips[chips.length - 2];
-      var pr = document.getElementById("price");
-      pr.style.left = (44 + target.offsetLeft - 16) + "px";
-      pr.style.top = "168px";
-    })
-    .fromTo("#price", { opacity: 0, y: -50, rotate: -8 }, { opacity: 1, y: 0, rotate: -8, duration: 0.5, ease: "bounce.out" });
+  tl.to("#pipe > *", { opacity: 1, duration: 0.22, stagger: 0.05, ease: "power1.out" });
   DECK.markStep(tl);
 
   // step 2: one block opens into the two machines
