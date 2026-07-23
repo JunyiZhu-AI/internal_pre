@@ -415,6 +415,66 @@ do.*
 
 ---
 
+## Pages 16–17 — Quantization (the notation, then the frontier)
+
+*Three candidate flows (a: dials rig, b: split-flap notation, c: bucket
+payments). Same 4 beats each. The B200 FP8/FP4 ceilings cut from slide 03
+deliberately reappear here.*
+
+### 16 — Quantization: Decoding the Notation
+
+1. "The entire quantization field hides in one line of notation: W-x A-y —
+   x-bit weights, y-bit activations. The two letters buy completely
+   different things, and if you know which letter you turned, you know which
+   bottleneck you fixed. One rule of community etiquette before we start:
+   bare digits mean integer; floating-point schemes go by their format name."
+2. "Turn the W dial. Weights are static — known before deployment — so you
+   can be aggressive: four bits, per-group scales, GPTQ- and AWQ-style error
+   compensation, all offline. What does it buy? Bandwidth — decode re-reads
+   every weight, every token — and capacity. What does it NOT buy? Compute.
+   Watch the tensor cores: still FP16. W4A16 is the serving default, and it
+   is a pure memory play."
+3. "Now the A dial. Activations are dynamic and outlier-prone — harder. But
+   the moment BOTH operands are cheap, the matmul drops onto low-precision
+   tensor cores, and now you bought compute. That's the whole taxonomy:
+   W8A8 was the SmoothQuant era; 'FP8' is the same digits on the native
+   Hopper path — nobody calls it W8A8-FP8; W4A8 is the specialist
+   throughput stack; and the KV cache is a third dial that buys capacity
+   alone."
+4. "One caveat with a signature you'll see again: grow the batch until
+   decode goes compute-bound, and these wins fade — quantization is a
+   bandwidth-regime weapon. And remember the roofline slide, where I hid
+   the B200's other two ceilings? Here they are: 2,250, 4,500, 9,000.
+   The hardware has dials too — and it's turning them in the same
+   direction."
+
+### 17 — Precision Becomes an Architecture Hyperparameter
+
+1. "Watch where quantization enters the pipeline. Old world: after training
+   — PTQ, compress and accept the loss. Then DeepSeek-V3 moved it before
+   pretraining: FP8-native. K3 moves it inside training: quantization-aware
+   training from the SFT stage onward."
+2. "K3's recipe: MXFP4 weights, MXFP8 activations. The 'MX' is microscaling
+   — one shared scale per small block of values — and that block-wise scale
+   is what keeps four-bit weights accurate. Watch the wall repaint sixteen,
+   eight, four — and the quality line hold flat."
+3. "Here's the punchline: in the notation, this is still just W4A8. The
+   digits didn't move — everything underneath them did. Number system:
+   integer became microscaling float. Origin: post-training became
+   quantization-aware. Hardware: hand-written kernels became
+   Blackwell-native. The digits record bit widths; K3's advance lives in
+   the three things they don't record. And versus FP8 it halves weight
+   memory and decode bandwidth *again* — straight into the token price."
+4. "So the takeaway: at the frontier, precision is an architecture
+   hyperparameter, co-designed with the model — not a compression
+   afterthought. And now weights are cheap to store — but decode still
+   reads every weight it uses. What if we simply used fewer of them per
+   token? Enter MoE."
+
+*(final click → next page)*
+
+---
+
 ## Template page — QKᵀ: where attention scores come from
 
 **Load:** title only; empty score grid awaits.

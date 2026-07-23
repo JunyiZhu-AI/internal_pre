@@ -26,8 +26,16 @@
   #state i { border-radius: 2px; background: #173b33; }
   #slab { position: absolute; left: 0; bottom: 14px; width: 100%; text-align: center;
           font: 700 12.5px ui-monospace, monospace; color: var(--accent); }
-  #ssm { position: absolute; left: 676px; top: 536px; max-width: 560px; opacity: 0; }
-  #dl { position: absolute; left: 44px; top: 542px; width: 560px; font: 600 12.5px ui-monospace, monospace; color: #e04b38; opacity: 0; }
+  #family { position: absolute; left: 44px; top: 540px; display: flex; gap: 14px; }
+  .fam { width: 278px; background: var(--panel); border: 1px solid var(--line); border-radius: 10px;
+         padding: 9px 12px; display: flex; align-items: center; gap: 10px; opacity: 0; }
+  .fam .fname { font: 700 12px ui-monospace, monospace; color: #c7cce0; line-height: 1.4; }
+  .fam .fbox { width: 30px; height: 30px; flex: none; border: 2px solid var(--accent); border-radius: 6px;
+               display: grid; grid-template-columns: repeat(3, 1fr); gap: 2px; padding: 3px; }
+  .fam .fbox b { background: #173b33; border-radius: 1.5px; }
+  #famline { position: absolute; left: 44px; top: 610px; font: 600 13px ui-monospace, monospace; color: var(--accent); opacity: 0; }
+  #sweep { position: absolute; left: 676px; top: 610px; width: 560px; font: 700 13px ui-monospace, monospace; color: #e0a935; opacity: 0; }
+  #sweep b { color: #ff8a7a; font-size: 15px; }
   #catch { position: absolute; left: 44px; bottom: 28px; font-size: 17px; font-weight: 800; color: #e0a935; opacity: 0; }
 </style>
 </head>
@@ -52,8 +60,9 @@
     <div id="state"></div>
     <div id="slab"></div>
   </div>
-  <div id="ssm" class="op-chip"></div>
-  <div id="dl"></div>
+  <div id="family"></div>
+  <div id="famline"></div>
+  <div id="sweep">context: <b id="ctxn">4k</b> — cache scales with it; the state does not</div>
   <div id="catch"></div>
 </div>
 
@@ -65,8 +74,16 @@
   EV.mapStrip(document.getElementById("map"), 4);
   document.getElementById("rec").textContent = EV.linear.recur;
   document.getElementById("slab").textContent = EV.linear.state;
-  document.getElementById("ssm").textContent = EV.linear.ssm;
-  document.getElementById("dl").textContent = EV.linear.delta;
+  var famHost = document.getElementById("family");
+  EV.linear.family.split(" · ").forEach(function (name) {
+    var d = document.createElement("div");
+    d.className = "fam";
+    var grid = "";
+    for (var g = 0; g < 9; g++) grid += "<b></b>";
+    d.innerHTML = '<span class="fbox">' + grid + '</span><span class="fname">' + name + "</span>";
+    famHost.appendChild(d);
+  });
+  document.getElementById("famline").textContent = EV.linear.familyNote;
   document.getElementById("catch").textContent = EV.linear.catch;
 
   // 16 stream tokens per panel
@@ -111,18 +128,28 @@
     .to({}, { duration: 2.2 });
   DECK.markStep(tl);
 
-  // step 2: the SSM branch of the same family
-  tl.fromTo("#ssm", { opacity: 0, y: 8 }, { opacity: 1, y: 0, duration: 0.45 });
+  // step 2: the family — many update rules, one shared property
+  tl.fromTo(".fam", { opacity: 0, y: 14 }, { opacity: 1, y: 0, duration: 0.4, stagger: 0.12, ease: "power2.out" })
+    .fromTo("#famline", { opacity: 0 }, { opacity: 1, duration: 0.4 });
   DECK.markStep(tl);
 
-  // step 3: the delta rule — a cell is corrected, not appended
-  var dc = cells[15];
-  tl.fromTo("#dl", { opacity: 0 }, { opacity: 1, duration: 0.35 })
-    .to(dc, { outline: "2px solid #e04b38", scale: 1.35, backgroundColor: "#e04b38", duration: 0.35 })
-    .to({}, { duration: 0.4 })
-    .to(dc, { backgroundColor: "#2fd6b0", outlineColor: "#2fd6b0", duration: 0.4 })
-    .to(dc, { scale: 1, outline: "0px solid rgba(0,0,0,0)", duration: 0.35 })
-    .to("#state", { opacity: 0.55, duration: 0.3, yoyo: true, repeat: 1 });   // the forget gate breathes
+  // step 3: the context sweep — cache explodes, every state stays put
+  var ctx = { n: 4096 };
+  tl.call(function () { amb.pause(); })
+    .fromTo("#sweep", { opacity: 0 }, { opacity: 1, duration: 0.35 })
+    .to(ctx, {
+      n: 1048576, duration: 2.2, ease: "power2.in",
+      onUpdate: function () {
+        var n = Math.round(ctx.n);
+        document.getElementById("ctxn").textContent = n >= 1048576 ? "1M" : (n >= 1024 ? Math.round(n / 1024) + "k" : n);
+        var h = Math.min(296, 12 + (Math.log2(ctx.n) - 12) / 8 * 360);
+        gsap.set("#sk, #sv", { height: h });
+        document.getElementById("cnt").textContent = "cache slots: " + n.toLocaleString();
+      }
+    })
+    .to("#cnt", { color: "#ff8a7a", scale: 1.12, duration: 0.3, yoyo: true, repeat: 1 })
+    .to("#sk, #sv", { boxShadow: "0 0 22px rgba(224,75,56,0.7)", duration: 0.4 }, "<")
+    .to(".fam .fbox, #state", { scale: 1.06, duration: 0.35, yoyo: true, repeat: 1, ease: "sine.inOut" });
   DECK.markStep(tl);
 
   // step 4: the catch — why hybrids exist
@@ -135,7 +162,9 @@
       [].forEach.call(tf.children, function (d) { d.classList.remove("on"); });
       [].forEach.call(tt.children, function (d) { d.classList.remove("on"); });
       document.getElementById("cnt").textContent = "cache slots: 1";
+      document.getElementById("ctxn").textContent = "4k";
       gsap.set(cells, { clearProps: "backgroundColor,outline,scale" });
+      gsap.set(".fam .fbox, #state", { clearProps: "scale" });
     }
   });
 </script>

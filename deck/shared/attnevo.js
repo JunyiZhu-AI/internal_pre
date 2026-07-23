@@ -37,8 +37,9 @@ var EV = {
   linear: {
     recur: "drop softmax → attention becomes a linear RNN: Sₜ = Sₜ₋₁ + vₜkₜᵀ",
     state: "decode touches a fixed d×d state — not the history",
-    ssm: "the SSM branch: Mamba — selective state spaces, hardware-efficient scan",
-    delta: "DeltaNet: delta-rule write (error-correcting, not accumulating) · Gated DeltaNet adds forgetting",
+    family: "Linear attention · Mamba (SSM) · DeltaNet · Gated DeltaNet",
+    familyNote: "different update rules — the same fixed-size memory",
+    o1: "context ×256 — the state does not grow: O(1) memory per step",
     catch: "a fixed state cannot hold an unbounded past → recall gap → hybrids",
   },
   kda: {
