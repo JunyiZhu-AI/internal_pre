@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Prefill vs Decode: Two Different Workloads</title>
+<title>Preliminaries — Prefill vs Decode: Two Different Workloads</title>
 <link rel="stylesheet" href="shared/deck.css">
 <link rel="stylesheet" href="shared/phases.css">
 <style>
@@ -25,12 +25,17 @@
     position: absolute; left: 620px; top: 620px; width: 560px;
     font-size: 18px; font-weight: 700; color: var(--accent); opacity: 0;
   }
+  .kicker {
+    position: absolute; top: 12px; left: 45px;
+    font: 700 11px ui-monospace, monospace; letter-spacing: 0.22em; color: #6b7284;
+  }
 </style>
 </head>
 <body>
 <div class="stage">
-  <div class="slide-title">Prefill vs Decode: Two Different Workloads</div>
-  <div class="slide-sub">the roofline from last slide — now watch inference actually run on it</div>
+  <div class="kicker">PRELIMINARIES</div>
+  <div class="slide-title" style="top:34px">Prefill vs Decode: Two Different Workloads</div>
+  <div class="slide-sub" style="top:78px">the roofline from last slide — now watch inference actually run on it</div>
 
   <svg id="plot" width="1200" height="340"></svg>
   <div id="gpuwrap"></div>

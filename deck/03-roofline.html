@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>The Memory Wall: Memory Access Lags Behind Compute</title>
+<title>Preliminaries — The Memory Wall: Memory Access Lags Behind Compute</title>
 <link rel="stylesheet" href="shared/deck.css">
 <style>
   .gcard {
@@ -22,7 +22,7 @@
   #plot .band { fill: rgba(232, 234, 240, 0.05); }
   #plot .preclab { font-size: 10px; font-weight: 700; }
   #aidef {
-    position: absolute; left: 44px; top: 70px; font: 600 13px ui-monospace, monospace;
+    position: absolute; left: 44px; top: 78px; font: 600 13px ui-monospace, monospace;
     color: var(--accent); opacity: 0;
   }
   #decdot { position: absolute; width: 15px; height: 15px; border-radius: 50%; background: #e04b38; box-shadow: 0 0 16px rgba(224,75,56,0.9); opacity: 0; z-index: 9; }
@@ -33,11 +33,16 @@
     font-size: 13.5px; color: var(--accent); font-weight: 600; line-height: 1.5; opacity: 0;
   }
   #punch .cliff { color: var(--ink-2); font-weight: 400; font-style: italic; }
+  .kicker {
+    position: absolute; top: 12px; left: 45px;
+    font: 700 11px ui-monospace, monospace; letter-spacing: 0.22em; color: #6b7284;
+  }
 </style>
 </head>
 <body>
 <div class="stage">
-  <div class="slide-title">The Memory Wall: Memory Access Lags Behind Compute</div>
+  <div class="kicker">PRELIMINARIES</div>
+  <div class="slide-title" style="top:34px">The Memory Wall: Memory Access Lags Behind Compute</div>
   <div id="aidef">AI = FLOPs performed ÷ bytes moved from HBM &nbsp;·&nbsp; roof = min(AI × bandwidth, compute) · BF16 dense</div>
 
   <div id="cards"></div>
