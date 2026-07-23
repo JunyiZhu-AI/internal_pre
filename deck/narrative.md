@@ -28,30 +28,23 @@ restart, loop (auto-plays all steps, for rehearsal or hallway mode). F = fullscr
    loosely; the tension between those two kinds of numbers is part of
    tonight's story."
 
-3. **[red discount stamps hit the K3 column]** "So per *token*, K3 looks like
-   a steal: forty percent under Sol, seventy under Fable."
+3. **[red discount stamps hit the K3 price column]** "So per *token*, K3
+   looks like a steal: forty percent under Sol, seventy under Fable."
 
-4. **[amber counterpoint callout]** "But developers who ran real workloads
-   found the bills much closer than the rate card promised: on the same
-   agentic tasks K3 generates roughly twice the tokens Sol does, and decodes
-   two to four times slower. Half the price, twice the words — the per-task
-   gap nearly closes. That debate is exactly why this rate card is worth a
-   whole talk."
-
-5. **[Q1 appears, ? lands on output price]** "So here's the first question
+4. **[Q1 appears, ? lands on output price]** "So here's the first question
    this rate card begs: why is output five times the price of input — for
    *every* vendor? That ratio is suspiciously universal."
 
-6. **[Q2 appears, ? lands on cached input]** "Second: why does a cache hit
+5. **[Q2 appears, ? lands on cached input]** "Second: why does a cache hit
    cost ten times less than a miss? Ninety percent off, from all three
    vendors, again."
 
-7. **[Q3 appears, ? lands on K3 column]** "And third: what does it take to
+6. **[Q3 appears, ? lands on K3 column]** "And third: what does it take to
    *afford* three-and-fifteen? K3's answer is 2.8 trillion parameters, a new
    attention mechanism, a million tokens of context. Why those choices —
    what physics connects this architecture to this price?"
 
-8. **[promise]** "That's the talk: token cost is physics, not marketing. By
+7. **[promise]** "That's the talk: token cost is physics, not marketing. By
    the end, every number on this slide will be explainable from first
    principles — and we'll come back and read this table again."
 

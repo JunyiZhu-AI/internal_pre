@@ -38,25 +38,25 @@
     background: rgba(11,13,18,0.55); font-family: ui-monospace, monospace;
     box-shadow: 0 4px 14px rgba(0,0,0,0.4);
   }
-  .callout {
-    position: absolute; font-size: 12.5px; font-family: ui-monospace, monospace;
-    color: var(--accent); background: rgba(47,214,176,0.07);
-    border: 1px solid rgba(47,214,176,0.35); border-radius: 8px; padding: 6px 11px; opacity: 0;
+  #fn3 { position: absolute; left: 44px; top: 452px; width: 560px; font-size: 10px; color: #6b7284; line-height: 1.45; opacity: 0; }
+  #qs3 {
+    position: absolute; left: 44px; top: 508px; width: 1192px;
+    display: flex; flex-direction: row; gap: 16px;
   }
-  .callout.amber { color: #e0a935; background: rgba(201,133,0,0.08); border-color: rgba(201,133,0,0.4); }
-  #fn3 { position: absolute; left: 44px; top: 660px; width: 620px; font-size: 10px; color: #6b7284; line-height: 1.45; opacity: 0; }
-  #qs3 { position: absolute; right: 44px; top: 452px; width: 520px; display: flex; flex-direction: column; gap: 8px; }
   .qchip {
-    background: var(--panel); border: 1px solid var(--line); border-left: 3px solid var(--accent);
-    border-radius: 8px; padding: 8px 12px; font-size: 12.5px; opacity: 0;
+    flex: 1; background: var(--panel); border: 1px solid var(--line); border-top: 3px solid var(--accent);
+    border-radius: 10px; padding: 14px 16px; font-size: 13.5px; opacity: 0; line-height: 1.5;
   }
-  .qchip .qn { color: var(--accent); font-weight: 700; margin-right: 6px; font-family: ui-monospace, monospace; }
+  .qchip .qn { color: var(--accent); font-weight: 700; margin-right: 7px; font-family: ui-monospace, monospace; display: block; margin-bottom: 5px; }
   .qbadge {
     position: absolute; width: 17px; height: 17px; border-radius: 50%;
     background: var(--accent); color: #0c1116; font-weight: 800; font-size: 12px;
     display: flex; align-items: center; justify-content: center; opacity: 0; z-index: 6;
   }
-  #promise3 { position: absolute; right: 44px; top: 610px; width: 520px; font-size: 14px; color: var(--accent); font-weight: 600; opacity: 0; }
+  #promise3 {
+    position: absolute; left: 0; top: 646px; width: 100%; text-align: center;
+    font-size: 15px; color: var(--accent); font-weight: 600; opacity: 0;
+  }
 </style>
 </head>
 <body>
@@ -69,15 +69,13 @@
     <div id="raterows"></div>
   </div>
   <div id="k3glow"></div>
-  <div class="stamp" id="st1" style="left:118px; top:458px">−40% vs Sol</div>
-  <div class="stamp" id="st2" style="left:315px; top:472px">−70% vs Fable</div>
+  <div class="stamp" id="st1" style="left:196px; top:220px">−40% vs Sol</div>
+  <div class="stamp" id="st2" style="left:182px; top:303px">−70% vs Fable</div>
 
   <div class="ledger" id="perf" style="right:44px; top:112px; width:560px; opacity:0">
     <h3>Performance <span class="note">July 2026</span></h3>
     <div id="perfrows"></div>
   </div>
-
-  <div class="callout amber" id="co2" style="left:46px; top:540px; width:440px">but per task: ≈ even vs Sol — K3 generates ~2× the tokens,<br>and decodes 2–4× slower</div>
 
   <div id="qs3"></div>
   <div id="fn3"></div>
@@ -163,18 +161,14 @@
     .fromTo("#st2", { opacity: 0, scale: 2.2, rotate: -9 }, { opacity: 1, scale: 1, duration: 0.35, ease: "power3.in" }, "+=0.25");
   DECK.markStep(tl);
 
-  // step 4: the counterpoint — per-task costs converge
-  tl.fromTo("#co2", { opacity: 0, scale: 0.7 }, { opacity: 1, scale: 1, duration: 0.4, ease: "back.out(1.8)" });
-  DECK.markStep(tl);
-
-  // steps 5-7: questions with pinned ? badges
+  // steps 4-6: questions with pinned ? badges
   for (var i = 0; i < 3; i++) {
     tl.fromTo("#q" + i, { opacity: 0, y: 14 }, { opacity: 1, y: 0, duration: 0.4, ease: "power2.out" })
       .fromTo("#qb" + (i + 1), { opacity: 0, scale: 0 }, { opacity: 1, scale: 1, duration: 0.35, ease: "back.out(2.5)" }, "-=0.15");
     DECK.markStep(tl);
   }
 
-  // step 8: the promise
+  // step 7: the promise
   tl.fromTo("#promise3", { opacity: 0 }, { opacity: 1, duration: 0.6 });
 
   DECK.register(tl, {});
