@@ -420,9 +420,9 @@ do.*
 
 ## Pages 16–17 — Quantization (the notation, then the frontier)
 
-*Three candidate flows (a: dials rig, b: split-flap notation, c: bucket
-payments). Same 4 beats each. The B200 FP8/FP4 ceilings cut from slide 03
-deliberately reappear here.*
+*Bucket payments: slide 02's machine returns and each dial visibly pays its
+bucket; the locked toolkit card unlocks. The B200 FP8/FP4 ceilings cut from
+slide 03 deliberately reappear here.*
 
 ### 16 — Quantization: Decoding the Notation
 
