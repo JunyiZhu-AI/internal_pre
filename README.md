@@ -1,9 +1,47 @@
-# Animation capability test suite
+# Presentation workspace
 
-Static test pages to probe which animation technologies a static hosting
-platform supports, before building real slide decks on it. Everything is
-self-contained: all libraries are vendored into the repo, there is no build
-step at deploy time, no server backend, and no CDN dependency.
+Two things live here, both pure static files (no build step at deploy time,
+no server backend, no CDN dependency — all libraries vendored):
+
+1. **`deck/` — the presentation itself** (see below)
+2. An animation capability test suite (the original probe of what the
+   hosting platform supports)
+
+## The deck
+
+Click-stepped presentation pages, one HTML file per slide, listed in
+presentation order in `deck/shared/manifest.js`. Entry point:
+**`deck/01-pricing.html`** (or follow the card on `index.html`).
+
+Controls:
+
+| Input | Action |
+|---|---|
+| click / Space / `→` / PageDown | next motion step (after the last step: next page) |
+| `←` / PageUp | back one step (instant) |
+| on-screen `❮` `❯` icons | previous / next page |
+| ↺ icon | restart current page |
+| ⟳ icon | auto-play all steps, looping (rehearsal mode) |
+| `F` | fullscreen |
+
+Slide 02 is interactive: after the toolkit reveal, drag technique cards onto
+the hardware — correct drops dock a chip, raise the score, and speed up the
+decode simulator; wrong drops bounce back. Dragging never advances the slide.
+
+The spoken script lives in **`deck/narrative.md`**, one numbered beat per
+click. Slide sources for new pages follow `deck/01-qkt-matmul.html` (the
+engine template); the engine contract is documented at the top of
+`deck/shared/deck.js`.
+
+**To deploy the deck**: copy `deck/`, `vendor/`, and `favicon.ico` keeping
+the directory layout (deck pages reference `../vendor/`). All paths are
+relative, so any subdirectory works. Nothing else is required; the test
+suite below is optional.
+
+## Animation capability test suite
+
+Static test pages that probe which animation technologies the hosting
+platform supports — this is how the deck's technology choices were validated.
 
 ## What's tested
 
