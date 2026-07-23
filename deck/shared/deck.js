@@ -186,6 +186,24 @@ var DECK = (function () {
 
   document.addEventListener("DOMContentLoaded", function () { buildControls(); fit(); });
 
+  // The manifest may be stale in the browser cache after a deploy (pages get
+  // renamed/removed). Re-fetch it fresh in the background and correct the
+  // navigation list if it changed — prevents "next page" pointing at a
+  // deleted file.
+  fetch("shared/manifest.js", { cache: "no-store" }).then(function (r) { return r.text(); })
+    .then(function (txt) {
+      var m = txt.match(/\[([^\]]*)\]/);
+      if (!m) return;
+      var fresh = (m[1].match(/"([^"]+)"/g) || []).map(function (s) { return s.slice(1, -1); });
+      if (fresh.length && fresh.join() !== pages.join()) {
+        pages = fresh;
+        idx = pages.indexOf(here);
+        if (ui.prev) ui.prev.disabled = idx <= 0;
+        if (ui.next) ui.next.disabled = idx < 0 || idx >= pages.length - 1;
+        updateUI();
+      }
+    }).catch(function () { /* file:// or offline — keep the baked-in list */ });
+
   return {
     register: register, markStep: markStep, advance: advance,
     prevStep: prevStep, reset: reset,
