@@ -100,7 +100,7 @@ advances the slide.)
 
 ---
 
-## Page 03 — FLOPs Are Cheap. Bytes Are Not.
+## Page 03 — The Memory Wall: Memory Access Lags Behind Compute
 
 *All figures BF16 dense. Story: teach the plot on the A100 alone, place
 decode on it, then pile on the generations — the decode dot crawls up ×4 and
