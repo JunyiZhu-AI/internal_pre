@@ -100,6 +100,13 @@
     box-shadow: 0 14px 30px rgba(0,0,0,0.55);
     border-color: #4a5066;
   }
+  .tcard .prog { position: absolute; bottom: 5px; right: 7px; display: flex; gap: 3px; }
+  .tcard .prog i { width: 6px; height: 6px; border-radius: 50%; border: 1px solid #5b647c; }
+  .tcard .prog i.done { background: var(--accent); border-color: var(--accent); }
+  #score {
+    position: absolute; left: 960px; top: 452px; width: 276px;
+    font: 600 12px ui-monospace, monospace; color: var(--accent); opacity: 0;
+  }
   #tray .abbr { font-size: 10.5px; padding-right: 14px; white-space: nowrap; }
   #tray .full { font-size: 8.5px; }
   #tray .lock { font-size: 9px; top: 5px; right: 6px; }
@@ -153,6 +160,7 @@
   <div id="teaser"></div>
   <div id="tray" data-no-advance></div>
   <div id="simlab">our speedometer for the whole talk — watch it accelerate</div>
+  <div id="score"></div>
   <div id="simhost" class="sim"></div>
 </div>
 
@@ -179,7 +187,11 @@
   BN.techniques.forEach(function (t) {
     var c = document.createElement("div");
     c.className = "tcard locked";
-    c.innerHTML = '<div class="abbr">' + t[1] + '</div><div class="full">' + t[0] + '</div><span class="lock">🔒</span>';
+    c.dataset.domains = JSON.stringify(t[2]);
+    c._applied = [];
+    c.innerHTML = '<div class="abbr">' + t[1] + '</div><div class="full">' + t[0] + "</div>" +
+      '<span class="lock">🔒</span>' +
+      '<span class="prog">' + t[2].map(function () { return "<i></i>"; }).join("") + "</span>";
     tray.appendChild(c);
   });
 
@@ -198,8 +210,8 @@
     z.flashEls = z.rects.map(function (r) {
       var f = document.createElement("div");
       f.style.cssText = "position:absolute; left:" + r[0] + "px; top:" + r[1] + "px; width:" + r[2] +
-        "px; height:" + r[3] + "px; border:3px solid #e04b38; border-radius:12px;" +
-        "box-shadow:0 0 26px rgba(224,75,56,0.8); opacity:0; pointer-events:none; z-index:20;";
+        "px; height:" + r[3] + "px; border:3px solid " + z.color + "; border-radius:12px;" +
+        "box-shadow:0 0 26px " + z.color + "cc; opacity:0; pointer-events:none; z-index:20;";
       stageEl.appendChild(f);
       return f;
     });
@@ -224,39 +236,83 @@
     return null;
   }
 
-  function absorb(card, hit) {
-    card.dataset.absorbed = "1";
-    var c = cardCenter(card);
-    var zx = hit.rect[0] + hit.rect[2] / 2, zy = hit.rect[1] + hit.rect[3] / 2;
-    var p = card._pos || { x: 0, y: 0 };
-    gsap.to(card, {
-      x: p.x + (zx - c.x), y: p.y + (zy - c.y), scale: 0.12, opacity: 0,
-      duration: 0.45, ease: "power2.in",
-      onComplete: function () {
-        // red flash on the zone
-        hit.zone.flashEls.forEach(function (f) {
-          gsap.fromTo(f, { opacity: 0 }, { opacity: 1, duration: 0.09, yoyo: true, repeat: 3 });
-        });
-        // dock a small chip recording the absorbed technique
-        var abbr = card.querySelector(".abbr").textContent;
-        var chip = document.createElement("div");
-        chip.className = "zchip";
-        chip.style.cssText = "position:absolute; left:" + (hit.rect[0] + 2 + (hit.zone.chips % 4) * 40) +
-          "px; top:" + (hit.rect[1] + hit.rect[3] + 5 + Math.floor(hit.zone.chips / 4) * 18) + "px;" +
-          "font:700 9.5px ui-monospace,monospace; color:" + hit.zone.color + "; border:1px solid " +
-          hit.zone.color + "88; border-radius:5px; padding:1px 5px; background:rgba(11,13,18,0.9); z-index:15;";
-        chip.textContent = abbr.length > 7 ? abbr.slice(0, 6) + "…" : abbr;
-        stageEl.appendChild(chip);
-        gsap.fromTo(chip, { scale: 0, opacity: 0 }, { scale: 1, opacity: 1, duration: 0.3, ease: "back.out(2.5)" });
-        hit.zone.chips++;
-        zoneEffect(hit.zone, hit.rect);
-      }
-    });
+  var correctCount = 0;
+  var TOTAL_APPS = BN.techniques.reduce(function (s, t) { return s + t[2].length; }, 0);
+
+  function updateScore() {
+    document.getElementById("score").textContent =
+      "correctly applied: " + correctCount + " / " + TOTAL_APPS +
+      "  →  ×" + (1 + 0.25 * correctCount).toFixed(2);
+    sim.setSpeed(1 + 0.25 * correctCount);
   }
 
-  // Each bucket pays a different bill — dropping a card moves THAT meter,
-  // not a universal speedup (the framing line, made mechanical).
-  var bwCount = 0, wireSlow = 0;
+  function dockChip(card, hit) {
+    var abbr = card.querySelector(".abbr").textContent;
+    var chip = document.createElement("div");
+    chip.className = "zchip";
+    chip.style.cssText = "position:absolute; left:" + (hit.rect[0] + 2 + (hit.zone.chips % 4) * 40) +
+      "px; top:" + (hit.rect[1] + hit.rect[3] + 5 + Math.floor(hit.zone.chips / 4) * 18) + "px;" +
+      "font:700 9.5px ui-monospace,monospace; color:" + hit.zone.color + "; border:1px solid " +
+      hit.zone.color + "88; border-radius:5px; padding:1px 5px; background:rgba(11,13,18,0.9); z-index:15;";
+    chip.textContent = abbr.length > 7 ? abbr.slice(0, 6) + "…" : abbr;
+    stageEl.appendChild(chip);
+    gsap.fromTo(chip, { scale: 0, opacity: 0 }, { scale: 1, opacity: 1, duration: 0.3, ease: "back.out(2.5)" });
+    hit.zone.chips++;
+  }
+
+  // correct drop: zone accepts the card
+  function applyCard(card, hit) {
+    card._applied.push(hit.zone.key);
+    var dots = card.querySelectorAll(".prog i");
+    if (dots[card._applied.length - 1]) dots[card._applied.length - 1].classList.add("done");
+
+    hit.zone.flashEls.forEach(function (f) {
+      gsap.fromTo(f, { opacity: 0 }, { opacity: 1, duration: 0.09, yoyo: true, repeat: 3 });
+    });
+    dockChip(card, hit);
+    zoneEffect(hit.zone, hit.rect);
+    correctCount++;
+    updateScore();
+
+    var domains = JSON.parse(card.dataset.domains);
+    if (card._applied.length >= domains.length) {
+      // every domain covered: the card is spent — absorb it for good
+      card.dataset.absorbed = "1";
+      var c = cardCenter(card);
+      var p = card._pos || { x: 0, y: 0 };
+      gsap.to(card, {
+        x: p.x + (hit.rect[0] + hit.rect[2] / 2 - c.x),
+        y: p.y + (hit.rect[1] + hit.rect[3] / 2 - c.y),
+        scale: 0.12, opacity: 0, duration: 0.45, ease: "power2.in",
+      });
+    } else {
+      // more bills to pay: pulse and return to the tray, still available
+      gsap.to(card, {
+        scale: 0.9, duration: 0.12, yoyo: true, repeat: 1,
+        onComplete: function () {
+          card._pos = null;
+          gsap.to(card, { x: 0, y: 0, scale: 1, duration: 0.55, ease: "power3.inOut" });
+        }
+      });
+    }
+  }
+
+  // wrong drop: red shake, spring back, nothing improves
+  function rejectCard(card, hit) {
+    var c = cardCenter(card);
+    toast([c.x - 60, c.y - 24, 120, 0], "✗ not this bottleneck", "#e04b38");
+    gsap.timeline()
+      .to(card, { x: "+=9", duration: 0.05, yoyo: true, repeat: 5 })
+      .to(card, {
+        x: 0, y: 0, scale: 1, duration: 0.5, ease: "power3.inOut",
+        onStart: function () { card._pos = null; }
+      });
+  }
+
+  // Each bucket's visual reacts when it correctly absorbs a card;
+  // the speedometer itself scales with the TOTAL number of correct
+  // applications (see updateScore).
+  var wireSlow = 0;
   function toast(rect, text, color) {
     var t = document.createElement("div");
     t.className = "ztoast";
@@ -272,9 +328,7 @@
   }
   function zoneEffect(zone, rect) {
     if (zone.key === "bw") {
-      bwCount++;
-      sim.setSpeed(1 + 0.5 * bwCount);
-      toast(rect, "decode speed ↑", zone.color);
+      toast(rect, "HBM reads / token ↓", zone.color);
     } else if (zone.key === "compute") {
       // fewer FLOPs per token: SM tiles go idle
       var lit = document.querySelectorAll("#die .tiles i:not(.idle)");
@@ -323,12 +377,15 @@
         card.removeEventListener("pointermove", mv);
         card.removeEventListener("pointerup", up);
         var hit = hitZone(cardCenter(card));
-        if (hit) {
-          absorb(card, hit);
-        } else {
-          // not on a zone: spring back to the tray
+        if (!hit) {
+          // not on a zone: spring back to the tray, no judgment
           card._pos = null;
           gsap.to(card, { x: 0, y: 0, scale: 1, duration: 0.55, ease: "elastic.out(1, 0.6)" });
+        } else {
+          var domains = JSON.parse(card.dataset.domains);
+          var ok = domains.indexOf(hit.zone.key) >= 0 && card._applied.indexOf(hit.zone.key) < 0;
+          if (ok) applyCard(card, hit);
+          else rejectCard(card, hit);
         }
       }
       card.addEventListener("pointermove", mv);
@@ -339,7 +396,8 @@
 
   function resetCards() {
     document.getElementById("tray").style.pointerEvents = "none";
-    bwCount = 0; wireSlow = 0;
+    wireSlow = 0; correctCount = 0;
+    document.getElementById("score").textContent = "";
     document.querySelectorAll(".zchip, .ztoast").forEach(function (c) { c.remove(); });
     ZONES.forEach(function (z) { z.chips = 0; });
     document.querySelectorAll("#die .tiles i.idle, .hbm .layer.idle").forEach(function (el) {
@@ -353,6 +411,8 @@
       gsap.killTweensOf(c);
       delete c.dataset.absorbed;
       c._pos = null;
+      c._applied = [];
+      c.querySelectorAll(".prog i").forEach(function (d) { d.classList.remove("done"); });
       gsap.set(c, { clearProps: "transform,opacity,visibility,scale" });
     });
     sim.setSpeed(1);
@@ -383,7 +443,12 @@
   // step 7: speedometer on
   tl.fromTo("#simhost", { opacity: 0, scale: 0.94 }, { opacity: 1, scale: 1, duration: 0.45, ease: "power2.out" })
     .fromTo("#simlab", { opacity: 0 }, { opacity: 1, duration: 0.3 }, "-=0.2")
-    .call(function () { sim.start(); });
+    .fromTo("#score", { opacity: 0 }, { opacity: 1, duration: 0.3 }, "<")
+    .call(function () {
+      sim.start();
+      document.getElementById("score").textContent =
+        "correctly applied: " + correctCount + " / " + TOTAL_APPS + "  →  ×" + (1 + 0.25 * correctCount).toFixed(2);
+    });
 
   DECK.register(tl, { reset: function () { sim.stop(); resetCards(); } });
 </script>

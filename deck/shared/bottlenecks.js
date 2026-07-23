@@ -8,16 +8,18 @@ var BN = {
     { key: "comm", name: "Interconnect", unit: "link GB/s", dom: "multi-GPU serving", color: "#9085e9", desc: "GPU ↔ GPU links — NVLink / InfiniBand" },
   ],
 
+  // [full name, abbr, correct bottleneck domains]
+  // multi-domain cards stay available until every domain is covered
   techniques: [
-    ["FlashAttention", "FA"],
-    ["Grouped-Query Attention", "GQA"],
-    ["Multi-head Latent Attention", "MLA"],
-    ["Kimi Delta Attention", "KDA"],
-    ["Quantization", "FP8 / INT4"],
-    ["Mixture-of-Experts", "MoE"],
-    ["Expert Parallelism", "EP"],
-    ["Prefill–Decode Disaggregation", "PD"],
-    ["Multi-Token Prediction", "MTP"],
+    ["FlashAttention", "FA", ["bw"]],
+    ["Grouped-Query Attention", "GQA", ["cap", "bw"]],
+    ["Multi-head Latent Attention", "MLA", ["cap", "bw"]],
+    ["Kimi Delta Attention", "KDA", ["cap", "bw"]],
+    ["Quantization", "FP8 / INT4", ["cap", "bw"]],
+    ["Mixture-of-Experts", "MoE", ["compute"]],
+    ["Expert Parallelism", "EP", ["cap", "comm"]],
+    ["Prefill–Decode Disaggregation", "PD", ["compute", "bw"]],
+    ["Multi-Token Prediction", "MTP", ["bw"]],
   ],
 
   framing: "Every technique you'll see today is a way to pay one of these four bills — sometimes by moving the cost to another one.",
@@ -80,7 +82,7 @@ var BN = {
     }
     function setSpeed(m) {
       speed = m;
-      if (badgeEl) badgeEl.textContent = m <= 1 ? "baseline ×1.0" : "×" + m.toFixed(1);
+      if (badgeEl) badgeEl.textContent = m <= 1 ? "baseline ×1.0" : "×" + m.toFixed(2);
       if (iv) { clearInterval(iv); iv = setInterval(tick, 55 / speed); }
     }
     return { start: start, stop: stop, setSpeed: setSpeed };
