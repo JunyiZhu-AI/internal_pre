@@ -162,7 +162,8 @@
 <script src="shared/deck.js"></script>
 <script>
   document.getElementById("framing").textContent = "“" + BN.framing + "”";
-  document.getElementById("teaser").textContent = "“" + BN.teaser + "”";
+  document.getElementById("teaser").innerHTML = "“" + BN.teaser + "”" +
+    ' <span style="color:#4d5468">— try it: drop a card on the hardware and watch the speedometer</span>';
 
   // die shots: grid of SM tiles on the main die and the peer GPUs
   function addTiles(host, n) {
@@ -182,13 +183,86 @@
     tray.appendChild(c);
   });
 
-  // free-drag for the technique cards (teaser for the bucket game).
-  // Pointer deltas are in screen px; divide by the stage scale factor.
+  // ---- drag + drop-zone game (teaser for the bucket game) --------------
+  // Drop a card on any hardware zone: the zone absorbs it (red flash, a chip
+  // docks there) and the decode simulator speeds up a notch.
   var stageEl = document.querySelector(".stage");
+  var ZONES = [
+    { key: "compute", color: "#3987e5", rects: [[300, 250, 170, 200]] },
+    { key: "bw", color: "#2fd6b0", rects: [[170, 255, 136, 180]] },
+    { key: "cap", color: "#c98500", rects: [[92, 225, 84, 250]] },
+    { key: "comm", color: "#9085e9", rects: [[790, 196, 150, 96], [790, 436, 150, 96]] },
+  ];
+  var absorbedCount = 0;
+
+  // red flash overlays + chip docks per zone
+  ZONES.forEach(function (z) {
+    z.flashEls = z.rects.map(function (r) {
+      var f = document.createElement("div");
+      f.style.cssText = "position:absolute; left:" + r[0] + "px; top:" + r[1] + "px; width:" + r[2] +
+        "px; height:" + r[3] + "px; border:3px solid #e04b38; border-radius:12px;" +
+        "box-shadow:0 0 26px rgba(224,75,56,0.8); opacity:0; pointer-events:none; z-index:20;";
+      stageEl.appendChild(f);
+      return f;
+    });
+    z.chips = 0;
+  });
+
+  function stageScale() { return stageEl.getBoundingClientRect().width / 1280; }
+  function cardCenter(card) {
+    var r = card.getBoundingClientRect(), sr = stageEl.getBoundingClientRect(), s = stageScale();
+    return { x: (r.left + r.width / 2 - sr.left) / s, y: (r.top + r.height / 2 - sr.top) / s };
+  }
+  function hitZone(pt) {
+    for (var i = 0; i < ZONES.length; i++) {
+      var rs = ZONES[i].rects;
+      for (var j = 0; j < rs.length; j++) {
+        var r = rs[j];
+        if (pt.x >= r[0] && pt.x <= r[0] + r[2] && pt.y >= r[1] && pt.y <= r[1] + r[3]) {
+          return { zone: ZONES[i], rect: r };
+        }
+      }
+    }
+    return null;
+  }
+
+  function absorb(card, hit) {
+    card.dataset.absorbed = "1";
+    var c = cardCenter(card);
+    var zx = hit.rect[0] + hit.rect[2] / 2, zy = hit.rect[1] + hit.rect[3] / 2;
+    var p = card._pos || { x: 0, y: 0 };
+    gsap.to(card, {
+      x: p.x + (zx - c.x), y: p.y + (zy - c.y), scale: 0.12, opacity: 0,
+      duration: 0.45, ease: "power2.in",
+      onComplete: function () {
+        // red flash on the zone
+        hit.zone.flashEls.forEach(function (f) {
+          gsap.fromTo(f, { opacity: 0 }, { opacity: 1, duration: 0.09, yoyo: true, repeat: 3 });
+        });
+        // dock a small chip recording the absorbed technique
+        var abbr = card.querySelector(".abbr").textContent;
+        var chip = document.createElement("div");
+        chip.className = "zchip";
+        chip.style.cssText = "position:absolute; left:" + (hit.rect[0] + 2 + (hit.zone.chips % 4) * 40) +
+          "px; top:" + (hit.rect[1] + hit.rect[3] + 5 + Math.floor(hit.zone.chips / 4) * 18) + "px;" +
+          "font:700 9.5px ui-monospace,monospace; color:" + hit.zone.color + "; border:1px solid " +
+          hit.zone.color + "88; border-radius:5px; padding:1px 5px; background:rgba(11,13,18,0.9); z-index:15;";
+        chip.textContent = abbr.length > 7 ? abbr.slice(0, 6) + "…" : abbr;
+        stageEl.appendChild(chip);
+        gsap.fromTo(chip, { scale: 0, opacity: 0 }, { scale: 1, opacity: 1, duration: 0.3, ease: "back.out(2.5)" });
+        hit.zone.chips++;
+        // the speedometer reacts
+        absorbedCount++;
+        sim.setSpeed(1 + 0.4 * absorbedCount);
+      }
+    });
+  }
+
   function enableDrag(card) {
     card.addEventListener("pointerdown", function (e) {
+      if (card.dataset.absorbed) return;
       e.preventDefault();
-      var s = stageEl.getBoundingClientRect().width / 1280;
+      var s = stageScale();
       var startX = e.clientX, startY = e.clientY;
       var base = card._pos || { x: 0, y: 0 };
       card.setPointerCapture(e.pointerId);
@@ -199,9 +273,16 @@
       }
       function up() {
         card.classList.remove("dragging");
-        card.style.transform = "translate(" + card._pos.x + "px," + card._pos.y + "px)";
         card.removeEventListener("pointermove", mv);
         card.removeEventListener("pointerup", up);
+        var hit = hitZone(cardCenter(card));
+        if (hit) {
+          absorb(card, hit);
+        } else {
+          // not on a zone: spring back to the tray
+          card._pos = null;
+          gsap.to(card, { x: 0, y: 0, scale: 1, duration: 0.55, ease: "elastic.out(1, 0.6)" });
+        }
       }
       card.addEventListener("pointermove", mv);
       card.addEventListener("pointerup", up);
@@ -211,10 +292,16 @@
 
   function resetCards() {
     document.getElementById("tray").style.pointerEvents = "none";
+    absorbedCount = 0;
+    document.querySelectorAll(".zchip").forEach(function (c) { c.remove(); });
+    ZONES.forEach(function (z) { z.chips = 0; });
     document.querySelectorAll("#tray .tcard").forEach(function (c) {
+      gsap.killTweensOf(c);
+      delete c.dataset.absorbed;
       c._pos = null;
-      c.style.transform = "";
+      gsap.set(c, { clearProps: "transform,opacity,visibility,scale" });
     });
+    sim.setSpeed(1);
   }
 
   var sim = BN.buildSim(document.getElementById("simhost"), {});

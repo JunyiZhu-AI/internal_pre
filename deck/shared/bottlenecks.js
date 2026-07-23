@@ -52,21 +52,23 @@ var BN = {
     host.innerHTML = (opts.ghost ? ghost : "") + main;
     var screens = [].slice.call(host.querySelectorAll(".sim-screen"));
     var rateEl = host.querySelector(".sim-rate");
-    var iv = null, rateIv = null, idx = 0;
+    var badgeEl = host.querySelector(".sim-badge");
+    var iv = null, rateIv = null, idx = 0, speed = 1;
+    function tick() {
+      var w = BN.simWords[idx++ % BN.simWords.length] + " ";
+      screens.forEach(function (s) {
+        var sp = document.createElement("span");
+        sp.textContent = w;
+        s.appendChild(sp);
+        while (s.childNodes.length > 90) s.removeChild(s.firstChild);
+        s.scrollTop = s.scrollHeight;
+      });
+    }
     function start() {
       stop();
-      iv = setInterval(function () {
-        var w = BN.simWords[idx++ % BN.simWords.length] + " ";
-        screens.forEach(function (s) {
-          var sp = document.createElement("span");
-          sp.textContent = w;
-          s.appendChild(sp);
-          while (s.childNodes.length > 90) s.removeChild(s.firstChild);
-          s.scrollTop = s.scrollHeight;
-        });
-      }, 55);
+      iv = setInterval(tick, 55 / speed);
       rateIv = setInterval(function () {
-        rateEl.textContent = (17.5 + Math.random() * 1.8).toFixed(1);
+        rateEl.textContent = ((17.5 + Math.random() * 1.8) * speed).toFixed(1);
       }, 400);
     }
     function stop() {
@@ -76,6 +78,11 @@ var BN = {
       if (rateEl) rateEl.textContent = "0.0";
       idx = 0;
     }
-    return { start: start, stop: stop };
+    function setSpeed(m) {
+      speed = m;
+      if (badgeEl) badgeEl.textContent = m <= 1 ? "baseline ×1.0" : "×" + m.toFixed(1);
+      if (iv) { clearInterval(iv); iv = setInterval(tick, 55 / speed); }
+    }
+    return { start: start, stop: stop, setSpeed: setSpeed };
   },
 };
