@@ -57,8 +57,8 @@ restart, loop (auto-plays all steps, for rehearsal or hallway mode). F = fullscr
 **Load:** the GPU anatomy is visible but dimmed. (Once the toolkit cards are
 revealed at beat 6, they are draggable — drop one on a hardware zone and that
 zone absorbs it with a red flash, and **that zone's meter** reacts: bandwidth →
-the decode speedometer accelerates; compute → SM tiles go idle; capacity → an
-HBM layer empties; interconnect → link traffic thins. The bucket you pay
+the decode speedometer accelerates; compute → processor tiles go idle;
+capacity → an HBM layer empties; interconnect → link traffic thins. The bucket you pay
 decides which meter moves — the framing line, made mechanical. Dragging never
 advances the slide.)
 
