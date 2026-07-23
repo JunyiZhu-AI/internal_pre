@@ -429,8 +429,7 @@ slide 03 deliberately reappear here.*
 1. "The entire quantization field hides in one line of notation: W-x A-y —
    x-bit weights, y-bit activations. The two letters buy completely
    different things, and if you know which letter you turned, you know which
-   bottleneck you fixed. One rule of community etiquette before we start:
-   bare digits mean integer; floating-point schemes go by their format name."
+   bottleneck you fixed."
 2. "Turn the W dial. Weights are static — known before deployment — so you
    can be aggressive: four bits, per-group scales, GPTQ- and AWQ-style error
    compensation, all offline. What does it buy? Bandwidth — decode re-reads
@@ -439,17 +438,13 @@ slide 03 deliberately reappear here.*
    is a pure memory play."
 3. "Now the A dial. Activations are dynamic and outlier-prone — harder. But
    the moment BOTH operands are cheap, the matmul drops onto low-precision
-   tensor cores, and now you bought compute. That's the whole taxonomy:
-   W8A8 was the SmoothQuant era; 'FP8' is the same digits on the native
-   Hopper path — nobody calls it W8A8-FP8; W4A8 is the specialist
-   throughput stack; and the KV cache is a third dial that buys capacity
-   alone."
-4. "One caveat with a signature you'll see again: grow the batch until
-   decode goes compute-bound, and these wins fade — quantization is a
-   bandwidth-regime weapon. And remember the roofline slide, where I hid
-   the B200's other two ceilings? Here they are: 2,250, 4,500, 9,000.
-   The hardware has dials too — and it's turning them in the same
-   direction."
+   tensor cores, and now you bought compute. That gives you the whole
+   family: W4A16 for serving, eight-bit both ways for compute, four-bit
+   weights at the frontier — and the KV cache as a third dial that buys
+   capacity alone."
+4. "And remember the roofline slide, where I hid the B200's other two
+   ceilings? Here they are: 2,250, 4,500, 9,000. The hardware has dials
+   too — and it's turning them in the same direction."
 
 ### 17 — Precision Becomes an Architecture Hyperparameter
 
@@ -461,13 +456,10 @@ slide 03 deliberately reappear here.*
    — one shared scale per small block of values — and that block-wise scale
    is what keeps four-bit weights accurate. Watch the wall repaint sixteen,
    eight, four — and the quality line hold flat."
-3. "Here's the punchline: in the notation, this is still just W4A8. The
-   digits didn't move — everything underneath them did. Number system:
-   integer became microscaling float. Origin: post-training became
-   quantization-aware. Hardware: hand-written kernels became
-   Blackwell-native. The digits record bit widths; K3's advance lives in
-   the three things they don't record. And versus FP8 it halves weight
-   memory and decode bandwidth *again* — straight into the token price."
+3. "The payoff: versus FP8, four-bit weights halve the weight memory and
+   the decode bandwidth *again* — and that flows straight into the token
+   price. Watch the machine: footprint frees, the pipe carries half the
+   bytes per token, quality holds."
 4. "So the takeaway: at the frontier, precision is an architecture
    hyperparameter, co-designed with the model — not a compression
    afterthought. And now weights are cheap to store — but decode still

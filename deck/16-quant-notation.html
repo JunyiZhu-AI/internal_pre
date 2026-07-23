@@ -4,8 +4,8 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Quantization: Decoding the Notation</title>
-<link rel="stylesheet" href="shared/deck.css?v=2">
-<link rel="stylesheet" href="shared/bottlenecks.css?v=2">
+<link rel="stylesheet" href="shared/deck.css?v=3">
+<link rel="stylesheet" href="shared/bottlenecks.css?v=3">
 <style>
   /* ---- the four-bucket machine (slide-02 visual language) ---- */
   #machine { position: absolute; inset: 0; opacity: 0.13; filter: grayscale(0.9); }
@@ -105,7 +105,6 @@
   #hero .hbig { font: 800 42px ui-monospace, monospace; letter-spacing: -0.01em; }
   #hero .hbig .w { color: #e0a935; } #hero .hbig .a { color: #6fb1ff; } #hero .hbig .b { color: #e8eaf0; }
   #hero .hrest { font: 600 14.5px ui-monospace, monospace; color: #c7cce0; }
-  #etiq { margin-top: 10px; font-size: 11.5px; font-style: italic; color: var(--ink-2); opacity: 0; }
 
   .panel { position: absolute; left: 620px; width: 616px; }
   #wpanel { top: 226px; } #apanel { top: 314px; }
@@ -116,7 +115,6 @@
   #wpanel .pb { color: #2fd6b0; } #apanel .pb { color: #3987e5; }
   #apanel .pk { margin-top: 5px; font-size: 11.5px; color: #9085e9; line-height: 1.4; opacity: 0; }
 
-  #caveat { position: absolute; left: 620px; top: 424px; width: 616px; font-size: 12.5px; font-weight: 600; color: #e04b38; line-height: 1.45; opacity: 0; }
   #b200 { position: absolute; left: 620px; top: 472px; width: 616px; }
   #b200lab { font-size: 11.5px; color: var(--ink-2); margin-bottom: 8px; line-height: 1.4; opacity: 0; }
   .brow { display: flex; align-items: center; gap: 9px; height: 21px; opacity: 0; }
@@ -140,12 +138,6 @@
   .qcard .qm { margin-top: 2px; font-size: 9px; color: #9aa1b5; line-height: 1.3; }
   .qcard .qb { margin-top: 2px; font-size: 9px; font-weight: 700; line-height: 1.3; }
   .qcard .qd { margin-top: 2px; font-size: 8.5px; color: #6b7284; line-height: 1.35; }
-  .qcard.fmt { border-color: rgba(111,177,255,0.5); }
-  .qcard.fmt .qn { color: #6fb1ff; }
-  .qcard.fmt::after {
-    content: "format name"; position: absolute; top: 4px; right: 6px;
-    font: 600 7.5px ui-monospace, monospace; color: rgba(111,177,255,0.75);
-  }
   .qcard.kv { border-color: rgba(144,133,233,0.5); }
   .qcard.kv .qn { color: #9085e9; }
 </style>
@@ -178,7 +170,6 @@
 
   <div id="hero">
     <div class="hrow"><span class="hbig"></span><span class="hrest"></span></div>
-    <div id="etiq"></div>
   </div>
   <div class="panel" id="wpanel">
     <div class="ph">pay with W · 16 → 8 → 4</div>
@@ -188,7 +179,6 @@
     <div class="ph">pay with A · → 8</div>
     <div class="pw"></div><div class="pb"></div><div class="pk"></div>
   </div>
-  <div id="caveat"></div>
   <div id="b200"><div id="b200lab"></div></div>
 
   <div id="tax">
@@ -201,23 +191,21 @@
 </div>
 
 <script src="../vendor/gsap.min.js"></script>
-<script src="shared/quant.js?v=2"></script>
-<script src="shared/gpus.js?v=2"></script>
-<script src="shared/manifest.js?v=2"></script>
-<script src="shared/deck.js?v=2"></script>
+<script src="shared/quant.js?v=3"></script>
+<script src="shared/gpus.js?v=3"></script>
+<script src="shared/manifest.js?v=3"></script>
+<script src="shared/deck.js?v=3"></script>
 <script>
   // ---- static content from shared data ----
   var parts = QT.headline.split(" — ");
   document.querySelector("#hero .hbig").innerHTML =
     '<span class="w">W</span><span class="b">x</span><span class="a">A</span><span class="b">y</span>';
   document.querySelector("#hero .hrest").textContent = "— " + parts[1];
-  document.getElementById("etiq").textContent = QT.etiquette;
   document.querySelector("#wpanel .pw").textContent = QT.wDial.what;
   document.querySelector("#wpanel .pb").textContent = QT.wDial.buys;
   document.querySelector("#apanel .pw").textContent = QT.aDial.what;
   document.querySelector("#apanel .pb").textContent = QT.aDial.buys;
   document.querySelector("#apanel .pk").textContent = QT.kvDial.what + " — " + QT.kvDial.buys;
-  document.getElementById("caveat").textContent = "⚠ " + QT.caveat;
   document.getElementById("b200lab").textContent = QT.b200;
   document.querySelector("#freed span").textContent = "footprint ÷4 — freed";
 
@@ -251,7 +239,6 @@
   var tax = document.getElementById("tax");
   QT.rows.forEach(function (r, i) {
     var cls = "qcard";
-    if (r[0].charAt(0) === "“") cls += " fmt";
     if (i === QT.rows.length - 1) cls += " kv";
     tax.insertAdjacentHTML("beforeend",
       '<div class="' + cls + '"><div class="qn">' + r[0] + "</div>" +
@@ -286,8 +273,7 @@
   tl.to("#machine", { opacity: 1, filter: "grayscale(0)", duration: 0.6, ease: "power2.out" })
     .fromTo("#wchip", { opacity: 0, scale: 0.5 }, { opacity: 1, scale: 1, duration: 0.4, ease: "back.out(2.2)" }, "-=0.25")
     .fromTo("#achip", { opacity: 0, scale: 0.5 }, { opacity: 1, scale: 1, duration: 0.4, ease: "back.out(2.2)" }, "<0.12")
-    .fromTo("#hero .hrow", { opacity: 0, y: 16 }, { opacity: 1, y: 0, duration: 0.5, ease: "power2.out" }, "-=0.2")
-    .fromTo("#etiq", { opacity: 0 }, { opacity: 1, duration: 0.4 }, "-=0.1");
+    .fromTo("#hero .hrow", { opacity: 0, y: 16 }, { opacity: 1, y: 0, duration: 0.5, ease: "power2.out" }, "-=0.2");
   DECK.markStep(tl);
 
   // beat 2: pay with W — weights re-tile 16 → 8 → 4, pipe thins, die stays FP16
@@ -326,9 +312,8 @@
     .fromTo(".qcard", { opacity: 0, y: 18 }, { opacity: 1, y: 0, duration: 0.35, stagger: 0.06, ease: "power2.out" });
   DECK.markStep(tl);
 
-  // beat 4: the regime caveat + the B200 ceilings saved for this moment
-  tl.fromTo("#caveat", { opacity: 0, y: 10 }, { opacity: 1, y: 0, duration: 0.45 })
-    .fromTo("#b200lab", { opacity: 0 }, { opacity: 1, duration: 0.35 })
+  // beat 4: the B200 ceilings — saved from the roofline slide for this moment
+  tl.fromTo("#b200lab", { opacity: 0, y: 8 }, { opacity: 1, y: 0, duration: 0.4 })
     .fromTo(".brow", { opacity: 0, x: -14 }, { opacity: 1, x: 0, duration: 0.35, stagger: 0.12 })
     .fromTo(".bfill", { scaleX: 0 }, { scaleX: 1, duration: 0.5, stagger: 0.12, ease: "power2.out" }, "<0.1");
 
