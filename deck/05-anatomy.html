@@ -67,7 +67,9 @@
   <div class="slide-sub">tokenize → embed → N identical blocks → next token. Inside each block: two machines.</div>
 
   <div id="pipe"></div>
-  <svg id="wires" width="1280" height="720"></svg>
+  <svg id="wires" width="1280" height="720">
+    <defs><marker id="arr" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#2fd6b0"/></marker></defs>
+  </svg>
   <div id="maplab">inside one block:</div>
   <div id="map">
     <span class="ta-arrow">→</span>
@@ -202,6 +204,10 @@
   }
   var w1 = wline(475, 228, 340, 258);
   var w2 = wline(600, 228, 940, 258);
+  var w0 = wline(0, 0, 0, 0);
+  w0.style.stroke = "#2fd6b0";
+  w0.style.strokeWidth = "2.5";
+  w0.setAttribute("marker-end", "url(#arr)");
 
   var tl = gsap.timeline({ paused: true });
 
@@ -210,7 +216,16 @@
   DECK.markStep(tl);
 
   // step 2: one block opens into the two machines
-  tl.fromTo("#maplab, #map", { opacity: 0, y: -10 }, { opacity: 1, y: 0, duration: 0.4 })
+  tl.call(function () {
+    var st = document.getElementById("stack");
+    var x1 = 44 + st.offsetLeft + st.offsetWidth / 2;
+    var y1 = 122 + st.offsetTop + st.offsetHeight + 4;
+    w0.setAttribute("x1", x1); w0.setAttribute("y1", y1);
+    w0.setAttribute("x2", 530); w0.setAttribute("y2", 190);
+  })
+    .to("#stack i", { borderColor: "#2fd6b0", boxShadow: "0 0 14px rgba(47,214,176,0.55)", duration: 0.4 })
+    .to(w0, { opacity: 1, duration: 0.4 })
+    .fromTo("#maplab, #map", { opacity: 0, y: -10 }, { opacity: 1, y: 0, duration: 0.4 })
     .to([w1, w2], { opacity: 1, duration: 0.35 })
     .fromTo("#pattn", { opacity: 0, y: 24 }, { opacity: 1, y: 0, duration: 0.45, ease: "power2.out" })
     .fromTo("#pffn", { opacity: 0, y: 24 }, { opacity: 1, y: 0, duration: 0.45, ease: "power2.out" }, "-=0.25");
