@@ -55,8 +55,11 @@ restart, loop (auto-plays all steps, for rehearsal or hallway mode). F = fullscr
 ## Page 02 — Hardware framework and efficient algorithms
 
 **Load:** the GPU anatomy is visible but dimmed. (Once the toolkit cards are
-revealed at beat 6, they are draggable — you can drag one toward the hardware
-while asking the audience where they think it belongs; dragging never
+revealed at beat 6, they are draggable — drop one on a hardware zone and that
+zone absorbs it with a red flash, and **that zone's meter** reacts: bandwidth →
+the decode speedometer accelerates; compute → SM tiles go idle; capacity → an
+HBM layer empties; interconnect → link traffic thins. The bucket you pay
+decides which meter moves — the framing line, made mechanical. Dragging never
 advances the slide.)
 
 1. **[compute lights up]** "Four numbers govern every inference deployment,

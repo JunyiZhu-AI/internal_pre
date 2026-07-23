@@ -163,7 +163,7 @@
 <script>
   document.getElementById("framing").textContent = "“" + BN.framing + "”";
   document.getElementById("teaser").innerHTML = "“" + BN.teaser + "”" +
-    ' <span style="color:#4d5468">— try it: drop a card on the hardware and watch the speedometer</span>';
+    ' <span style="color:#4d5468">— try it: the bucket you pay decides which meter moves</span>';
 
   // die shots: grid of SM tiles on the main die and the peer GPUs
   function addTiles(host, n) {
@@ -193,8 +193,6 @@
     { key: "cap", color: "#c98500", rects: [[92, 225, 84, 250]] },
     { key: "comm", color: "#9085e9", rects: [[790, 196, 150, 96], [790, 436, 150, 96]] },
   ];
-  var absorbedCount = 0;
-
   // red flash overlays + chip docks per zone
   ZONES.forEach(function (z) {
     z.flashEls = z.rects.map(function (r) {
@@ -251,11 +249,60 @@
         stageEl.appendChild(chip);
         gsap.fromTo(chip, { scale: 0, opacity: 0 }, { scale: 1, opacity: 1, duration: 0.3, ease: "back.out(2.5)" });
         hit.zone.chips++;
-        // the speedometer reacts
-        absorbedCount++;
-        sim.setSpeed(1 + 0.4 * absorbedCount);
+        zoneEffect(hit.zone, hit.rect);
       }
     });
+  }
+
+  // Each bucket pays a different bill — dropping a card moves THAT meter,
+  // not a universal speedup (the framing line, made mechanical).
+  var bwCount = 0, wireSlow = 0;
+  function toast(rect, text, color) {
+    var t = document.createElement("div");
+    t.className = "ztoast";
+    t.style.cssText = "position:absolute; left:" + (rect[0] + rect[2] / 2) + "px; top:" + (rect[1] - 12) +
+      "px; transform:translateX(-50%); font:700 13px ui-monospace,monospace; color:" + color +
+      "; z-index:25; pointer-events:none; white-space:nowrap; text-shadow:0 2px 8px #000;";
+    t.textContent = text;
+    stageEl.appendChild(t);
+    gsap.fromTo(t, { opacity: 0, y: 8 }, {
+      opacity: 1, y: -26, duration: 1.6, ease: "power1.out",
+      onComplete: function () { gsap.to(t, { opacity: 0, duration: 0.5, onComplete: function () { t.remove(); } }); }
+    });
+  }
+  function zoneEffect(zone, rect) {
+    if (zone.key === "bw") {
+      bwCount++;
+      sim.setSpeed(1 + 0.5 * bwCount);
+      toast(rect, "decode speed ↑", zone.color);
+    } else if (zone.key === "compute") {
+      // fewer FLOPs per token: SM tiles go idle
+      var lit = document.querySelectorAll("#die .tiles i:not(.idle)");
+      for (var i = 0; i < 6 && i < lit.length; i++) {
+        lit[i].classList.add("idle");
+        lit[i].style.background = "rgba(57,135,229,0.06)";
+        lit[i].style.animation = "none";
+      }
+      toast(rect, "FLOPs / token ↓", zone.color);
+    } else if (zone.key === "cap") {
+      // smaller footprint: an HBM layer empties
+      var layers = document.querySelectorAll(".hbm .layer:not(.idle)");
+      if (layers.length) {
+        var ly = layers[layers.length - 1];
+        ly.classList.add("idle");
+        ly.style.opacity = "0.15";
+        ly.style.animation = "none";
+      }
+      toast(rect, "KV bytes ↓ — fits smaller", zone.color);
+    } else {
+      // less all-to-all: link traffic thins and slows
+      wireSlow++;
+      document.querySelectorAll("#wires line").forEach(function (l) {
+        l.style.animationDuration = (0.9 + 0.7 * wireSlow) + "s";
+        l.style.opacity = Math.max(0.3, 1 - 0.22 * wireSlow);
+      });
+      toast(rect, "all-to-all traffic ↓", zone.color);
+    }
   }
 
   function enableDrag(card) {
@@ -292,9 +339,16 @@
 
   function resetCards() {
     document.getElementById("tray").style.pointerEvents = "none";
-    absorbedCount = 0;
-    document.querySelectorAll(".zchip").forEach(function (c) { c.remove(); });
+    bwCount = 0; wireSlow = 0;
+    document.querySelectorAll(".zchip, .ztoast").forEach(function (c) { c.remove(); });
     ZONES.forEach(function (z) { z.chips = 0; });
+    document.querySelectorAll("#die .tiles i.idle, .hbm .layer.idle").forEach(function (el) {
+      el.classList.remove("idle");
+      el.style.background = ""; el.style.animation = ""; el.style.opacity = "";
+    });
+    document.querySelectorAll("#wires line").forEach(function (l) {
+      l.style.animationDuration = ""; l.style.opacity = "";
+    });
     document.querySelectorAll("#tray .tcard").forEach(function (c) {
       gsap.killTweensOf(c);
       delete c.dataset.absorbed;
