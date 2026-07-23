@@ -390,9 +390,12 @@ do.*
 2. "KDA's upgrade: make the gate channel-wise. Every channel of the memory
    gets its own forget rate — some hold on for thousands of tokens, some
    flush immediately. Reported: much better long-context retention."
-3. "Around it: a short convolution for local context, and chunked kernels
-   that keep it hardware-efficient. This is the backbone attention of K3 —
-   three linear layers for every one gated-MLA full-attention layer."
+3. "And here is where that box actually ships: K3's backbone — three KDA
+   linear layers for every one gated-MLA full-attention layer. Notice the
+   blue blocks: those are the MLA layers from two slides ago; that slide
+   wasn't history, it's a quarter of this stack. Around the KDA layers, the
+   engineering details you'd expect: a short convolution for local context,
+   chunked hardware-efficient kernels."
 4. "Place it on our map: KDA attacks decode bandwidth with the fixed state
    AND capacity with the tiny cache — at million-token scale. The lineage
    converges here."

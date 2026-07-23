@@ -26,10 +26,22 @@
   .capline { position: absolute; left: 110px; top: 470px; width: 520px; font: 600 13.5px ui-monospace, monospace; opacity: 0; }
   #c1 { color: #c7cce0; }
   #c2 { color: #ff8a7a; }
-  #plumb { position: absolute; left: 680px; top: 200px; width: 540px; opacity: 0; }
-  #plumb .op-chip { display: inline-block; margin: 0 10px 12px 0; }
-  #home { position: absolute; left: 680px; top: 300px; width: 540px; font: 600 13px ui-monospace, monospace;
-          color: #9aa1b5; line-height: 1.7; opacity: 0; }
+  #conn { position: absolute; inset: 0; pointer-events: none; }
+  #conn path { fill: none; stroke: var(--accent); stroke-width: 2; stroke-dasharray: 7 6; }
+  #stack { position: absolute; left: 800px; top: 158px; width: 250px; }
+  .lay { display: flex; align-items: center; gap: 10px; height: 36px; margin-bottom: 6px;
+         border: 1.5px solid; border-radius: 8px; padding: 0 12px; opacity: 0;
+         font: 700 12px ui-monospace, monospace; }
+  .lay.kda { border-color: rgba(47,214,176,0.6); color: var(--accent); background: rgba(47,214,176,0.06); }
+  .lay.mla { border-color: rgba(111,177,255,0.6); color: #6fb1ff; background: rgba(57,135,229,0.07); }
+  .lay .ic { width: 18px; height: 18px; flex: none; }
+  .lay.kda .ic { border: 1.5px solid var(--accent); border-radius: 4px;
+                 background: repeating-linear-gradient(0deg, rgba(47,214,176,0.55) 0 3px, transparent 3px 6px); }
+  .lay.mla .ic { border: 1.5px solid #6fb1ff; border-radius: 9px; width: 12px; margin: 0 3px;
+                 background: rgba(111,177,255,0.35); }
+  #ratio { position: absolute; left: 800px; top: 520px; width: 260px;
+           font: 700 12.5px ui-monospace, monospace; color: #9aa1b5; opacity: 0; line-height: 1.6; }
+  #ratio b { color: var(--accent); }
   #pos { position: absolute; left: 44px; bottom: 28px; font-size: 17px; font-weight: 800; color: var(--accent); opacity: 0; }
 </style>
 </head>
@@ -45,10 +57,9 @@
   <div id="ks"></div>
   <div class="capline" id="c1"></div>
   <div class="capline" id="c2"></div>
-  <div id="plumb">
-    <span class="op-chip" id="pc1"></span><span class="op-chip" id="pc2"></span>
-  </div>
-  <div id="home"></div>
+  <svg id="conn" width="1280" height="720"></svg>
+  <div id="stack"></div>
+  <div id="ratio">K3 backbone — <b>3 × KDA : 1 × gated MLA</b> (the full-attention layers from the MLA slide)</div>
   <div id="pos"></div>
 </div>
 
@@ -60,10 +71,19 @@
   EV.mapStrip(document.getElementById("map"), 5);
   document.getElementById("c1").textContent = EV.kda.from;
   document.getElementById("c2").textContent = EV.kda.upgrade + "";
-  var pl = EV.kda.plumbing.split(" · ");
-  document.getElementById("pc1").textContent = pl[0];
-  document.getElementById("pc2").textContent = pl[1];
-  document.getElementById("home").textContent = EV.kda.home;
+  var stack = document.getElementById("stack");
+  ["kda", "kda", "kda", "mla", "kda", "kda", "kda", "mla"].forEach(function (kind) {
+    var d = document.createElement("div");
+    d.className = "lay " + kind;
+    d.innerHTML = '<span class="ic"></span>' + (kind === "kda" ? "KDA — linear" : "gated MLA — full attention");
+    stack.appendChild(d);
+  });
+  var connPath = document.createElementNS("http://www.w3.org/2000/svg", "path");
+  connPath.setAttribute("d", "M 548 300 C 650 300, 680 176, 796 178");
+  document.getElementById("conn").appendChild(connPath);
+  var connLen = connPath.getTotalLength();
+  connPath.style.strokeDasharray = connLen;
+  connPath.style.strokeDashoffset = connLen;
   document.getElementById("pos").textContent = EV.kda.position;
 
   // 8 state rows + 8 per-channel sliders
@@ -131,9 +151,11 @@
     .to({}, { duration: 1.6 });
   DECK.markStep(tl);
 
-  // step 3: the plumbing, and where it ships
-  tl.fromTo("#plumb", { opacity: 0, y: 10 }, { opacity: 1, y: 0, duration: 0.45 })
-    .fromTo("#home", { opacity: 0, y: 8 }, { opacity: 1, y: 0, duration: 0.45 });
+  // step 3: where the box ships — the K3 backbone stack, 3 KDA : 1 gated MLA
+  tl.to(connPath, { strokeDashoffset: 0, duration: 0.6, ease: "power2.inOut" })
+    .fromTo(".lay", { opacity: 0, x: 18 }, { opacity: 1, x: 0, duration: 0.3, stagger: 0.09, ease: "power2.out" })
+    .fromTo("#ratio", { opacity: 0, y: 8 }, { opacity: 1, y: 0, duration: 0.4 })
+    .to(".lay.mla", { boxShadow: "0 0 14px rgba(111,177,255,0.5)", duration: 0.35, yoyo: true, repeat: 1 });
   DECK.markStep(tl);
 
   // step 4: its place on the map
