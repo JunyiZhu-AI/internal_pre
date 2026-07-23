@@ -102,51 +102,53 @@ advances the slide.)
 
 ## Page 03 — FLOPs Are Cheap. Bytes Are Not.
 
-*All figures BF16 dense. Each generation card shows its own derivation
-(TFLOPS ÷ TB/s → balance). The NVL72 rack material was cut from this slide
-for focus — it returns on the expert-parallelism slide.*
+*All figures BF16 dense. Story: teach the plot on the A100 alone, place
+decode on it, then pile on the generations — the decode dot crawls up ×4 and
+stalls while the ceilings explode ×11. (NVL72 rack material moved to the
+expert-parallelism slide; FP8/FP4 ceilings moved to the quantization
+section.)*
 
 **Load:** title, empty log–log axes.
 
-1. **[A100 lands → ~156]** "Let's derive tonight's central number from the
-   spec sheet. A100, 2020: 312 teraFLOPS, two terabytes a second of HBM.
-   Divide them — 156 FLOPs per byte. That ratio is the machine balance point:
-   how much arithmetic the chip can afford per byte it reads. Note these are
-   dense BF16 numbers — the marketing figures are 2:4 sparse."
+1. **[A100 alone: roof draws, ridge ~156]** "One machine first: A100, 2020.
+   Two numbers from the spec sheet — 312 teraFLOPS, 2 terabytes a second —
+   and one derived ratio: 156 FLOPs per byte. On this plot, that's the whole
+   machine: a bandwidth slant, a compute ceiling, and the ridge where they
+   meet. Arithmetic intensity — FLOPs per byte moved from HBM — is the only
+   x-axis you need tonight. These are dense BF16 figures, by the way; the
+   marketing numbers are 2:4 sparse."
 
-2. **[H100 → 295]** "H100: compute triples, bandwidth grows two-thirds —
-   balance nearly doubles to 295. Remember that number."
+2. **[regions label]** "The ridge splits the world in two. Left of it,
+   memory-bound: performance is bandwidth times intensity, and adding FLOPs
+   changes nothing. Right of it, compute-bound: the ceiling is all that
+   matters."
 
-3. **[H200 → 206, highlight]** "Then something interesting: H200. Same
-   silicon, same FLOPs — NVIDIA shipped a refresh with 43% more bandwidth and
-   76% more capacity, and the market happily paid a premium. When a vendor
-   can sell the *same* compute for more money by adding memory, that tells
-   you exactly what's scarce."
+3. **[decode dot lands at AI ≈ 1]** "Now place tonight's workload. LLM
+   decode reads every weight to produce a couple of FLOPs each — arithmetic
+   intensity about one. Here. Deep in memory-bound territory, at two
+   teraFLOPS attainable — on a 312-teraFLOP machine. That's less than one
+   percent of the silicon doing useful work."
 
-4. **[B200 → 281, precision bars]** "Blackwell: 2,250 dense BF16. But watch
-   the same silicon under different precisions — 2,250 BF16, 4,500 FP8,
-   9,000 FP4. Hardware now scales compute *through quantization* — that's
-   Part 4 of this talk, and K3's MXFP4 release is riding exactly this wave."
+4. **[H100 roof; dot climbs to 3.35]** "So surely newer hardware fixes this?
+   H100: compute triples to 989. Decode's roof rises exactly with
+   bandwidth — to 3.35. The ceiling tripled; decode got two-thirds more."
 
-5. **[B300 ⚠ → ~440, divergence]** "Blackwell Ultra pushes toward 3,500 —
-   with bandwidth flat. Add it up: A100 to B200, compute grew 7.2×,
-   bandwidth 4×. And the balance point climbs back to ~440. The memory wall
-   is not closing; it is structurally widening. Rubin and HBM4 land next
-   year — same story."
+5. **[H200 roof; dot to 4.8]** "H200 is the honest confession: same silicon,
+   same FLOPs, 43% more bandwidth — and the market paid a premium for it.
+   When vendors can charge more for the same compute plus more memory, you
+   know what's scarce. Decode's roof: 4.8."
 
-6. **[roofline / regions]** "Now the tool that turns these specs into
-   predictions. Arithmetic intensity: FLOPs performed per byte moved from
-   HBM. Plot performance against it and every machine is two lines — a
-   bandwidth slant and a compute ceiling, meeting at the balance point we
-   just derived. Left of the ridge you're memory-bound: more FLOPs change
-   nothing. Right of it, compute-bound."
+6. **[B200 roof; dot to 8]** "Blackwell: 2,250 teraFLOPS, and decode's roof
+   reaches eight. Ceilings up seven-fold since A100; decode up four-fold."
 
-7. **[the ? at AI ≈ 1]** "And here's the punchline the table was setting up:
-   across six years and four architectures, the ridge stays pinned between
-   150 and 440 — while LLM decode runs at an arithmetic intensity of about
-   *one*. That gap is not an engineering accident; it's structural. Inference
-   actually lives on both sides of this roof, at different phases — so:
-   where exactly does decode sit? That's the next slide."
+7. **[B300 ⚠: dot shakes, +0; band + punchline]** "And Blackwell Ultra —
+   compute pushes toward 3,500, bandwidth doesn't move: decode gains
+   *nothing*. Add the band: across six years the ridge lives between 150 and
+   440, and decode sits at one. This is the structural fact of the talk:
+   hardware cannot fix memory-bound. Everything from here on — every
+   technique in the toolkit — is about attacking this from the *software and
+   architecture* side. Rubin and HBM4 arrive next year; the divergence
+   continues."
 
 *(final click → next page)*
 

@@ -34,6 +34,7 @@
   }
   #decdot { position: absolute; width: 15px; height: 15px; border-radius: 50%; background: #e04b38; box-shadow: 0 0 16px rgba(224,75,56,0.9); opacity: 0; z-index: 9; }
   #decq { position: absolute; font: 800 21px ui-monospace, monospace; color: #e04b38; opacity: 0; z-index: 9; white-space: nowrap; }
+  #dectrack { position: absolute; font: 700 12.5px ui-monospace, monospace; color: #e0a935; opacity: 0; z-index: 9; white-space: nowrap; }
   #punch {
     position: absolute; left: 44px; bottom: 26px; width: 900px;
     font-size: 13.5px; color: var(--accent); font-weight: 600; line-height: 1.5; opacity: 0;
@@ -53,6 +54,7 @@
   <div class="anno" id="an-rubin"></div>
   <div id="decdot"></div>
   <div id="decq">? ← decode lives here</div>
+  <div id="dectrack"></div>
   <div id="punch"></div>
 </div>
 
@@ -122,37 +124,74 @@
     }, "~" + Math.round(bal) + (g.approx ? "⚠" : ""));
   });
 
-  // B200 precision ceilings (FP8 / FP4)
-  var b200 = GPUS.list[3];
-  [["FP8", 4500], ["FP4", 9000]].forEach(function (p, i) {
-    var bal = p[1] / b200.bw;
-    el("line", {
-      x1: rx(Math.min(bal, 1024)), y1: ry(p[1]), x2: rx(1024), y2: ry(p[1]),
-      stroke: "#2fd6b0", "stroke-width": 1.6, "stroke-dasharray": "7 6", opacity: 0, id: "pc-" + i,
-    });
-    el("text", { x: rx(1024) - 108, y: ry(p[1]) - 6, fill: "#2fd6b0", "class": "preclab", opacity: 0, id: "pl-" + i },
-      p[0] + " " + p[1].toLocaleString() + " → ridge " + Math.round(bal));
-  });
-
   // ---- timeline ----
+  // Story: teach the plot on the A100 alone, place decode on it, THEN pile on
+  // the generations — ceilings explode ×11 while decode's roof crawls ×4 and
+  // stalls. Hardware cannot fix memory-bound.
   var tl = gsap.timeline({ paused: true });
+  var DX = 40 + rx(1.15);
+  function decY(g) { return 168 + ry(g.bw * 1.15); }
+  var track = document.getElementById("dectrack");
 
-  GPUS.list.forEach(function (g, i) {
-    if (i === 0) tl.fromTo("#plot", { opacity: 0 }, { opacity: 1, duration: 0.4 });
+  function drawGen(g) {
     tl.fromTo("#gc-" + g.key, { opacity: 0, y: -14 }, { opacity: 1, y: 0, duration: 0.35, ease: "power2.out" })
       .to("#roof-" + g.key, { strokeDashoffset: 0, duration: 0.9, ease: "power2.inOut" })
       .fromTo("#rd-" + g.key, { opacity: 0, scale: 0, transformOrigin: "center" }, { opacity: 1, scale: 1, duration: 0.35, ease: "back.out(2.5)" })
       .to("#rl-" + g.key, { opacity: 1, duration: 0.25 }, "-=0.1");
+  }
+  function trackText(g, suffix) {
+    return "decode roof ≈ " + g.bw.toFixed(g.bw % 1 ? 2 : 1) + " TF/s" + (suffix || "");
+  }
 
+  // step 1: one machine — A100 — and the tool to read it
+  tl.fromTo("#plot", { opacity: 0 }, { opacity: 1, duration: 0.4 })
+    .fromTo("#aidef", { opacity: 0 }, { opacity: 1, duration: 0.4 }, "-=0.2");
+  drawGen(GPUS.list[0]);
+  DECK.markStep(tl);
+
+  // step 2: the two regimes
+  tl.to(memLab, { opacity: 1, duration: 0.4 })
+    .to(cmpLab, { opacity: 1, duration: 0.4 }, "-=0.15");
+  DECK.markStep(tl);
+
+  // step 3: decode lands at AI ~ 1, deep in memory-bound
+  tl.fromTo("#decdot", { opacity: 0, scale: 0, left: DX - 7, top: decY(GPUS.list[0]) - 7 },
+    { opacity: 1, scale: 1, duration: 0.45, ease: "back.out(2.5)" })
+    .call(function () {
+      var q = document.getElementById("decq");
+      q.style.left = (DX + 16) + "px"; q.style.top = (decY(GPUS.list[0]) - 30) + "px";
+      track.style.left = (DX + 16) + "px"; track.style.top = (decY(GPUS.list[0]) + 12) + "px";
+      track.textContent = trackText(GPUS.list[0]);
+    })
+    .fromTo("#decq", { opacity: 0, x: -10 }, { opacity: 1, x: 0, duration: 0.4 })
+    .fromTo(track, { opacity: 0 }, { opacity: 1, duration: 0.35 }, "-=0.2")
+    .to("#decdot", { scale: 1.35, duration: 0.5, yoyo: true, repeat: 3, ease: "sine.inOut" }, "<");
+  DECK.markStep(tl);
+
+  // steps 4-7: the generations pile on; decode's roof crawls, then stalls
+  GPUS.list.slice(1).forEach(function (g) {
+    drawGen(g);
     if (g.key === "h200") {
       tl.call(function () {
         var a = document.getElementById("an-h200");
         a.style.left = "380px"; a.style.top = "194px";
       }).fromTo("#an-h200", { opacity: 0, scale: 0.8 }, { opacity: 1, scale: 1, duration: 0.4, ease: "back.out(1.7)" });
     }
-    if (g.key === "b200") {
-      tl.to("#pc-0, #pl-0", { opacity: 1, duration: 0.35 })
-        .to("#pc-1, #pl-1", { opacity: 1, duration: 0.35 });
+    var stalls = g.key === "b300";   // same bandwidth as B200: decode gains nothing
+    if (stalls) {
+      tl.call(function () { track.textContent = trackText(g, "  — B300: +0"); })
+        .fromTo(track, { color: "#e0a935" }, { color: "#e04b38", duration: 0.3 })
+        .to("#decdot", { x: "+=7", duration: 0.06, yoyo: true, repeat: 5 })
+        .to("#decdot", { x: 0, duration: 0.1 });
+    } else {
+      tl.to("#decdot", { top: decY(g) - 7, duration: 0.6, ease: "power2.out" })
+        .call(function () {
+          var q = document.getElementById("decq");
+          q.style.top = (decY(g) - 30) + "px";
+          track.style.top = (decY(g) + 12) + "px";
+          track.textContent = trackText(g);
+        })
+        .to("#decdot", { scale: 1.3, duration: 0.25, yoyo: true, repeat: 1 });
     }
     if (g.key === "b300") {
       tl.call(function () {
@@ -160,31 +199,14 @@
         a.style.left = "170px"; a.style.top = "232px";
         r.style.left = "170px"; r.style.top = "286px";
       }).fromTo("#an-div", { opacity: 0, scale: 0.8 }, { opacity: 1, scale: 1, duration: 0.4, ease: "back.out(1.7)" })
-        .fromTo("#an-rubin", { opacity: 0 }, { opacity: 1, duration: 0.35 }, "-=0.15");
+        .fromTo("#an-rubin", { opacity: 0 }, { opacity: 1, duration: 0.35 }, "-=0.15")
+        .to(band, { opacity: 1, duration: 0.5 })
+        .to("#bandlab1, #bandlab2", { opacity: 1, duration: 0.35 })
+        .fromTo("#punch", { opacity: 0, y: 10 }, { opacity: 1, y: 0, duration: 0.5 });
+    } else {
+      DECK.markStep(tl);   // the B300 beat is the finale — no trailing pause
     }
-    DECK.markStep(tl);
   });
-
-  // step 6: the tool — AI definition, regions, and the six-year ridge band
-  tl.fromTo("#aidef", { opacity: 0 }, { opacity: 1, duration: 0.4 })
-    .to("#an-h200, #an-div", { opacity: 0.25, duration: 0.3 }, "<")
-    .to(band, { opacity: 1, duration: 0.5 })
-    .to("#bandlab1, #bandlab2", { opacity: 1, duration: 0.35 })
-    .to(memLab, { opacity: 1, duration: 0.35 })
-    .to(cmpLab, { opacity: 1, duration: 0.35 }, "-=0.15");
-  DECK.markStep(tl);
-
-  // step 7: decode at AI ~ 1 — bottom-left, miles from every ridge
-  var DX = 40 + rx(1.15), DY = 168 + ry(3.5);
-  tl.fromTo("#decdot", { opacity: 0, scale: 0, left: DX - 7, top: DY - 7 },
-    { opacity: 1, scale: 1, duration: 0.45, ease: "back.out(2.5)" })
-    .call(function () {
-      var q = document.getElementById("decq");
-      q.style.left = (DX + 16) + "px"; q.style.top = (DY - 30) + "px";
-    })
-    .fromTo("#decq", { opacity: 0, x: -10 }, { opacity: 1, x: 0, duration: 0.4 })
-    .to("#decdot", { scale: 1.35, duration: 0.6, yoyo: true, repeat: 3, ease: "sine.inOut" }, "<")
-    .fromTo("#punch", { opacity: 0, y: 10 }, { opacity: 1, y: 0, duration: 0.5 }, "-=1.0");
 
   DECK.register(tl, {});
 </script>
