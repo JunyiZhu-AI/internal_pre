@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FLOPs Are Cheap. Bytes Are Not.</title>
+<link rel="stylesheet" href="shared/deck.css">
+<style>
+  .gcard {
+    position: absolute; top: 104px; width: 226px; height: 46px;
+    background: var(--panel); border: 1px solid var(--line); border-radius: 9px;
+    padding: 6px 10px; opacity: 0;
+  }
+  .gcard .gn { font-weight: 700; font-size: 12.5px; }
+  .gcard .gs { font-size: 9px; color: var(--ink-2); margin-left: 5px; }
+  .gcard .gd { font: 10px ui-monospace, monospace; color: #c7cce0; margin-top: 1px; }
+  #plot { position: absolute; left: 40px; top: 168px; }
+  #plot text { font-family: ui-monospace, monospace; fill: #6b7284; font-size: 11px; }
+  #plot .axisline { stroke: var(--line); stroke-width: 1.5; }
+  #plot .roof { fill: none; stroke-width: 3; stroke-linecap: round; }
+  #plot .ridgelab { font-weight: 700; font-size: 12px; }
+  #plot .band { fill: rgba(232, 234, 240, 0.05); }
+  #plot .preclab { font-size: 10px; font-weight: 700; }
+  .anno {
+    position: absolute; font: 11.5px ui-monospace, monospace; line-height: 1.5;
+    border: 1px solid; border-radius: 8px; padding: 6px 10px; opacity: 0; z-index: 8;
+  }
+  #an-h200 { color: #6fb1ff; border-color: rgba(111,177,255,0.5); background: rgba(11,13,18,0.85); }
+  #an-div { color: #e0a935; border-color: rgba(201,133,0,0.5); background: rgba(11,13,18,0.85); }
+  #an-rubin { color: #6b7284; border-color: var(--line); background: rgba(11,13,18,0.85); }
+  #rack {
+    position: absolute; right: 54px; bottom: 122px; width: 330px;
+    background: rgba(27,30,39,0.92); border: 1px solid var(--line); border-radius: 12px;
+    padding: 10px 14px; opacity: 0; z-index: 8; display: flex; gap: 12px; align-items: center;
+  }
+  #rackgrid { display: grid; grid-template-columns: repeat(9, 7px); gap: 2px; }
+  #rackgrid i { width: 7px; height: 7px; border-radius: 1.5px; background: rgba(144,133,233,0.55); }
+  #rack .rtxt { font-size: 10px; line-height: 1.5; color: var(--ink-2); }
+  #rack .rtxt b { color: var(--c-o); }
+  #aidef {
+    position: absolute; left: 44px; top: 70px; font: 600 13px ui-monospace, monospace;
+    color: var(--accent); opacity: 0;
+  }
+  #decdot { position: absolute; width: 15px; height: 15px; border-radius: 50%; background: #e04b38; box-shadow: 0 0 16px rgba(224,75,56,0.9); opacity: 0; z-index: 9; }
+  #decq { position: absolute; font: 800 21px ui-monospace, monospace; color: #e04b38; opacity: 0; z-index: 9; white-space: nowrap; }
+  #punch {
+    position: absolute; left: 44px; bottom: 26px; width: 900px;
+    font-size: 13.5px; color: var(--accent); font-weight: 600; line-height: 1.5; opacity: 0;
+  }
+  #punch .cliff { color: var(--ink-2); font-weight: 400; font-style: italic; }
+</style>
+</head>
+<body>
+<div class="stage">
+  <div class="slide-title">FLOPs Are Cheap. Bytes Are Not.</div>
+  <div id="aidef">AI = FLOPs performed ÷ bytes moved from HBM &nbsp;·&nbsp; roof = min(AI × bandwidth, compute) · BF16 dense</div>
+
+  <div id="cards"></div>
+  <svg id="plot" width="1200" height="500"></svg>
+  <div class="anno" id="an-h200"></div>
+  <div class="anno" id="an-div"></div>
+  <div class="anno" id="an-rubin"></div>
+  <div id="rack"><div id="rackgrid"></div><div class="rtxt" id="racktxt"></div></div>
+  <div id="decdot"></div>
+  <div id="decq">? ← decode lives here</div>
+  <div id="punch"></div>
+</div>
+
+<script src="../vendor/gsap.min.js"></script>
+<script src="shared/gpus.js"></script>
+<script src="shared/manifest.js"></script>
+<script src="shared/deck.js"></script>
+<script>
+  document.getElementById("an-h200").innerHTML = "H200: ridge slides LEFT, 295 → 206<br>" + GPUS.h200note;
+  document.getElementById("an-div").innerHTML = GPUS.divergence + "<br>the ridge marches right — the wall worsens";
+  document.getElementById("an-rubin").textContent = GPUS.rubin;
+  document.getElementById("punch").innerHTML = GPUS.punchline + ' <span class="cliff">— ' + GPUS.cliffhanger + "</span>";
+  document.getElementById("racktxt").innerHTML = "<b>" + GPUS.nvl72.name + "</b> · " + GPUS.nvl72.gpus + " GPUs, one NVLink domain<br>" +
+    GPUS.nvl72.hbm + " · " + GPUS.nvl72.aggBw + "<br>" + GPUS.nvl72.nvlink + " → EP";
+
+  // top card row
+  var cards = document.getElementById("cards");
+  GPUS.list.forEach(function (g, i) {
+    var d = document.createElement("div");
+    d.className = "gcard"; d.id = "gc-" + g.key;
+    d.style.left = (44 + i * 240) + "px";
+    d.style.borderColor = g.color + "77";
+    d.innerHTML = '<span class="gn" style="color:' + g.color + '">' + g.name + '</span><span class="gs">' + g.gen + "</span>" +
+      '<div class="gd">' + (g.approx ? "~" : "") + g.tflops.toLocaleString() + " TF · " + g.bw + " TB/s · " + g.cap + " GB</div>";
+    cards.appendChild(d);
+  });
+
+  // roofline canvas: x = AI 2^0..2^10, y = TFLOPS 2^0..2^14
+  var NS = "http://www.w3.org/2000/svg";
+  var plot = document.getElementById("plot");
+  var X0 = 70, W = 1080, Y0 = 448, H = 420;
+  function rx(ai) { return X0 + Math.log2(ai) / 10 * W; }
+  function ry(tf) { return Y0 - Math.log2(tf) / 14 * H; }
+  function el(tag, attrs, txt) {
+    var e = document.createElementNS(NS, tag);
+    for (var k in attrs) e.setAttribute(k, attrs[k]);
+    if (txt !== undefined) e.textContent = txt;
+    plot.appendChild(e);
+    return e;
+  }
+  el("line", { x1: X0, y1: Y0, x2: X0 + W, y2: Y0, "class": "axisline" });
+  el("line", { x1: X0, y1: Y0, x2: X0, y2: Y0 - H, "class": "axisline" });
+  [1, 4, 16, 64, 256, 1024].forEach(function (v) { el("text", { x: rx(v) - 8, y: Y0 + 18 }, String(v)); });
+  [1, 16, 256, 4096].forEach(function (v) { el("text", { x: X0 - 44, y: ry(v) + 4 }, v.toLocaleString()); });
+  el("text", { x: X0 + W / 2 - 100, y: Y0 + 38 }, "arithmetic intensity (FLOPs / byte)");
+  el("text", { x: X0 - 52, y: ry(16384) - 10 }, "TFLOPS");
+
+  // the ridge band (revealed at step 7)
+  var band = el("rect", { x: rx(150), y: Y0 - H, width: rx(440) - rx(150), height: H, "class": "band", opacity: 0 });
+  el("text", { x: rx(150) + 6, y: 60, fill: "#9aa1b5", opacity: 0, id: "bandlab1" }, "the ridge has lived here");
+  el("text", { x: rx(150) + 6, y: 76, fill: "#9aa1b5", opacity: 0, id: "bandlab2" }, "for six years: 150–440");
+  var memLab = el("text", { x: rx(2), y: 240, fill: "#6fb1ff", "font-weight": 700, opacity: 0 }, "← memory-bound: more FLOPs change nothing");
+  var cmpLab = el("text", { x: rx(500), y: 240, fill: "#2fd6b0", "font-weight": 700, opacity: 0 }, "compute-bound →");
+
+  // per-generation roofs
+  GPUS.list.forEach(function (g) {
+    var bal = g.tflops / g.bw;
+    var p = el("path", {
+      d: "M " + rx(1) + " " + ry(g.bw) + " L " + rx(bal) + " " + ry(g.tflops) + " L " + rx(1024) + " " + ry(g.tflops),
+      "class": "roof", stroke: g.color, id: "roof-" + g.key,
+    });
+    var len = p.getTotalLength();
+    p.style.strokeDasharray = len;
+    p.style.strokeDashoffset = len;
+    el("circle", { cx: rx(bal), cy: ry(g.tflops), r: 7, fill: g.color, opacity: 0, id: "rd-" + g.key });
+    el("text", {
+      x: rx(bal) - 14, y: ry(g.tflops) - 12, fill: g.color, "class": "ridgelab", opacity: 0, id: "rl-" + g.key,
+    }, "~" + Math.round(bal) + (g.approx ? "⚠" : ""));
+  });
+
+  // B200 precision ceilings (FP8 / FP4)
+  var b200 = GPUS.list[3];
+  [["FP8", 4500], ["FP4", 9000]].forEach(function (p, i) {
+    var bal = p[1] / b200.bw;
+    el("line", {
+      x1: rx(Math.min(bal, 1024)), y1: ry(p[1]), x2: rx(1024), y2: ry(p[1]),
+      stroke: "#2fd6b0", "stroke-width": 1.6, "stroke-dasharray": "7 6", opacity: 0, id: "pc-" + i,
+    });
+    el("text", { x: rx(1024) - 108, y: ry(p[1]) - 6, fill: "#2fd6b0", "class": "preclab", opacity: 0, id: "pl-" + i },
+      p[0] + " " + p[1].toLocaleString() + " → ridge " + Math.round(bal));
+  });
+
+  var rg = document.getElementById("rackgrid");
+  for (var i = 0; i < 72; i++) rg.appendChild(document.createElement("i"));
+
+  // ---- timeline ----
+  var tl = gsap.timeline({ paused: true });
+
+  GPUS.list.forEach(function (g, i) {
+    if (i === 0) tl.fromTo("#plot", { opacity: 0 }, { opacity: 1, duration: 0.4 });
+    tl.fromTo("#gc-" + g.key, { opacity: 0, y: -14 }, { opacity: 1, y: 0, duration: 0.35, ease: "power2.out" })
+      .to("#roof-" + g.key, { strokeDashoffset: 0, duration: 0.9, ease: "power2.inOut" })
+      .fromTo("#rd-" + g.key, { opacity: 0, scale: 0, transformOrigin: "center" }, { opacity: 1, scale: 1, duration: 0.35, ease: "back.out(2.5)" })
+      .to("#rl-" + g.key, { opacity: 1, duration: 0.25 }, "-=0.1");
+
+    if (g.key === "h200") {
+      tl.call(function () {
+        var a = document.getElementById("an-h200");
+        a.style.left = "560px"; a.style.top = "210px";
+      }).fromTo("#an-h200", { opacity: 0, scale: 0.8 }, { opacity: 1, scale: 1, duration: 0.4, ease: "back.out(1.7)" });
+    }
+    if (g.key === "b200") {
+      tl.to("#pc-0, #pl-0", { opacity: 1, duration: 0.35 })
+        .to("#pc-1, #pl-1", { opacity: 1, duration: 0.35 });
+    }
+    if (g.key === "b300") {
+      tl.call(function () {
+        var a = document.getElementById("an-div"), r = document.getElementById("an-rubin");
+        a.style.left = "170px"; a.style.top = "232px";
+        r.style.left = "170px"; r.style.top = "286px";
+      }).fromTo("#an-div", { opacity: 0, scale: 0.8 }, { opacity: 1, scale: 1, duration: 0.4, ease: "back.out(1.7)" })
+        .fromTo("#an-rubin", { opacity: 0 }, { opacity: 1, duration: 0.35 }, "-=0.15");
+    }
+    DECK.markStep(tl);
+  });
+
+  // step 6: NVL72 inset
+  tl.fromTo("#rack", { opacity: 0, y: 16 }, { opacity: 1, y: 0, duration: 0.45, ease: "power2.out" })
+    .fromTo("#rackgrid i", { opacity: 0, scale: 0 }, { opacity: 1, scale: 1, duration: 0.2, stagger: 0.005 }, "-=0.25");
+  DECK.markStep(tl);
+
+  // step 7: the tool — AI definition, regions, and the six-year ridge band
+  tl.fromTo("#aidef", { opacity: 0 }, { opacity: 1, duration: 0.4 })
+    .to("#an-h200, #an-div", { opacity: 0.25, duration: 0.3 }, "<")
+    .to(band, { opacity: 1, duration: 0.5 })
+    .to("#bandlab1, #bandlab2", { opacity: 1, duration: 0.35 })
+    .to(memLab, { opacity: 1, duration: 0.35 })
+    .to(cmpLab, { opacity: 1, duration: 0.35 }, "-=0.15");
+  DECK.markStep(tl);
+
+  // step 8: decode at AI ~ 1 — bottom-left, miles from every ridge
+  var DX = 40 + rx(1.15), DY = 168 + ry(3.5);
+  tl.fromTo("#decdot", { opacity: 0, scale: 0, left: DX - 7, top: DY - 7 },
+    { opacity: 1, scale: 1, duration: 0.45, ease: "back.out(2.5)" })
+    .call(function () {
+      var q = document.getElementById("decq");
+      q.style.left = (DX + 16) + "px"; q.style.top = (DY - 30) + "px";
+    })
+    .fromTo("#decq", { opacity: 0, x: -10 }, { opacity: 1, x: 0, duration: 0.4 })
+    .to("#decdot", { scale: 1.35, duration: 0.6, yoyo: true, repeat: 3, ease: "sine.inOut" }, "<")
+    .fromTo("#punch", { opacity: 0, y: 10 }, { opacity: 1, y: 0, duration: 0.5 }, "-=1.0");
+
+  DECK.register(tl, {});
+</script>
+</body>
+</html>

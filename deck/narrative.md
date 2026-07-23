@@ -100,6 +100,62 @@ advances the slide.)
 
 ---
 
+## Page 03 — FLOPs Are Cheap. Bytes Are Not.
+
+*The same 8 beats drive all three candidate variants (a: ledger + live math,
+b: divergence curves, c: roofline canvas). All figures BF16 dense.*
+
+**Load:** title only (variant c: empty log–log axes).
+
+1. **[A100 lands → ~156]** "Let's derive tonight's central number from the
+   spec sheet. A100, 2020: 312 teraFLOPS, two terabytes a second of HBM.
+   Divide them — 156 FLOPs per byte. That ratio is the machine balance point:
+   how much arithmetic the chip can afford per byte it reads. Note these are
+   dense BF16 numbers — the marketing figures are 2:4 sparse."
+
+2. **[H100 → 295]** "H100: compute triples, bandwidth grows two-thirds —
+   balance nearly doubles to 295. Remember that number."
+
+3. **[H200 → 206, highlight]** "Then something interesting: H200. Same
+   silicon, same FLOPs — NVIDIA shipped a refresh with 43% more bandwidth and
+   76% more capacity, and the market happily paid a premium. When a vendor
+   can sell the *same* compute for more money by adding memory, that tells
+   you exactly what's scarce."
+
+4. **[B200 → 281, precision bars]** "Blackwell: 2,250 dense BF16. But watch
+   the same silicon under different precisions — 2,250 BF16, 4,500 FP8,
+   9,000 FP4. Hardware now scales compute *through quantization* — that's
+   Part 4 of this talk, and K3's MXFP4 release is riding exactly this wave."
+
+5. **[B300 ⚠ → ~440, divergence]** "Blackwell Ultra pushes toward 3,500 —
+   with bandwidth flat. Add it up: A100 to B200, compute grew 7.2×,
+   bandwidth 4×. And the balance point climbs back to ~440. The memory wall
+   is not closing; it is structurally widening. Rubin and HBM4 land next
+   year — same story."
+
+6. **[NVL72 rack]** "One more scale: the rack. GB200 NVL72 puts 72 GPUs in a
+   single NVLink domain — 13.8 terabytes of HBM, over 570 terabytes a second
+   aggregate, 1.8 per GPU of NVLink, double Hopper. Interconnect is now
+   engineered at rack level — hold that thought for expert parallelism."
+
+7. **[roofline / regions]** "Now the tool that turns these specs into
+   predictions. Arithmetic intensity: FLOPs performed per byte moved from
+   HBM. Plot performance against it and every machine is two lines — a
+   bandwidth slant and a compute ceiling, meeting at the balance point we
+   just derived. Left of the ridge you're memory-bound: more FLOPs change
+   nothing. Right of it, compute-bound."
+
+8. **[the ? at AI ≈ 1]** "And here's the punchline the table was setting up:
+   across six years and four architectures, the ridge stays pinned between
+   150 and 440 — while LLM decode runs at an arithmetic intensity of about
+   *one*. That gap is not an engineering accident; it's structural. Inference
+   actually lives on both sides of this roof, at different phases — so:
+   where exactly does decode sit? That's the next slide."
+
+*(final click → next page)*
+
+---
+
 ## Template page — QKᵀ: where attention scores come from
 
 **Load:** title only; empty score grid awaits.
