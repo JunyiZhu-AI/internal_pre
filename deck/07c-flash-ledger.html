@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FlashAttention: The Bottleneck Was Memory Movement, Not Math</title>
+<link rel="stylesheet" href="shared/deck.css">
+<style>
+  #ledger { position: absolute; left: 44px; top: 160px; width: 620px; background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 16px 20px; opacity: 0; }
+  #ledger h3 { margin: 0 0 12px; font-size: 14px; }
+  #ledger h3 .note { font-size: 11px; color: var(--ink-2); font-weight: 400; margin-left: 8px; }
+  .lrow { display: flex; align-items: center; height: 40px; border-bottom: 1px solid rgba(42,46,59,0.6); font: 600 13px ui-monospace, monospace; opacity: 0; }
+  .lrow .st { flex: 1; color: #c7cce0; font-weight: 400; }
+  .lrow .nv { width: 130px; text-align: right; color: #ff8a7a; }
+  .lrow .fv { width: 130px; text-align: right; color: #2fd6b0; opacity: 0; }
+  .lrow.hd { font-weight: 700; color: var(--ink-2); border-bottom: 1.5px solid var(--line); }
+  .lrow.hd .nv { color: #ff8a7a; } .lrow.hd .fv { color: #2fd6b0; opacity: 1; }
+  .lrow.total { border-bottom: none; font-weight: 800; font-size: 15px; height: 48px; }
+  #ratio { position: absolute; left: 44px; top: 494px; font: 800 20px ui-monospace, monospace; color: var(--accent); opacity: 0; }
+  #idea { position: absolute; left: 712px; top: 170px; width: 520px; font: 12.5px ui-monospace, monospace; color: var(--ink-2); line-height: 1.8; opacity: 0; }
+  #idea b { color: #2fd6b0; }
+  #strip { position: absolute; left: 690px; top: 300px; opacity: 0; }
+  #strip text { font: 11px ui-monospace, monospace; fill: #6b7284; }
+  #strip .axisline { stroke: var(--line); stroke-width: 1.5; }
+  .sdot { position: absolute; width: 15px; height: 15px; border-radius: 50%; opacity: 0; z-index: 9; }
+  .dlab { position: absolute; font: 700 11.5px ui-monospace, monospace; opacity: 0; white-space: nowrap; }
+  #verdict { position: absolute; left: 44px; top: 560px; font: 700 15px ui-monospace, monospace; color: #9aa1b5; opacity: 0; }
+  #lesson { position: absolute; left: 44px; top: 610px; font-size: 26px; font-weight: 800; color: var(--accent); opacity: 0; }
+</style>
+</head>
+<body>
+<div class="stage">
+  <div class="slide-title">FlashAttention: The Bottleneck Was Memory, Not Math</div>
+  <div class="slide-sub">the IO bill for one attention op · n = 128k, BF16, one head</div>
+
+  <div id="ledger">
+    <h3>HBM traffic ledger <span class="note">bytes to/from memory</span></h3>
+    <div class="lrow hd"><span class="st">stage</span><span class="nv">naïve</span><span class="fv">FlashAttention</span></div>
+    <div class="lrow"><span class="st">write S = QKᵀ</span><span class="nv">34.4 GB</span><span class="fv">—</span></div>
+    <div class="lrow"><span class="st">read S — softmax</span><span class="nv">34.4 GB</span><span class="fv">—</span></div>
+    <div class="lrow"><span class="st">read S — ·V</span><span class="nv">34.4 GB</span><span class="fv">—</span></div>
+    <div class="lrow"><span class="st">stream Q, K, V, O</span><span class="nv">0.13 GB</span><span class="fv">0.13 GB</span></div>
+    <div class="lrow total"><span class="st">total</span><span class="nv">103 GB</span><span class="fv">0.13 GB</span></div>
+  </div>
+  <div id="ratio">≈ 770× less HBM traffic — identical numerics</div>
+
+  <div id="idea"><b>the trick:</b> tile Q,K,V into SRAM-sized blocks ·
+    keep a <b>running max + running sum</b> (online softmax) ·
+    the n×n matrix simply never exists in HBM</div>
+
+  <svg id="strip" width="560" height="120"></svg>
+  <div class="sdot" id="dN" style="background:#ff8a7a; box-shadow:0 0 13px rgba(255,138,122,0.8)"></div>
+  <div class="sdot" id="dF" style="background:#2fd6b0; box-shadow:0 0 13px rgba(47,214,176,0.8)"></div>
+  <div class="dlab" id="lN" style="color:#ff8a7a">naïve · AI ≈ 43 — memory-bound</div>
+  <div class="dlab" id="lF" style="color:#2fd6b0">flash · compute-bound at last</div>
+
+  <div id="verdict"></div>
+  <div id="lesson"></div>
+</div>
+
+<script src="../vendor/gsap.min.js"></script>
+<script src="shared/attnscale.js"></script>
+<script src="shared/manifest.js"></script>
+<script src="shared/deck.js"></script>
+<script>
+  document.getElementById("verdict").textContent = AS.flashVerdict;
+  document.getElementById("lesson").textContent = AS.flashLesson;
+
+  // AI strip with the H100 ridge (same visual as slide 04)
+  var NS = "http://www.w3.org/2000/svg";
+  var strip = document.getElementById("strip");
+  function sx(ai) { return 40 + Math.log2(ai) / 16 * 490; }   // 1 .. 65536
+  function sel(tag, attrs, txt) {
+    var e = document.createElementNS(NS, tag);
+    for (var k in attrs) e.setAttribute(k, attrs[k]);
+    if (txt !== undefined) e.textContent = txt;
+    strip.appendChild(e);
+    return e;
+  }
+  sel("line", { x1: 40, y1: 70, x2: 530, y2: 70, "class": "axisline" });
+  [1, 16, 256, 4096, 65536].forEach(function (v) {
+    sel("line", { x1: sx(v), y1: 66, x2: sx(v), y2: 74, "class": "axisline" });
+    sel("text", { x: sx(v) - 10, y: 92 }, v >= 1024 ? (v / 1024) + "k" : String(v));
+  });
+  sel("text", { x: 40, y: 14 }, "arithmetic intensity of the attention op");
+  sel("line", { x1: sx(295), y1: 40, x2: sx(295), y2: 70, stroke: "#6fb1ff", "stroke-width": 2, "stroke-dasharray": "5 4" });
+  sel("text", { x: sx(295) - 30, y: 34, fill: "#6fb1ff" }, "ridge 295");
+
+  var tl = gsap.timeline({ paused: true });
+
+  // step 1: the naive bill, line by line
+  tl.fromTo("#ledger", { opacity: 0, y: 20 }, { opacity: 1, y: 0, duration: 0.45, ease: "power2.out" });
+  document.querySelectorAll(".lrow").forEach(function (r) {
+    tl.fromTo(r, { opacity: 0, x: -12 }, { opacity: 1, x: 0, duration: 0.3 }, "+=0.05");
+  });
+  DECK.markStep(tl);
+
+  // step 2: the flash column — three dashes and one small number
+  tl.fromTo("#idea", { opacity: 0 }, { opacity: 1, duration: 0.45 });
+  document.querySelectorAll(".lrow:not(.hd) .fv").forEach(function (c) {
+    tl.fromTo(c, { opacity: 0, scale: 0.6 }, { opacity: 1, scale: 1, duration: 0.3, ease: "back.out(2)" }, "+=0.07");
+  });
+  DECK.markStep(tl);
+
+  // step 3: the ratio
+  tl.fromTo("#ratio", { opacity: 0, scale: 0.8 }, { opacity: 1, scale: 1, duration: 0.5, ease: "back.out(1.8)" });
+  DECK.markStep(tl);
+
+  // step 4: what it means on the roofline — the op switches sides
+  var SY = 300 + 70, NX = 690 + sx(43), FX = 690 + sx(32768);
+  tl.fromTo("#strip", { opacity: 0 }, { opacity: 1, duration: 0.4 })
+    .fromTo("#dN", { opacity: 0, left: NX - 7, top: SY - 7, scale: 0 }, { opacity: 1, scale: 1, duration: 0.35, ease: "back.out(2)" })
+    .call(function () {
+      var l = document.getElementById("lN");
+      l.style.left = (NX - 90) + "px"; l.style.top = (SY + 18) + "px";
+      var f = document.getElementById("lF");
+      f.style.left = (FX - 200) + "px"; f.style.top = (SY - 34) + "px";
+    })
+    .fromTo("#lN", { opacity: 0 }, { opacity: 1, duration: 0.3 })
+    .fromTo("#dF", { opacity: 0, left: NX - 7, top: SY - 7 }, { opacity: 1, left: FX - 7, duration: 0.9, ease: "power2.inOut" })
+    .fromTo("#lF", { opacity: 0 }, { opacity: 1, duration: 0.3 })
+    .fromTo("#verdict", { opacity: 0 }, { opacity: 1, duration: 0.4 })
+    .fromTo("#lesson", { opacity: 0, y: 12 }, { opacity: 1, y: 0, duration: 0.6, ease: "power2.out" });
+
+  DECK.register(tl, {});
+</script>
+</body>
+</html>

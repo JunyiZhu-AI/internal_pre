@@ -243,6 +243,66 @@ back at the two machines it names.*
 
 ---
 
+## Pages 06–08 — Attention at scale (one flow, three slides)
+
+*Three candidate flows, each spanning all three slides: **a — machine room**
+(the die/pipe/HBM anatomy carries the story), **b — the matrix** (the n×n
+object is the protagonist), **c — the ledger** (cost meters and receipts).
+Beats below work for any flow.*
+
+### 06 — Self-Attention Recap: The O(n²) Problem (5 clicks)
+
+1. **[recap / setup at n = 1k]** "You know this machine — softmax of QKᵀ over
+   root-d, times V. At toy scale it was adorable. Now run it at serving
+   scale."
+2. **[naïve dataflow]** "The naïve kernel touches HBM three times: write the
+   full n×n score matrix out, read it back for softmax, read it again for
+   the V product. Three full passes over n² numbers."
+3. **[n = 8k]** "Grow the context. Sixty-seven million entries — fine."
+4. **[n = 128k]** "128k: sixteen *billion* entries — 33 gigabytes. That is a
+   third of the GPU's entire memory, for the scratch matrix of ONE head."
+5. **[n = 1M + punch]** "A million tokens? Two terabytes. It does not fit —
+   nothing fits. Both the FLOPs and the bytes scale as n². This is the
+   original sin of attention, and everything in this part of the talk is a
+   response to it."
+
+### 07 — FlashAttention: The Bottleneck Was Memory, Not Math (4 clicks)
+
+1. **[naïve side]** "Here's that naïve kernel as an IO bill: at 128k, over a
+   hundred gigabytes through the pipe, for one op."
+2. **[flash side]** "FlashAttention's whole idea: tile Q, K, V into blocks
+   that fit in on-chip SRAM, keep a running max and running sum — the online
+   softmax — and the n×n matrix simply never exists in HBM."
+3. **[the race / ratio]** "Same arithmetic. Identical numerics, bit for bit
+   comparable. But the traffic drops from order n-squared to order n —
+   roughly 770 times fewer bytes at this scale. And the wall-clock speedup
+   is 2–4×, which tells you exactly what was binding."
+4. **[lesson]** "That's the deepest lesson in this talk, and it will recur in
+   the KV cache, in quantization, in MoE: count bytes, not FLOPs."
+
+### 08 — KV Cache: Trading Memory for Compute (4 clicks)
+
+1. **[decode without cache]** "Now decode. Without memory of the past, step
+   t re-derives the keys and values of every previous token — quadratic
+   total work. Nobody serves like this."
+2. **[cache on]** "So we remember: store every layer's K and V once, and
+   each new token only computes itself and reads the cache. Decoding
+   becomes linear — this is what makes autoregressive serving feasible at
+   all."
+3. **[the bill]** "But memory was traded for that compute, and here's the
+   receipt, term by term: two tensors, times 80 layers, times 8 KV heads —
+   note that's GQA already helping — times head dimension 128, times two
+   bytes. A third of a megabyte per token."
+4. **[42.9 GB + squeeze]** "Multiply by a 128k context: forty-three
+   gigabytes for ONE request — competing with the weights for HBM, eating
+   the batch, capping throughput. And look at that formula again: every
+   factor in it is an architecture decision. Layers, KV heads, head width,
+   precision — turning those knobs is the entire next section."
+
+*(final click → next page)*
+
+---
+
 ## Template page — QKᵀ: where attention scores come from
 
 **Load:** title only; empty score grid awaits.

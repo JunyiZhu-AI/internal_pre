@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FlashAttention: The Bottleneck Was Memory Movement, Not Math</title>
+<link rel="stylesheet" href="shared/deck.css">
+<style>
+  .rig { position: absolute; top: 170px; width: 560px; height: 330px; opacity: 0; }
+  #rigN { left: 44px; } #rigF { left: 676px; }
+  .rig .word { position: absolute; top: -34px; left: 0; font: 800 15px ui-monospace, monospace; letter-spacing: 0.06em; }
+  .rdie { position: absolute; left: 0; top: 40px; width: 150px; height: 230px; border: 2.5px solid #3987e5; border-radius: 10px; background: repeating-linear-gradient(0deg, rgba(57,135,229,0.09) 0 7px, transparent 7px 14px), repeating-linear-gradient(90deg, rgba(57,135,229,0.09) 0 7px, transparent 7px 14px); }
+  .rdie .lab { position: absolute; bottom: 5px; width: 100%; text-align: center; font-size: 10.5px; color: #9ec7f5; }
+  #sram { position: absolute; left: 26px; top: 30px; width: 98px; height: 98px; border: 2px dashed #2fd6b0; border-radius: 8px; opacity: 0; }
+  #sram .lab { position: absolute; bottom: -18px; width: 100%; text-align: center; font: 700 10px ui-monospace, monospace; color: #2fd6b0; }
+  #tile { position: absolute; left: 34px; top: 40px; width: 26px; height: 26px; background: rgba(47,214,176,0.5); border: 1.5px solid #2fd6b0; border-radius: 4px; opacity: 0; }
+  .rpipe { position: absolute; left: 170px; top: 140px; width: 110px; height: 16px; border: 2px solid rgba(47,214,176,0.55); border-radius: 8px; overflow: hidden; }
+  .rpipe i { position: absolute; top: 3px; width: 6px; height: 6px; border-radius: 50%; background: #2fd6b0; animation: fl 1.2s linear infinite; }
+  .rpipe i:nth-child(2) { animation-delay: 0.4s; }
+  .rpipe i:nth-child(3) { animation-delay: 0.8s; }
+  @keyframes fl { from { left: -8px; } to { left: 112px; } }
+  .rhbm { position: absolute; left: 300px; top: 40px; width: 250px; height: 230px; border: 2px solid rgba(201,133,0,0.7); border-radius: 10px; }
+  .rhbm .lab { position: absolute; bottom: -22px; width: 100%; text-align: center; font-size: 11px; color: #e0a935; font-weight: 700; }
+  .rhbm .qkv { position: absolute; top: 10px; width: 46px; height: 26px; border: 1.5px solid #4a5066; border-radius: 5px; display: flex; align-items: center; justify-content: center; font: 700 11px ui-monospace, monospace; color: #c7cce0; }
+  #sN { position: absolute; left: 50%; top: 130px; transform: translateX(-50%); width: 150px; height: 120px; background: rgba(224,75,56,0.18); border: 2px solid #e04b38; border-radius: 6px; display: flex; align-items: center; justify-content: center; font: 700 13px ui-monospace, monospace; color: #ff8a7a; }
+  #noS { position: absolute; left: 50%; top: 150px; transform: translateX(-50%); font: 700 26px ui-monospace, monospace; color: #2fd6b0; opacity: 0; }
+  .io { position: absolute; top: 306px; left: 0; width: 100%; font: 600 13px ui-monospace, monospace; color: #9aa1b5; opacity: 0; }
+  .io b { font-size: 19px; }
+  #ioN b { color: #ff8a7a; } #ioF b { color: #2fd6b0; }
+  .olab { position: absolute; top: 336px; left: 0; font: 700 13px ui-monospace, monospace; opacity: 0; }
+  #idea { position: absolute; left: 676px; top: 528px; font: 12.5px ui-monospace, monospace; color: var(--ink-2); opacity: 0; }
+  #verdict { position: absolute; left: 44px; top: 570px; font: 700 15px ui-monospace, monospace; color: #9aa1b5; opacity: 0; }
+  #lesson { position: absolute; left: 44px; top: 618px; font-size: 26px; font-weight: 800; color: var(--accent); opacity: 0; }
+</style>
+</head>
+<body>
+<div class="stage">
+  <div class="slide-title">FlashAttention: The Bottleneck Was Memory, Not Math</div>
+  <div class="slide-sub">same math — just never write the n×n matrix to HBM</div>
+
+  <div class="rig" id="rigN">
+    <div class="word" style="color:#ff8a7a">NAÏVE</div>
+    <div class="rdie"><div class="lab">Processor</div></div>
+    <div class="rpipe" id="pipeN"><i></i><i></i><i></i></div>
+    <div class="rhbm">
+      <div class="qkv" style="left:16px">Q</div><div class="qkv" style="left:100px">K</div><div class="qkv" style="left:184px">V</div>
+      <div id="sN">S · n×n</div>
+      <div class="lab">HBM</div>
+    </div>
+    <div class="io" id="ioN">bytes moved&nbsp; <b id="bN">0</b>&nbsp; <span style="color:#6b7284">(3 passes over n²)</span></div>
+    <div class="olab" style="color:#ff8a7a" id="oN">O(n²) traffic</div>
+  </div>
+
+  <div class="rig" id="rigF">
+    <div class="word" style="color:#2fd6b0">FLASHATTENTION</div>
+    <div class="rdie"><div class="lab">Processor</div>
+      <div id="sram"><div class="lab">SRAM tiles</div></div>
+      <div id="tile"></div>
+    </div>
+    <div class="rpipe" id="pipeF"><i></i><i></i><i></i></div>
+    <div class="rhbm">
+      <div class="qkv" style="left:16px">Q</div><div class="qkv" style="left:100px">K</div><div class="qkv" style="left:184px">V</div>
+      <div id="noS">no S.</div>
+      <div class="lab">HBM</div>
+    </div>
+    <div class="io" id="ioF">bytes moved&nbsp; <b id="bF">0</b>&nbsp; <span style="color:#6b7284">(stream Q,K,V,O once)</span></div>
+    <div class="olab" style="color:#2fd6b0" id="oF">O(n) traffic</div>
+  </div>
+  <div id="idea">tile into SRAM · online softmax · never materialize S</div>
+
+  <div id="verdict"></div>
+  <div id="lesson"></div>
+</div>
+
+<script src="../vendor/gsap.min.js"></script>
+<script src="shared/attnscale.js"></script>
+<script src="shared/manifest.js"></script>
+<script src="shared/deck.js"></script>
+<script>
+  document.getElementById("verdict").textContent = AS.flashVerdict;
+  document.getElementById("lesson").textContent = AS.flashLesson;
+
+  var n = 131072;
+  var counting = false, tCount = 0;
+  var countLoop = gsap.timeline({ repeat: -1, paused: true });
+  countLoop.call(function () {
+    tCount += 0.02;   // fraction of the op completed per tick
+    var f = Math.min(1, tCount);
+    document.getElementById("bN").textContent = AS.fmtGB(AS.naiveBytesGB(n) * f);
+    document.getElementById("bF").textContent = AS.fmtGB(AS.flashBytesGB(n) * f);
+  }).to({}, { duration: 0.12 });
+
+  // tile cycling in SRAM
+  var tileLoop = gsap.timeline({ repeat: -1, paused: true });
+  tileLoop.to("#tile", { x: 34, duration: 0.4, ease: "power1.inOut" })
+    .to("#tile", { y: 34, duration: 0.4, ease: "power1.inOut" })
+    .to("#tile", { x: 0, duration: 0.4, ease: "power1.inOut" })
+    .to("#tile", { y: 0, duration: 0.4, ease: "power1.inOut" });
+
+  var tl = gsap.timeline({ paused: true });
+
+  // step 1: the naive rig — S lives in HBM, pipe runs hot
+  tl.fromTo("#rigN", { opacity: 0, x: -20 }, { opacity: 1, x: 0, duration: 0.5, ease: "power2.out" })
+    .call(function () {
+      document.querySelectorAll("#pipeN i").forEach(function (d) { d.style.background = "#e04b38"; d.style.animationDuration = "0.45s"; });
+      document.querySelector("#pipeN").style.borderColor = "#e04b38";
+    })
+    .to("#sN", { boxShadow: "0 0 22px rgba(224,75,56,0.6)", duration: 0.4 });
+  DECK.markStep(tl);
+
+  // step 2: the flash rig — tiles in SRAM, no S anywhere
+  tl.fromTo("#rigF", { opacity: 0, x: 20 }, { opacity: 1, x: 0, duration: 0.5, ease: "power2.out" })
+    .fromTo("#idea", { opacity: 0 }, { opacity: 1, duration: 0.4 })
+    .fromTo("#sram", { opacity: 0, scale: 0.6 }, { opacity: 1, scale: 1, duration: 0.4, ease: "back.out(1.8)" })
+    .fromTo("#tile", { opacity: 0 }, { opacity: 1, duration: 0.3 })
+    .call(function () { tileLoop.play(0); })
+    .fromTo("#noS", { opacity: 0, scale: 0.5 }, { opacity: 1, scale: 1, duration: 0.5, ease: "back.out(2)" });
+  DECK.markStep(tl);
+
+  // step 3: the IO race at n = 128k
+  tl.fromTo("#ioN, #ioF", { opacity: 0 }, { opacity: 1, duration: 0.35 })
+    .call(function () { countLoop.play(0); })
+    .to({}, { duration: 2.2 })
+    .fromTo("#oN, #oF", { opacity: 0, y: 8 }, { opacity: 1, y: 0, duration: 0.4 });
+  DECK.markStep(tl);
+
+  // step 4: verdict + the lesson of the whole talk
+  tl.fromTo("#verdict", { opacity: 0 }, { opacity: 1, duration: 0.4 })
+    .fromTo("#lesson", { opacity: 0, y: 12 }, { opacity: 1, y: 0, duration: 0.6, ease: "power2.out" });
+
+  DECK.register(tl, {
+    reset: function () {
+      countLoop.pause(0); tileLoop.pause(0);
+      tCount = 0;
+      document.getElementById("bN").textContent = "0";
+      document.getElementById("bF").textContent = "0";
+      document.querySelectorAll("#pipeN i").forEach(function (d) { d.style.background = ""; d.style.animationDuration = ""; });
+      document.querySelector("#pipeN").style.borderColor = "";
+      gsap.set("#tile", { x: 0, y: 0 });
+    }
+  });
+</script>
+</body>
+</html>

@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>KV Cache: Trading Memory for Compute</title>
+<link rel="stylesheet" href="shared/deck.css">
+<style>
+  #mode { position: absolute; left: 44px; top: 128px; font: 800 16px ui-monospace, monospace; opacity: 0; }
+  #tri { position: absolute; left: 90px; top: 190px; opacity: 0; }
+  .trow { display: flex; gap: 3px; margin-bottom: 3px; height: 21px; }
+  .trow i { width: 21px; border-radius: 3px; background: rgba(57,135,229,0.3); }
+  .trow i.new { background: #2fd6b0; }
+  .trow i.re { background: rgba(224,75,56,0.75); }
+  #trilab { position: absolute; left: 90px; top: 500px; width: 300px; font: 600 12px ui-monospace, monospace; color: #9aa1b5; opacity: 0; line-height: 1.7; }
+  #strips { position: absolute; left: 460px; top: 190px; display: flex; gap: 12px; opacity: 0; }
+  .strip { width: 34px; height: 0; border-radius: 5px; background: linear-gradient(180deg, rgba(144,133,233,0.5), #9085e9); position: relative; }
+  .strip .sl { position: absolute; top: -22px; width: 100%; text-align: center; font: 800 12px ui-monospace, monospace; color: #9085e9; }
+  #striplab { position: absolute; left: 440px; top: 500px; width: 180px; font: 700 12px ui-monospace, monospace; color: #9085e9; opacity: 0; text-align: center; }
+  #work { position: absolute; left: 90px; top: 152px; width: 340px; font: 600 12.5px ui-monospace, monospace; color: #9aa1b5; opacity: 0; }
+  #work b { color: #e8eaf0; }
+  #formula { position: absolute; left: 680px; top: 220px; display: flex; align-items: center; gap: 9px; opacity: 0; flex-wrap: wrap; width: 540px; }
+  .fterm { text-align: center; opacity: 0; }
+  .fterm .fv { font: 800 19px ui-monospace, monospace; color: #9085e9; }
+  .fterm .fl { font: 9.5px ui-monospace, monospace; color: #6b7284; margin-top: 1px; }
+  .fop { font: 700 16px ui-monospace, monospace; color: #4a5066; }
+  #fres { font: 800 19px ui-monospace, monospace; color: var(--accent); opacity: 0; }
+  #mult { position: absolute; left: 680px; top: 320px; font: 700 16px ui-monospace, monospace; color: #e0a935; opacity: 0; }
+  #hbmbar { position: absolute; left: 680px; top: 388px; width: 540px; height: 40px; border: 1.5px solid rgba(201,133,0,0.6); border-radius: 9px; display: flex; overflow: hidden; opacity: 0; }
+  #hbmbar .w { width: 240px; background: repeating-linear-gradient(90deg, rgba(201,133,0,0.3) 0 6px, rgba(201,133,0,0.15) 6px 12px); display: flex; align-items: center; justify-content: center; font: 700 11px ui-monospace, monospace; color: #e0a935; flex: none; }
+  #hbmbar .kv { width: 0; background: #9085e9; display: flex; align-items: center; justify-content: center; font: 700 11px ui-monospace, monospace; color: #0c1116; flex: none; overflow: hidden; white-space: nowrap; }
+  #hbmbar .b { flex: 1; display: flex; align-items: center; justify-content: center; font: 600 10.5px ui-monospace, monospace; color: #6b7284; }
+  #hbmlab { position: absolute; left: 680px; top: 434px; font: 11px ui-monospace, monospace; color: var(--ink-2); opacity: 0; }
+  #punch { position: absolute; left: 44px; bottom: 28px; font-size: 16px; font-weight: 700; color: var(--accent); opacity: 0; }
+</style>
+</head>
+<body>
+<div class="stage">
+  <div class="slide-title">KV Cache: Trading Memory for Compute</div>
+  <div class="slide-sub">the causal triangle — recompute it, or remember two strips</div>
+
+  <div id="mode"></div>
+  <div id="work">per-token work: <b id="workv">—</b></div>
+  <div id="tri"></div>
+  <div id="trilab"></div>
+  <div id="strips">
+    <div class="strip" id="stK"><span class="sl">K</span></div>
+    <div class="strip" id="stV"><span class="sl">V</span></div>
+  </div>
+  <div id="striplab">the cache: every layer's K,V — kept, never recomputed</div>
+
+  <div id="formula"><span style="font: 600 13px ui-monospace, monospace; color: var(--ink-2)">per token =</span></div>
+  <div id="mult">× 131,072 tokens (128k ctx) = <span style="color:#ff8a7a">42.9 GB</span> — one request</div>
+  <div id="hbmbar"><div class="w">weights</div><div class="kv" id="kvseg"></div><div class="b" id="bseg">batch ×6</div></div>
+  <div id="hbmlab">HBM · fixed — the cache eats the batch</div>
+  <div id="punch"></div>
+</div>
+
+<script src="../vendor/gsap.min.js"></script>
+<script src="shared/attnscale.js"></script>
+<script src="shared/manifest.js"></script>
+<script src="shared/deck.js"></script>
+<script>
+  document.getElementById("punch").textContent = AS.kvPunch;
+
+  var formula = document.getElementById("formula");
+  AS.kvTerms.forEach(function (t, i) {
+    if (i) formula.insertAdjacentHTML("beforeend", '<span class="fop">×</span>');
+    formula.insertAdjacentHTML("beforeend",
+      '<div class="fterm"><div class="fv">' + t[0] + '</div><div class="fl">' + t[1] + "</div></div>");
+  });
+  formula.insertAdjacentHTML("beforeend", '<span class="fop">=</span><span id="fres">0.33 MB / token</span>');
+
+  // causal triangle: one row per decode step
+  var tri = document.getElementById("tri");
+  var ROWS = 12;
+  for (var r = 0; r < ROWS; r++) {
+    var row = document.createElement("div");
+    row.className = "trow";
+    for (var c = 0; c <= r; c++) row.appendChild(document.createElement("i"));
+    row.style.opacity = 0;
+    tri.appendChild(row);
+  }
+
+  var step = 0, cached = false;
+  var loop = gsap.timeline({ repeat: -1, paused: true });
+  loop.call(function () {
+    var rows = tri.children;
+    if (step >= ROWS) {   // restart the decode
+      for (var r = 0; r < ROWS; r++) { rows[r].style.opacity = 0; }
+      if (cached) gsap.set("#stK, #stV", { height: 0 });
+      step = 0;
+    }
+    var row = rows[step];
+    row.style.opacity = 1;
+    [].forEach.call(row.children, function (c) { c.className = "new"; });
+    if (!cached) {
+      // recompute: every earlier cell flares red
+      for (var r = 0; r < step; r++) {
+        [].forEach.call(rows[r].children, function (c) { c.className = "re"; });
+      }
+      gsap.delayedCall(0.35, function () {
+        for (var r = 0; r < ROWS; r++) [].forEach.call(rows[r].children, function (c) { c.className = ""; });
+      });
+      document.getElementById("workv").textContent = "re-derive all " + (step + 1) + " K,V → O(n²) total";
+    } else {
+      for (var r = 0; r < step; r++) [].forEach.call(rows[r].children, function (c) { c.className = ""; });
+      gsap.to("#stK, #stV", { height: (step + 1) * 24, duration: 0.3 });
+      document.getElementById("workv").textContent = "1 new row — read the cache → O(n) total";
+    }
+    step++;
+  }).to({}, { duration: 0.55 });
+
+  var tl = gsap.timeline({ paused: true });
+
+  // step 1: decode WITHOUT cache — the triangle re-burns every step
+  tl.fromTo("#tri, #work, #mode", { opacity: 0 }, { opacity: 1, duration: 0.4 })
+    .call(function () {
+      document.getElementById("mode").textContent = "WITHOUT CACHE";
+      document.getElementById("mode").style.color = "#ff8a7a";
+      document.getElementById("trilab").textContent = "each row = one decode step attending over all previous tokens";
+      cached = false; step = 0; loop.play(0);
+    })
+    .fromTo("#trilab", { opacity: 0 }, { opacity: 1, duration: 0.4 });
+  DECK.markStep(tl);
+
+  // step 2: cache ON — keep K,V as two strips; only the new row computes
+  tl.call(function () {
+    cached = true; step = 0;
+    [].forEach.call(tri.children, function (r) { r.style.opacity = 0; });
+    document.getElementById("mode").textContent = "WITH KV CACHE";
+    document.getElementById("mode").style.color = "#9085e9";
+  })
+    .fromTo("#strips", { opacity: 0, x: -14 }, { opacity: 1, x: 0, duration: 0.45 })
+    .fromTo("#striplab", { opacity: 0 }, { opacity: 1, duration: 0.4 })
+    .to({}, { duration: 2.2 });
+  DECK.markStep(tl);
+
+  // step 3: the bill per token
+  tl.fromTo("#formula", { opacity: 0 }, { opacity: 1, duration: 0.3 });
+  document.querySelectorAll(".fterm").forEach(function (t) {
+    tl.fromTo(t, { opacity: 0, y: 14 }, { opacity: 1, y: 0, duration: 0.35, ease: "back.out(1.7)" }, "+=0.08");
+  });
+  tl.fromTo("#fres", { opacity: 0, scale: 0.6 }, { opacity: 1, scale: 1, duration: 0.45, ease: "back.out(2)" });
+  DECK.markStep(tl);
+
+  // step 4: one 128k request; the cache eats the batch
+  tl.fromTo("#mult", { opacity: 0, y: 10 }, { opacity: 1, y: 0, duration: 0.45 })
+    .fromTo("#hbmbar, #hbmlab", { opacity: 0 }, { opacity: 1, duration: 0.4 })
+    .call(function () { document.getElementById("kvseg").textContent = "KV 42.9 GB"; })
+    .to("#kvseg", { width: 220, duration: 1.0, ease: "power2.inOut" })
+    .call(function () { document.getElementById("bseg").textContent = "batch ×1"; })
+    .fromTo("#punch", { opacity: 0, y: 10 }, { opacity: 1, y: 0, duration: 0.5 });
+
+  DECK.register(tl, {
+    reset: function () {
+      loop.pause(0); step = 0; cached = false;
+      [].forEach.call(tri.children, function (r) { r.style.opacity = 0; });
+      gsap.set("#stK, #stV", { height: 0 });
+      gsap.set("#kvseg", { width: 0 });
+      document.getElementById("kvseg").textContent = "";
+      document.getElementById("bseg").textContent = "batch ×6";
+      document.getElementById("workv").textContent = "—";
+      document.getElementById("mode").textContent = "";
+    }
+  });
+</script>
+</body>
+</html>
