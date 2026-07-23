@@ -80,8 +80,14 @@
   #tray {
     position: absolute; left: 60px; top: 610px; width: 880px;
     display: flex; gap: 9px;
+    pointer-events: none;   /* enabled once the cards are revealed */
   }
-  #tray .tcard { flex: 1; padding: 7px 8px; }
+  #tray .tcard { flex: 1; padding: 7px 8px; cursor: grab; touch-action: none; }
+  #tray .tcard.dragging {
+    cursor: grabbing; z-index: 40;
+    box-shadow: 0 14px 30px rgba(0,0,0,0.55);
+    border-color: #4a5066;
+  }
   #tray .abbr { font-size: 10.5px; padding-right: 14px; white-space: nowrap; }
   #tray .full { font-size: 8.5px; }
   #tray .lock { font-size: 9px; top: 5px; right: 6px; }
@@ -136,7 +142,7 @@
   </div>
 
   <div id="teaser"></div>
-  <div id="tray"></div>
+  <div id="tray" data-no-advance></div>
   <div id="simlab">our speedometer for the whole talk — watch it accelerate</div>
   <div id="simhost" class="sim"></div>
 </div>
@@ -157,6 +163,41 @@
     tray.appendChild(c);
   });
 
+  // free-drag for the technique cards (teaser for the bucket game).
+  // Pointer deltas are in screen px; divide by the stage scale factor.
+  var stageEl = document.querySelector(".stage");
+  function enableDrag(card) {
+    card.addEventListener("pointerdown", function (e) {
+      e.preventDefault();
+      var s = stageEl.getBoundingClientRect().width / 1280;
+      var startX = e.clientX, startY = e.clientY;
+      var base = card._pos || { x: 0, y: 0 };
+      card.setPointerCapture(e.pointerId);
+      card.classList.add("dragging");
+      function mv(ev) {
+        card._pos = { x: base.x + (ev.clientX - startX) / s, y: base.y + (ev.clientY - startY) / s };
+        card.style.transform = "translate(" + card._pos.x + "px," + card._pos.y + "px) scale(1.07)";
+      }
+      function up() {
+        card.classList.remove("dragging");
+        card.style.transform = "translate(" + card._pos.x + "px," + card._pos.y + "px)";
+        card.removeEventListener("pointermove", mv);
+        card.removeEventListener("pointerup", up);
+      }
+      card.addEventListener("pointermove", mv);
+      card.addEventListener("pointerup", up);
+    });
+  }
+  document.querySelectorAll("#tray .tcard").forEach(enableDrag);
+
+  function resetCards() {
+    document.getElementById("tray").style.pointerEvents = "none";
+    document.querySelectorAll("#tray .tcard").forEach(function (c) {
+      c._pos = null;
+      c.style.transform = "";
+    });
+  }
+
   var sim = BN.buildSim(document.getElementById("simhost"), {});
 
   var tl = gsap.timeline({ paused: true });
@@ -175,7 +216,8 @@
   // step 6: the locked toolkit tray
   tl.fromTo("#tray .tcard", { opacity: 0, y: 30 },
     { opacity: 1, y: 0, duration: 0.4, stagger: 0.06, ease: "power2.out" })
-    .fromTo("#teaser", { opacity: 0 }, { opacity: 1, duration: 0.4 });
+    .fromTo("#teaser", { opacity: 0 }, { opacity: 1, duration: 0.4 })
+    .call(function () { document.getElementById("tray").style.pointerEvents = "auto"; });
   DECK.markStep(tl);
 
   // step 7: speedometer on
@@ -183,7 +225,7 @@
     .fromTo("#simlab", { opacity: 0 }, { opacity: 1, duration: 0.3 }, "-=0.2")
     .call(function () { sim.start(); });
 
-  DECK.register(tl, { reset: function () { sim.stop(); } });
+  DECK.register(tl, { reset: function () { sim.stop(); resetCards(); } });
 </script>
 </body>
 </html>

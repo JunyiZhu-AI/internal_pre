@@ -54,10 +54,10 @@ restart, loop (auto-plays all steps, for rehearsal or hallway mode). F = fullscr
 
 ## Page 02 — Hardware framework and efficient algorithms
 
-*The same 7 beats drive all three candidate variants (a: bucket board,
-b: quadrant map, c: circuit anatomy).*
-
-**Load:** title only (variant c: the dimmed GPU anatomy is already visible).
+**Load:** the GPU anatomy is visible but dimmed. (Once the toolkit cards are
+revealed at beat 6, they are draggable — you can drag one toward the hardware
+while asking the audience where they think it belongs; dragging never
+advances the slide.)
 
 1. **[compute lights up]** "Four numbers govern every inference deployment,
    and everything tonight reduces to them. First: compute — FLOP/s, the raw
