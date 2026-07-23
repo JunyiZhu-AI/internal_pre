@@ -156,9 +156,9 @@ section.)*
 
 ## Page 04 — Prefill vs Decode: Two Different Workloads
 
-*Same 5 beats for all three candidate variants (a: one machine, b: split
-screen, c: on the roofline). Deliberately low-text: the thermal picture and
-the moving dot carry the argument; these beats carry the words.*
+*Deliberately low-text: the roofline dot and the thermal anatomy carry the
+argument; these beats carry the words. During beat 4 the KV block fills to
+capacity within a few seconds — let it hit the wall before clicking on.*
 
 **Load:** title only.
 
@@ -181,10 +181,11 @@ the moving dot carry the argument; these beats carry the words.*
    token at a time, and for *every* token the machine drags all 140 GB of
    weights — plus the growing KV cache — through the pipe, to do just 140
    gigaFLOPs of work. Arithmetic intensity: one. The pipe glows, the
-   processor idles at three percent, and the KV block quietly eats the
-   memory that batching needs. Decode throughput *is* bandwidth; latency
-   *is* bytes-read. Shrinking bytes per token is the entire game of
-   efficient decode."
+   processor idles at three percent — and watch the KV block: every token
+   adds a row, until it hits the ceiling and physically squeezes out the
+   batch slots beside it. Decode throughput *is* bandwidth; latency *is*
+   bytes-read. Shrinking bytes per token is the entire game of efficient
+   decode."
 
 5. **[caption]** "Same model. Same GPU. Two different workloads. That's why
    output tokens cost five times input on every rate card — and almost every

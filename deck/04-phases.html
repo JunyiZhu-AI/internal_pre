@@ -98,7 +98,7 @@
 
   var decodeLoop = gsap.timeline({ repeat: -1, paused: true });
   decodeLoop.call(function () {
-    PH.addKV(gpu);
+    PH.addKV(gpu); PH.addKV(gpu);   // fill visibly: KV reaches capacity within ~5s
     var w = gpu.querySelector(".ph-w");
     gsap.fromTo(w, { boxShadow: "0 0 16px rgba(224,75,56,0.9)" }, { boxShadow: "0 0 0px rgba(224,75,56,0)", duration: 0.9 });
     var c = chip(580, 560, "out");
