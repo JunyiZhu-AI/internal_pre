@@ -149,7 +149,9 @@
     })
     .to("#cnt", { color: "#ff8a7a", scale: 1.12, duration: 0.3, yoyo: true, repeat: 1 })
     .to("#sk, #sv", { boxShadow: "0 0 22px rgba(224,75,56,0.7)", duration: 0.4 }, "<")
-    .to(".fam .fbox, #state", { scale: 1.06, duration: 0.35, yoyo: true, repeat: 1, ease: "sine.inOut" });
+    .to(".fam .fbox, #state", { scale: 1.06, duration: 0.35, yoyo: true, repeat: 1, ease: "sine.inOut" })
+    .to("#state", { boxShadow: "0 0 28px rgba(47,214,176,0.8)", duration: 0.5 })
+    .to("#slab", { color: "#e8eaf0", scale: 1.07, duration: 0.4, yoyo: true, repeat: 1 }, "<");
   DECK.markStep(tl);
 
   // step 4: the catch — why hybrids exist
@@ -163,6 +165,9 @@
       [].forEach.call(tt.children, function (d) { d.classList.remove("on"); });
       document.getElementById("cnt").textContent = "cache slots: 1";
       document.getElementById("ctxn").textContent = "4k";
+      gsap.set("#sk, #sv", { boxShadow: "none" });
+      gsap.set("#state", { boxShadow: "none" });
+      gsap.set("#cnt", { clearProps: "color,transform" });
       gsap.set(cells, { clearProps: "backgroundColor,outline,scale" });
       gsap.set(".fam .fbox, #state", { clearProps: "scale" });
     }
