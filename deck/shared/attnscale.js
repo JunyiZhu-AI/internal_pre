@@ -23,9 +23,9 @@ var AS = {
     return Math.round(gb * 1000) + " MB";
   },
 
-  // naive attention HBM traffic: ~3 passes over the n x n score matrix (write S,
-  // read for softmax, read for PV), BF16
-  naiveBytesGB: function (n) { return 3 * n * n * 2 / 1e9; },
+  // naive attention HBM traffic: 4 passes over an n x n matrix (write S,
+  // read S for softmax, write P = softmax(S), read P for PV), BF16
+  naiveBytesGB: function (n) { return 4 * n * n * 2 / 1e9; },
   // flash: Q,K,V,O streamed once, d=128, BF16 (order-n)
   flashBytesGB: function (n) { return 4 * n * 128 * 2 / 1e9; },
 

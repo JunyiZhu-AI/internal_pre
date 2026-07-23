@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>FlashAttention: The Bottleneck Was Memory Movement, Not Math</title>
+<title>FlashAttention: The Bottleneck Was Memory, Not Compute</title>
 <link rel="stylesheet" href="shared/deck.css">
 <style>
   .half { position: absolute; top: 168px; width: 560px; opacity: 0; }
@@ -14,7 +14,7 @@
   #tiles { position: absolute; inset: 0; border: 2px solid #2fd6b0; border-radius: 6px; display: grid; grid-template-columns: repeat(6, 1fr); grid-template-rows: repeat(6, 1fr); gap: 2px; padding: 2px; }
   #tiles i { background: rgba(47,214,176,0.1); border-radius: 2px; }
   #tiles i.hot { background: rgba(47,214,176,0.75); }
-  #sramchip { position: absolute; top: 6px; left: 252px; transform: none; font: 700 11px ui-monospace, monospace; color: #2fd6b0; border: 2px dashed #2fd6b0; border-radius: 7px; padding: 4px 12px; opacity: 0; }
+  #sramchip { position: absolute; top: 6px; left: 252px; transform: none; width: 92px; text-align: center; font: 700 11px ui-monospace, monospace; color: #2fd6b0; border: 2px dashed #2fd6b0; border-radius: 7px; padding: 4px 12px; opacity: 0; }
   .hbmbar { position: relative; margin: 22px auto 0; width: 420px; height: 26px; border: 1.5px solid rgba(201,133,0,0.6); border-radius: 7px; overflow: hidden; }
   .hbmbar .fill { position: absolute; left: 0; top: 0; bottom: 0; width: 0; }
   #fillN .fill, #fillN { }
@@ -27,20 +27,23 @@
   #idea { text-align: center; font: 12px ui-monospace, monospace; color: var(--ink-2); margin-top: 6px; }
   #verdict { position: absolute; left: 44px; top: 588px; font: 700 15px ui-monospace, monospace; color: #9aa1b5; opacity: 0; }
   #lesson { position: absolute; left: 44px; top: 630px; font-size: 26px; font-weight: 800; color: var(--accent); opacity: 0; }
+  #formula { position: absolute; right: 44px; top: 36px; font: 600 14px ui-monospace, monospace; color: #9aa1b5; }
 </style>
 </head>
 <body>
 <div class="stage">
-  <div class="slide-title">FlashAttention: The Bottleneck Was Memory, Not Math</div>
+  <div class="slide-title">FlashAttention: The Bottleneck Was Memory, Not Compute</div>
   <div class="slide-sub">the same n×n matrix — handled two ways · n = 128k</div>
+  <div id="formula">O = softmax(QKᵀ/√d)·V &nbsp;— computed tile-by-tile</div>
 
   <div class="half" id="hN">
-    <div class="word" style="color:#ff8a7a">NAÏVE — S lands in HBM, three times</div>
+    <div class="word" style="color:#ff8a7a">NAÏVE — S and P cross the pipe four times</div>
     <div class="sqwrap">
       <div class="bigsq" id="sqN">S · n×n</div>
-      <div class="plabel" id="pw" style="top:8px; left:8px">① write</div>
-      <div class="plabel" id="pr1" style="top:8px; left:92px">② read</div>
-      <div class="plabel" id="pr2" style="top:8px; left:172px">③ read</div>
+      <div class="plabel" id="pw" style="top:8px; left:8px">① write S</div>
+      <div class="plabel" id="pr1" style="top:8px; left:128px">② read S</div>
+      <div class="plabel" id="pw2" style="top:26px; left:8px">③ write P</div>
+      <div class="plabel" id="pr2" style="top:26px; left:128px">④ read P</div>
     </div>
     <div class="hbmbar"><div class="fill" id="fillN" style="background:linear-gradient(90deg, rgba(224,75,56,0.5), #e04b38)"></div><span class="blab">HBM traffic</span></div>
     <div class="io" id="ioN">bytes&nbsp; <b id="bN">0</b></div>
@@ -96,7 +99,7 @@
 
   // step 1: the naive half — the matrix crosses the pipe three times
   tl.fromTo("#hN", { opacity: 0, x: -20 }, { opacity: 1, x: 0, duration: 0.5, ease: "power2.out" });
-  ["#pw", "#pr1", "#pr2"].forEach(function (s) {
+  ["#pw", "#pr1", "#pw2", "#pr2"].forEach(function (s) {
     tl.fromTo(s, { opacity: 0, y: -6 }, { opacity: 1, y: 0, duration: 0.3 })
       .to("#sqN", { boxShadow: "0 0 26px rgba(224,75,56,0.8)", duration: 0.16, yoyo: true, repeat: 1 });
   });

@@ -253,9 +253,10 @@ the tiled square (07), the causal triangle + K/V strips (08).*
 1. **[recap / setup at n = 1k]** "You know this machine — softmax of QKᵀ over
    root-d, times V. At toy scale it was adorable. Now run it at serving
    scale."
-2. **[naïve dataflow]** "The naïve kernel touches HBM three times: write the
-   full n×n score matrix out, read it back for softmax, read it again for
-   the V product. Three full passes over n² numbers."
+2. **[naïve dataflow]** "Look at what the naïve kernel does to HBM: write
+   the full n×n score matrix S out, read it back for softmax, write the
+   probabilities P back out, read P again for the V product. Four full
+   passes over n² numbers — two writes, two reads."
 3. **[n = 8k]** "Grow the context. Sixty-seven million entries — fine."
 4. **[n = 128k]** "128k: sixteen *billion* entries — 33 gigabytes. That is a
    third of the GPU's entire memory, for the scratch matrix of ONE head."
@@ -264,16 +265,17 @@ the tiled square (07), the causal triangle + K/V strips (08).*
    original sin of attention, and everything in this part of the talk is a
    response to it."
 
-### 07 — FlashAttention: The Bottleneck Was Memory, Not Math (4 clicks)
+### 07 — FlashAttention: The Bottleneck Was Memory, Not Compute (4 clicks)
 
-1. **[naïve side]** "Here's that naïve kernel as an IO bill: at 128k, over a
-   hundred gigabytes through the pipe, for one op."
+1. **[naïve side]** "Here's that naïve kernel as an IO bill: at 128k, S and
+   P cross the pipe four times — nearly 140 gigabytes of traffic for one
+   op."
 2. **[flash side]** "FlashAttention's whole idea: tile Q, K, V into blocks
    that fit in on-chip SRAM, keep a running max and running sum — the online
    softmax — and the n×n matrix simply never exists in HBM."
 3. **[the race / ratio]** "Same arithmetic. Identical numerics, bit for bit
    comparable. But the traffic drops from order n-squared to order n —
-   roughly 770 times fewer bytes at this scale. And the wall-clock speedup
+   roughly a thousand times fewer bytes at this scale. And the wall-clock speedup
    is 2–4×, which tells you exactly what was binding."
 4. **[lesson]** "That's the deepest lesson in this talk, and it will recur in
    the KV cache, in quantization, in MoE: count bytes, not FLOPs."

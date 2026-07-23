@@ -32,19 +32,20 @@
   <div class="slide-sub">the n×n score matrix, drawn to scale against HBM</div>
 
   <div id="recap">
-    <h3>at n = 4 the weights were adorable:</h3>
+    <h3>at n = 4, the weight matrix softmax(S/√d) was adorable:</h3>
     <div id="mini"></div>
-    <div class="f">softmax(QKᵀ/√d)·V</div>
+    <div class="f">S = QKᵀ &nbsp;∈ ℝⁿˣⁿ<br>O = softmax(S/√d)·V &nbsp;∈ ℝⁿˣᵈ</div>
     <div class="n4">every entry: one query·key dot product</div>
   </div>
 
   <div id="nsel"><span class="nl">context n =</span></div>
   <div id="hbmbox"><div class="lab">HBM · 80 GB, to scale</div></div>
   <div id="sq">S</div>
-  <div class="pass" id="pa1">① write S to HBM</div>
-  <div class="pass" id="pa2">② read back — softmax</div>
-  <div class="pass" id="pa3">③ read again — ·V</div>
-  <div id="counters">entries&nbsp; <b id="ce">—</b><br>size (BF16)&nbsp; <b id="cg">—</b><br><span style="color:#6b7284">traffic: 3 full passes</span></div>
+  <div class="pass" id="pa1">① write S</div>
+  <div class="pass" id="pa2">② read S — softmax</div>
+  <div class="pass" id="pa3">③ write P = softmax(S)</div>
+  <div class="pass" id="pa4">④ read P — ·V</div>
+  <div id="counters">entries&nbsp; <b id="ce">—</b><br>size (BF16)&nbsp; <b id="cg">—</b><br><span style="color:#6b7284">traffic: 4 full passes (2W + 2R)</span></div>
   <div id="onehead">— ONE head</div>
   <div id="punch"></div>
 </div>
@@ -84,6 +85,7 @@
     for (var k = 0; k < 4; k++) document.getElementById("nc" + k).classList.toggle("on", k === i);
     document.getElementById("ce").textContent = AS.fmtN(AS.entries(p.n));
     document.getElementById("cg").textContent = AS.fmtGB(AS.sGB(p.n));
+    document.getElementById("sq").textContent = i >= 2 ? "S ∈ ℝⁿˣⁿ" : "S";
     gsap.to("#sq", { width: side(p.n), height: side(p.n), duration: 0.9, ease: "power2.inOut" });
   }
 
@@ -98,7 +100,7 @@
   DECK.markStep(tl);
 
   // step 2: the naive dataflow — three full passes
-  [["pa1", 500, 168], ["pa2", 690, 168], ["pa3", 880, 168]].forEach(function (r) {
+  [["pa1", 450, 168], ["pa2", 580, 168], ["pa3", 760, 168], ["pa4", 970, 168]].forEach(function (r) {
     tl.call(function () {
       var l = document.getElementById(r[0]);
       l.style.left = r[1] + "px"; l.style.top = r[2] + "px";
