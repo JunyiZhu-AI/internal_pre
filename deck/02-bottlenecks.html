@@ -118,7 +118,7 @@
 <body>
 <div class="stage">
   <div class="slide-title">Hardware framework and efficient algorithms</div>
-  <div class="slide-sub">where is the bottleneck — compute, bandwidth, capacity, or interconnect?</div>
+  <div class="slide-sub">where is the bottleneck — capacity, bandwidth, compute, or interconnect?</div>
   <div id="framing"></div>
 
   <div id="pkg"><span class="pkglab">GPU PACKAGE</span></div>
@@ -423,7 +423,7 @@
   var tl = gsap.timeline({ paused: true });
 
   // steps 1-4: light up each part of the hardware + its tag
-  [["compute", "#g-compute"], ["bw", "#g-bw"], ["cap", "#g-cap"], ["comm", "#g-comm"]].forEach(function (pair) {
+  [["cap", "#g-cap"], ["bw", "#g-bw"], ["compute", "#g-compute"], ["comm", "#g-comm"]].forEach(function (pair) {
     tl.to(pair[1], { opacity: 1, filter: "grayscale(0)", duration: 0.55, ease: "power2.out" })
       .fromTo("#tag-" + pair[0], { opacity: 0, scale: 0.7 }, { opacity: 1, scale: 1, duration: 0.4, ease: "back.out(2)" }, "-=0.25");
     DECK.markStep(tl);

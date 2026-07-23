@@ -62,19 +62,20 @@ capacity → an HBM layer empties; interconnect → link traffic thins. The buck
 decides which meter moves — the framing line, made mechanical. Dragging never
 advances the slide.)
 
-1. **[compute lights up]** "Four numbers govern every inference deployment,
-   and everything tonight reduces to them. First: compute — FLOP/s, the raw
-   arithmetic. Prefill lives here: chewing through a million-token prompt is
-   one giant, beautifully parallel matmul."
+1. **[capacity lights up]** "Four numbers govern every inference deployment,
+   and everything tonight reduces to them. First: memory capacity — the
+   gigabytes that weights plus KV cache must fit into. Capacity doesn't make
+   you slow; it decides how many GPUs you must buy before you serve a single
+   request."
 
 2. **[bandwidth lights up]** "Second: memory bandwidth — bytes per second
-   between HBM and the cores. Decode lives here: every single generated token
-   re-reads the weights and the KV cache. This one line explains most of
-   tonight's rate card."
+   between HBM and the processor. Decode lives here: every single generated
+   token re-reads the weights and the KV cache. This one line explains most
+   of tonight's rate card."
 
-3. **[capacity lights up]** "Third: memory capacity — the gigabytes that
-   weights plus KV cache must fit into. Capacity doesn't make you slow; it
-   decides how many GPUs you must buy before you serve a single request."
+3. **[compute lights up]** "Third: compute — FLOP/s, the raw arithmetic.
+   Prefill lives here: chewing through a million-token prompt is one giant,
+   beautifully parallel matmul."
 
 4. **[interconnect lights up]** "And fourth: interconnect — once the model no
    longer fits one GPU, every token crosses NVLink or InfiniBand, and the
