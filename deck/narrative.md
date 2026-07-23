@@ -102,10 +102,11 @@ advances the slide.)
 
 ## Page 03 — FLOPs Are Cheap. Bytes Are Not.
 
-*The same 8 beats drive all three candidate variants (a: ledger + live math,
-b: divergence curves, c: roofline canvas). All figures BF16 dense.*
+*All figures BF16 dense. Each generation card shows its own derivation
+(TFLOPS ÷ TB/s → balance). The NVL72 rack material was cut from this slide
+for focus — it returns on the expert-parallelism slide.*
 
-**Load:** title only (variant c: empty log–log axes).
+**Load:** title, empty log–log axes.
 
 1. **[A100 lands → ~156]** "Let's derive tonight's central number from the
    spec sheet. A100, 2020: 312 teraFLOPS, two terabytes a second of HBM.
@@ -133,19 +134,14 @@ b: divergence curves, c: roofline canvas). All figures BF16 dense.*
    is not closing; it is structurally widening. Rubin and HBM4 land next
    year — same story."
 
-6. **[NVL72 rack]** "One more scale: the rack. GB200 NVL72 puts 72 GPUs in a
-   single NVLink domain — 13.8 terabytes of HBM, over 570 terabytes a second
-   aggregate, 1.8 per GPU of NVLink, double Hopper. Interconnect is now
-   engineered at rack level — hold that thought for expert parallelism."
-
-7. **[roofline / regions]** "Now the tool that turns these specs into
+6. **[roofline / regions]** "Now the tool that turns these specs into
    predictions. Arithmetic intensity: FLOPs performed per byte moved from
    HBM. Plot performance against it and every machine is two lines — a
    bandwidth slant and a compute ceiling, meeting at the balance point we
    just derived. Left of the ridge you're memory-bound: more FLOPs change
    nothing. Right of it, compute-bound."
 
-8. **[the ? at AI ≈ 1]** "And here's the punchline the table was setting up:
+7. **[the ? at AI ≈ 1]** "And here's the punchline the table was setting up:
    across six years and four architectures, the ridge stays pinned between
    150 and 440 — while LLM decode runs at an arithmetic intensity of about
    *one*. That gap is not an engineering accident; it's structural. Inference
