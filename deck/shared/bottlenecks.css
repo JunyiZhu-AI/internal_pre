@@ -1,0 +1,88 @@
+/* Shared slide-02 pieces: ambient bottleneck icons + decode simulator. */
+
+/* ---- animated icons ---- */
+.bn-icon { position: relative; width: 84px; height: 64px; margin: 0 auto; }
+
+.bni-chip {
+  width: 52px; height: 52px; margin: 5px auto; border-radius: 8px;
+  border: 2px solid #3987e5; position: relative;
+  background:
+    repeating-linear-gradient(0deg, rgba(57,135,229,0.14) 0 5px, transparent 5px 10px),
+    repeating-linear-gradient(90deg, rgba(57,135,229,0.14) 0 5px, transparent 5px 10px);
+  animation: bnChipPulse 1.7s ease-in-out infinite;
+}
+@keyframes bnChipPulse {
+  50% { box-shadow: 0 0 22px rgba(57,135,229,0.75); border-color: #6fb1ff; }
+}
+
+.bni-pipe {
+  width: 82px; height: 18px; margin: 23px auto; border-radius: 9px;
+  border: 2px solid rgba(47,214,176,0.55); position: relative; overflow: hidden;
+}
+.bni-pipe i {
+  position: absolute; top: 4px; width: 6px; height: 6px; border-radius: 50%;
+  background: #2fd6b0; animation: bnFlow 1.25s linear infinite;
+}
+.bni-pipe i:nth-child(2) { animation-delay: 0.25s; }
+.bni-pipe i:nth-child(3) { animation-delay: 0.5s; }
+.bni-pipe i:nth-child(4) { animation-delay: 0.75s; }
+.bni-pipe i:nth-child(5) { animation-delay: 1s; }
+@keyframes bnFlow { from { left: -8px; } to { left: 84px; } }
+
+.bni-ram {
+  width: 30px; height: 58px; margin: 3px auto; border-radius: 4px;
+  border: 2px solid rgba(201,133,0,0.65); position: relative; overflow: hidden;
+}
+.bni-ram i {
+  position: absolute; left: 0; right: 0; bottom: 0;
+  background: linear-gradient(rgba(201,133,0,0.55), #c98500);
+  animation: bnFill 3.2s ease-in-out infinite;
+}
+@keyframes bnFill { 0% { height: 12%; } 70% { height: 94%; } 100% { height: 12%; } }
+
+.bni-nodes { width: 84px; height: 64px; }
+.bni-nodes circle { fill: #171a22; stroke: #9085e9; stroke-width: 2; }
+.bni-nodes line { stroke: #9085e9; stroke-width: 1.6; animation: bnLink 1.8s ease-in-out infinite; }
+.bni-nodes line:nth-of-type(2) { animation-delay: 0.3s; }
+.bni-nodes line:nth-of-type(3) { animation-delay: 0.6s; }
+.bni-nodes line:nth-of-type(4) { animation-delay: 0.9s; }
+.bni-nodes line:nth-of-type(5) { animation-delay: 1.2s; }
+.bni-nodes line:nth-of-type(6) { animation-delay: 1.5s; }
+@keyframes bnLink { 0%, 100% { opacity: 0.15; } 50% { opacity: 1; } }
+
+/* ---- decode simulator ---- */
+.sim { position: absolute; }
+.sim-main, .sim-ghost {
+  background: #0a0f0c; border: 1px solid #1d2a22; border-radius: 10px;
+  padding: 10px 12px;
+}
+.sim-ghost {
+  position: absolute; inset: -12px 12px 12px -12px;
+  opacity: 0.4; filter: grayscale(0.7);
+}
+.sim-main { position: absolute; inset: 0; }
+.sim-head {
+  font-family: ui-monospace, monospace; font-size: 11px; color: #6fae7d;
+  margin-bottom: 6px; display: flex; align-items: center; gap: 6px;
+}
+.sim-head b { color: #d3f9dc; font-size: 12.5px; }
+.sim-dot { width: 8px; height: 8px; border-radius: 50%; background: #28c840; animation: bnChipPulse 1.4s infinite; }
+.sim-badge {
+  margin-left: auto; font-size: 9.5px; color: #e0a935;
+  border: 1px solid rgba(201,133,0,0.5); border-radius: 999px; padding: 1px 7px;
+}
+.sim-screen {
+  position: absolute; inset: 34px 12px 10px;
+  overflow: hidden; font-family: ui-monospace, monospace; font-size: 11px;
+  line-height: 1.55; color: #8ef0a3; word-break: break-word;
+}
+
+/* ---- technique cards (locked state) ---- */
+.tcard {
+  background: var(--panel); border: 1px solid var(--line); border-radius: 10px;
+  padding: 8px 11px; position: relative; opacity: 0;
+}
+.tcard .abbr { font-family: ui-monospace, monospace; font-weight: 700; font-size: 14px; color: #aab2c9; }
+.tcard .full { font-size: 10.5px; color: #6b7284; margin-top: 2px; line-height: 1.3; }
+.tcard .lock { position: absolute; top: 6px; right: 8px; font-size: 10px; opacity: 0.75; }
+.tcard.locked { filter: grayscale(0.9); }

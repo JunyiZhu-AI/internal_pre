@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Hardware framework and efficient algorithms</title>
+<link rel="stylesheet" href="shared/deck.css">
+<link rel="stylesheet" href="shared/bottlenecks.css">
+<style>
+  #framing {
+    position: absolute; left: 45px; top: 98px; width: 860px;
+    font-size: 14.5px; font-style: italic; color: var(--accent); opacity: 0;
+  }
+  #pkg {
+    position: absolute; left: 60px; top: 150px; width: 600px; height: 410px;
+    border: 1.5px solid var(--line); border-radius: 18px; background: rgba(27,30,39,0.45);
+  }
+  #pkg .pkglab { position: absolute; left: 16px; top: 10px; font-size: 11px; color: var(--ink-2); letter-spacing: 0.08em; }
+  .grp { transition: none; }
+  .dim { opacity: 0.16; filter: grayscale(0.85); }
+
+  #die {
+    position: absolute; left: 300px; top: 250px; width: 170px; height: 200px;
+    border: 2.5px solid #3987e5; border-radius: 12px;
+    background:
+      repeating-linear-gradient(0deg, rgba(57,135,229,0.12) 0 8px, transparent 8px 16px),
+      repeating-linear-gradient(90deg, rgba(57,135,229,0.12) 0 8px, transparent 8px 16px);
+    animation: bnChipPulse 1.8s ease-in-out infinite;
+  }
+  #die .dlab { position: absolute; bottom: 8px; width: 100%; text-align: center; font-size: 12px; color: #9ec7f5; font-weight: 600; }
+
+  .hbm {
+    position: absolute; left: 92px; width: 84px; height: 110px;
+    border: 2px solid rgba(201,133,0,0.7); border-radius: 8px; overflow: hidden;
+  }
+  .hbm .layer {
+    position: absolute; left: 6px; right: 6px; height: 16px; border-radius: 3px;
+    background: linear-gradient(rgba(201,133,0,0.4), rgba(201,133,0,0.8));
+    animation: hbmGlow 2.6s ease-in-out infinite;
+  }
+  @keyframes hbmGlow { 50% { opacity: 0.45; } }
+  .hbm .hlab { position: absolute; bottom: 4px; width: 100%; text-align: center; font-size: 10.5px; color: #e0a935; font-weight: 700; }
+
+  .pipe {
+    position: absolute; left: 178px; width: 120px; height: 16px;
+    border: 2px solid rgba(47,214,176,0.55); border-radius: 8px; overflow: hidden;
+  }
+  .pipe i {
+    position: absolute; top: 3px; width: 6px; height: 6px; border-radius: 50%;
+    background: #2fd6b0; animation: bnFlow 1.1s linear infinite;
+  }
+  .pipe i:nth-child(2) { animation-delay: 0.22s; }
+  .pipe i:nth-child(3) { animation-delay: 0.44s; }
+  .pipe i:nth-child(4) { animation-delay: 0.66s; }
+  .pipe i:nth-child(5) { animation-delay: 0.88s; }
+
+  .peer {
+    position: absolute; left: 790px; width: 150px; height: 96px;
+    border: 1.5px solid var(--line); border-radius: 12px; background: rgba(27,30,39,0.45);
+  }
+  .peer .pdie {
+    position: absolute; left: 50px; top: 18px; width: 50px; height: 50px;
+    border: 2px solid #9085e9; border-radius: 7px;
+    background: repeating-linear-gradient(0deg, rgba(144,133,233,0.15) 0 5px, transparent 5px 10px);
+  }
+  .peer .plab { position: absolute; bottom: 5px; width: 100%; text-align: center; font-size: 10px; color: var(--ink-2); }
+  #wires { position: absolute; inset: 0; pointer-events: none; }
+  #wires line { stroke: #9085e9; stroke-width: 2.5; stroke-dasharray: 9 7; animation: commDash 0.9s linear infinite; }
+  @keyframes commDash { to { stroke-dashoffset: -32; } }
+
+  .tag {
+    position: absolute; font-size: 11.5px; line-height: 1.45;
+    background: rgba(11,13,18,0.88); border: 1.5px solid; border-radius: 9px;
+    padding: 7px 11px; opacity: 0; z-index: 8; width: 168px;
+  }
+  .tag b { font-size: 13px; display: block; }
+  .tag .u { font-family: ui-monospace, monospace; font-size: 10.5px; }
+  .tag .d { color: var(--ink-2); font-size: 10.5px; }
+
+  #tray {
+    position: absolute; left: 60px; top: 610px; width: 880px;
+    display: flex; gap: 9px;
+  }
+  #tray .tcard { flex: 1; padding: 7px 8px; }
+  #tray .abbr { font-size: 10.5px; padding-right: 14px; white-space: nowrap; }
+  #tray .full { font-size: 8.5px; }
+  #tray .lock { font-size: 9px; top: 5px; right: 6px; }
+  #teaser { position: absolute; left: 60px; top: 585px; font-size: 12.5px; color: var(--ink-2); font-style: italic; opacity: 0; }
+  #simhost { left: 960px; top: 150px; width: 276px; height: 270px; opacity: 0; }
+  #simlab { position: absolute; left: 960px; top: 428px; width: 276px; font-size: 11.5px; color: var(--ink-2); opacity: 0; }
+</style>
+</head>
+<body>
+<div class="stage">
+  <div class="slide-title">Hardware framework and efficient algorithms</div>
+  <div class="slide-sub">where is the bottleneck — compute, bandwidth, capacity, or communication?</div>
+  <div id="framing"></div>
+
+  <div id="pkg"><span class="pkglab">GPU PACKAGE</span></div>
+
+  <div class="grp dim" id="g-cap">
+    <div class="hbm" style="top:225px"><div class="layer" style="top:8px"></div><div class="layer" style="top:30px; animation-delay:0.4s"></div><div class="layer" style="top:52px; animation-delay:0.8s"></div><div class="hlab">HBM</div></div>
+    <div class="hbm" style="top:365px"><div class="layer" style="top:8px; animation-delay:0.2s"></div><div class="layer" style="top:30px; animation-delay:0.6s"></div><div class="layer" style="top:52px; animation-delay:1s"></div><div class="hlab">HBM</div></div>
+  </div>
+  <div class="grp dim" id="g-bw">
+    <div class="pipe" style="top:268px"><i></i><i></i><i></i><i></i><i></i></div>
+    <div class="pipe" style="top:412px"><i></i><i></i><i></i><i></i><i></i></div>
+  </div>
+  <div class="grp dim" id="g-compute">
+    <div id="die"><div class="dlab">die · SMs</div></div>
+  </div>
+  <div class="grp dim" id="g-comm">
+    <svg id="wires" width="1280" height="720">
+      <line x1="470" y1="320" x2="792" y2="240"/>
+      <line x1="470" y1="390" x2="792" y2="480"/>
+    </svg>
+    <div class="peer" style="top:196px"><div class="pdie"></div><div class="plab">GPU 1</div></div>
+    <div class="peer" style="top:436px"><div class="pdie"></div><div class="plab">GPU n</div></div>
+  </div>
+
+  <div class="tag" id="tag-compute" style="left:475px; top:188px; border-color:#3987e5">
+    <b style="color:#3987e5">Compute</b><span class="u" style="color:#3987e5">FLOP/s</span>
+    <div class="d">dominated by prefill</div>
+  </div>
+  <div class="tag" id="tag-bw" style="left:150px; top:322px; border-color:#2fd6b0">
+    <b style="color:#2fd6b0">Memory bandwidth</b><span class="u" style="color:#2fd6b0">bytes/s</span>
+    <div class="d">dominated by decode</div>
+  </div>
+  <div class="tag" id="tag-cap" style="left:64px; top:490px; border-color:#c98500">
+    <b style="color:#e0a935">Memory capacity</b><span class="u" style="color:#e0a935">GB</span>
+    <div class="d">weights + KV cache</div>
+  </div>
+  <div class="tag" id="tag-comm" style="left:680px; top:330px; border-color:#9085e9">
+    <b style="color:#9085e9">Communication</b><span class="u" style="color:#9085e9">link GB/s</span>
+    <div class="d">multi-GPU serving</div>
+  </div>
+
+  <div id="teaser"></div>
+  <div id="tray"></div>
+  <div id="simlab">our speedometer for the whole talk — watch it accelerate</div>
+  <div id="simhost" class="sim"></div>
+</div>
+
+<script src="../vendor/gsap.min.js"></script>
+<script src="shared/bottlenecks.js"></script>
+<script src="shared/manifest.js"></script>
+<script src="shared/deck.js"></script>
+<script>
+  document.getElementById("framing").textContent = "“" + BN.framing + "”";
+  document.getElementById("teaser").textContent = "“" + BN.teaser + "”";
+
+  var tray = document.getElementById("tray");
+  BN.techniques.forEach(function (t) {
+    var c = document.createElement("div");
+    c.className = "tcard locked";
+    c.innerHTML = '<div class="abbr">' + t[1] + '</div><div class="full">' + t[0] + '</div><span class="lock">🔒</span>';
+    tray.appendChild(c);
+  });
+
+  var sim = BN.buildSim(document.getElementById("simhost"), {});
+
+  var tl = gsap.timeline({ paused: true });
+
+  // steps 1-4: light up each part of the hardware + its tag
+  [["compute", "#g-compute"], ["bw", "#g-bw"], ["cap", "#g-cap"], ["comm", "#g-comm"]].forEach(function (pair) {
+    tl.to(pair[1], { opacity: 1, filter: "grayscale(0)", duration: 0.55, ease: "power2.out" })
+      .fromTo("#tag-" + pair[0], { opacity: 0, scale: 0.7 }, { opacity: 1, scale: 1, duration: 0.4, ease: "back.out(2)" }, "-=0.25");
+    DECK.markStep(tl);
+  });
+
+  // step 5: framing line
+  tl.fromTo("#framing", { opacity: 0, x: -18 }, { opacity: 1, x: 0, duration: 0.5, ease: "power2.out" });
+  DECK.markStep(tl);
+
+  // step 6: the locked toolkit tray
+  tl.fromTo("#tray .tcard", { opacity: 0, y: 30 },
+    { opacity: 1, y: 0, duration: 0.4, stagger: 0.06, ease: "power2.out" })
+    .fromTo("#teaser", { opacity: 0 }, { opacity: 1, duration: 0.4 });
+  DECK.markStep(tl);
+
+  // step 7: speedometer on
+  tl.fromTo("#simhost", { opacity: 0, scale: 0.94 }, { opacity: 1, scale: 1, duration: 0.45, ease: "power2.out" })
+    .fromTo("#simlab", { opacity: 0 }, { opacity: 1, duration: 0.3 }, "-=0.2")
+    .call(function () { sim.start(); });
+
+  DECK.register(tl, { reset: function () { sim.stop(); } });
+</script>
+</body>
+</html>

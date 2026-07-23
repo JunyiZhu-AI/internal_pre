@@ -52,6 +52,50 @@ restart, loop (auto-plays all steps, for rehearsal or hallway mode). F = fullscr
 
 ---
 
+## Page 02 — Hardware framework and efficient algorithms
+
+*The same 7 beats drive all three candidate variants (a: bucket board,
+b: quadrant map, c: circuit anatomy).*
+
+**Load:** title only (variant c: the dimmed GPU anatomy is already visible).
+
+1. **[compute lights up]** "Four numbers govern every inference deployment,
+   and everything tonight reduces to them. First: compute — FLOP/s, the raw
+   arithmetic. Prefill lives here: chewing through a million-token prompt is
+   one giant, beautifully parallel matmul."
+
+2. **[bandwidth lights up]** "Second: memory bandwidth — bytes per second
+   between HBM and the cores. Decode lives here: every single generated token
+   re-reads the weights and the KV cache. This one line explains most of
+   tonight's rate card."
+
+3. **[capacity lights up]** "Third: memory capacity — the gigabytes that
+   weights plus KV cache must fit into. Capacity doesn't make you slow; it
+   decides how many GPUs you must buy before you serve a single request."
+
+4. **[communication lights up]** "And fourth: communication — once the model
+   no longer fits one GPU, every token crosses interconnect, and the network
+   between GPUs becomes part of the model."
+
+5. **[framing line]** "So here's the framing for everything that follows:
+   every technique you'll see today is a way to pay one of these four bills —
+   and quite often, a way to move a cost from one bill to another."
+
+6. **[locked toolkit appears]** "And here's tonight's toolkit: FlashAttention,
+   GQA, MLA, KDA, quantization, MoE, expert parallelism, prefill–decode
+   disaggregation, multi-token prediction. These names mean nothing yet —
+   that's deliberate. By the end of the talk, you'll sort them into these
+   four buckets yourselves."
+
+7. **[decode simulator powers on]** "One more thing before we start: this
+   screen. It's a decode stream running at K3's launch-day speed — our
+   speedometer. Keep an eye on it; every section that follows will make it
+   faster."
+
+*(final click → next page)*
+
+---
+
 ## Template page — QKᵀ: where attention scores come from
 
 **Load:** title only; empty score grid awaits.

@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Hardware framework and efficient algorithms</title>
+<link rel="stylesheet" href="shared/deck.css">
+<link rel="stylesheet" href="shared/bottlenecks.css">
+<style>
+  #framing {
+    position: absolute; left: 45px; top: 98px; width: 860px;
+    font-size: 14.5px; font-style: italic; color: var(--accent); opacity: 0;
+  }
+  .quad {
+    position: absolute; width: 356px; height: 236px;
+    background: var(--panel); border: 1.5px solid var(--line); border-radius: 14px;
+    padding: 18px 20px; opacity: 0;
+  }
+  .quad .bn-icon { position: absolute; right: 16px; top: 16px; margin: 0; }
+  .quad h3 { margin: 0 0 6px; font-size: 19px; }
+  .quad .unit {
+    display: inline-block; font-family: ui-monospace, monospace; font-size: 12px;
+    border: 1px solid; border-radius: 999px; padding: 2px 10px; margin-bottom: 12px;
+  }
+  .quad .dom { font-size: 13px; color: #e8eaf0; font-weight: 600; margin-bottom: 6px; }
+  .quad .desc { font-size: 12.5px; color: var(--ink-2); line-height: 1.5; }
+  .quad .idx {
+    position: absolute; left: 20px; bottom: 14px; font-family: ui-monospace, monospace;
+    font-size: 26px; font-weight: 800; opacity: 0.22;
+  }
+  #inv {
+    position: absolute; left: 800px; top: 150px; width: 436px; height: 300px;
+    background: var(--panel); border: 1px solid var(--line); border-radius: 14px;
+    padding: 13px 16px; opacity: 0;
+  }
+  #inv h3 { margin: 0 0 8px; font-size: 14px; }
+  #inv h3 .note { font-size: 11px; color: var(--ink-2); font-weight: 400; margin-left: 6px; }
+  .invrow {
+    display: flex; align-items: baseline; gap: 9px; padding: 3.5px 0;
+    border-bottom: 1px solid rgba(42,46,59,0.55); opacity: 0;
+    filter: grayscale(0.9);
+  }
+  .invrow .abbr { font-family: ui-monospace, monospace; font-weight: 700; font-size: 12.5px; color: #aab2c9; width: 74px; }
+  .invrow .full { font-size: 11.5px; color: #6b7284; flex: 1; }
+  .invrow .lock { font-size: 10px; opacity: 0.75; }
+  #teaser { font-size: 11px; color: var(--ink-2); font-style: italic; margin-top: 8px; opacity: 0; }
+  #simhost { left: 800px; top: 476px; width: 436px; height: 188px; opacity: 0; }
+</style>
+</head>
+<body>
+<div class="stage">
+  <div class="slide-title">Hardware framework and efficient algorithms</div>
+  <div class="slide-sub">where is the bottleneck — compute, bandwidth, capacity, or communication?</div>
+  <div id="framing"></div>
+
+  <div id="quads"></div>
+
+  <div id="inv">
+    <h3>Tonight's toolkit <span class="note">— all locked</span></h3>
+    <div id="invrows"></div>
+    <div id="teaser"></div>
+  </div>
+  <div id="simhost" class="sim"></div>
+</div>
+
+<script src="../vendor/gsap.min.js"></script>
+<script src="shared/bottlenecks.js"></script>
+<script src="shared/manifest.js"></script>
+<script src="shared/deck.js"></script>
+<script>
+  document.getElementById("framing").textContent = "“" + BN.framing + "”";
+
+  var qhost = document.getElementById("quads");
+  BN.list.forEach(function (b, i) {
+    var d = document.createElement("div");
+    d.className = "quad"; d.id = "qd-" + b.key;
+    d.style.left = (44 + (i % 2) * 372) + "px";
+    d.style.top = (150 + Math.floor(i / 2) * 252) + "px";
+    d.style.borderColor = b.color + "66";
+    d.innerHTML = BN.iconHTML(b.key) +
+      "<h3>" + b.name + "</h3>" +
+      '<span class="unit" style="color:' + b.color + '; border-color:' + b.color + '55">' + b.unit + "</span>" +
+      '<div class="dom">' + b.dom + "</div>" +
+      '<div class="desc">' + b.desc + "</div>" +
+      '<div class="idx" style="color:' + b.color + '">0' + (i + 1) + "</div>";
+    qhost.appendChild(d);
+  });
+
+  var ihost = document.getElementById("invrows");
+  BN.techniques.forEach(function (t) {
+    var r = document.createElement("div");
+    r.className = "invrow";
+    r.innerHTML = '<span class="abbr">' + t[1] + '</span><span class="full">' + t[0] + '</span><span class="lock">🔒</span>';
+    ihost.appendChild(r);
+  });
+  document.getElementById("teaser").textContent = "“" + BN.teaser + "”";
+
+  var sim = BN.buildSim(document.getElementById("simhost"), {});
+
+  var tl = gsap.timeline({ paused: true });
+
+  BN.list.forEach(function (b) {
+    tl.fromTo("#qd-" + b.key, { opacity: 0, scale: 0.88 },
+      { opacity: 1, scale: 1, duration: 0.5, ease: "back.out(1.5)" });
+    DECK.markStep(tl);
+  });
+
+  tl.fromTo("#framing", { opacity: 0, x: -18 }, { opacity: 1, x: 0, duration: 0.5, ease: "power2.out" });
+  DECK.markStep(tl);
+
+  tl.fromTo("#inv", { opacity: 0, x: 30 }, { opacity: 1, x: 0, duration: 0.45, ease: "power2.out" })
+    .fromTo(".invrow", { opacity: 0, x: 16 }, { opacity: 0.85, x: 0, duration: 0.28, stagger: 0.06 }, "-=0.15")
+    .fromTo("#teaser", { opacity: 0 }, { opacity: 1, duration: 0.4 });
+  DECK.markStep(tl);
+
+  tl.fromTo("#simhost", { opacity: 0, scale: 0.94 }, { opacity: 1, scale: 1, duration: 0.45, ease: "power2.out" })
+    .call(function () { sim.start(); });
+
+  DECK.register(tl, { reset: function () { sim.stop(); } });
+</script>
+</body>
+</html>

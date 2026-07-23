@@ -3,4 +3,7 @@
    (01-qkt-matmul.html is the engine template page, kept out of the flow.) */
 window.DECK_PAGES = [
   "01-pricing.html",
+  "02a-buckets.html",
+  "02b-quadrant.html",
+  "02c-circuit.html",
 ];
