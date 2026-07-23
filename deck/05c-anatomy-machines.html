@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Transformer Anatomy</title>
+<link rel="stylesheet" href="shared/deck.css">
+<link rel="stylesheet" href="shared/anatomy.css">
+<style>
+  #pipe { position: absolute; left: 44px; top: 122px; display: flex; align-items: center; gap: 6px; }
+  #pipe > * { opacity: 0; }
+  #pipe .ta-box { font-size: 10.5px; padding: 4px 8px; }
+  #pipe .ta-chip { min-width: 26px; padding: 2px 4px 1px; }
+  #pipe .ta-chip .tt { font-size: 10px; }
+  #pipe .ta-chip .tid { font-size: 8px; }
+  #stack { position: relative; width: 52px; height: 44px; }
+  #stack i { position: absolute; inset: 0; border: 1.5px solid #4a5066; border-radius: 7px; background: var(--panel); }
+  #stack i:nth-child(2) { transform: translate(4px,-4px); }
+  #stack i:nth-child(3) { transform: translate(8px,-8px); }
+  #stack .nx { position: absolute; inset: 0; transform: translate(8px,-8px); display: flex; align-items: center; justify-content: center; font: 700 10.5px ui-monospace, monospace; color: #9aa1b5; z-index: 2; }
+  #price { position: absolute; opacity: 0; z-index: 12; }
+
+  #map { position: absolute; left: 350px; top: 196px; display: flex; align-items: center; gap: 6px; opacity: 0; }
+  #map .mod { font-size: 10px; }
+  #maplab { position: absolute; left: 250px; top: 202px; font: 10.5px ui-monospace, monospace; color: #6b7284; opacity: 0; }
+  #wires { position: absolute; inset: 0; pointer-events: none; }
+  #wires line { stroke: #4a5066; stroke-width: 1.5; stroke-dasharray: 6 5; }
+
+  .mpanel {
+    position: absolute; top: 258px; width: 588px; height: 330px;
+    background: rgba(27,30,39,0.6); border: 1.5px solid var(--line); border-radius: 16px;
+    padding: 16px 20px; opacity: 0;
+  }
+  #pattn { left: 44px; border-color: rgba(57,135,229,0.5); }
+  #pffn { left: 648px; border-color: rgba(201,133,0,0.5); }
+  .mpanel h3 { margin: 0 0 4px; font-size: 16px; }
+  .mpanel .role { font-size: 12px; color: var(--ink-2); margin-bottom: 14px; }
+  .inner { opacity: 0; }
+
+  #tokrow { position: relative; height: 92px; margin-bottom: 6px; }
+  #tokrow .ta-chip { position: absolute; top: 52px; }
+  #tokarcs { position: absolute; inset: 0; }
+  #tokarcs path { fill: none; stroke: #6fb1ff; stroke-width: 2; opacity: 0.85; }
+  .aflow { display: flex; align-items: center; gap: 8px; }
+  .proj3 { display: flex; flex-direction: column; gap: 4px; }
+  .proj3 .mod { height: 24px; width: 50px; font-size: 11px; }
+  #wq { border-color: var(--c-q); color: #6fb1ff; }
+  #wk { border-color: var(--c-k); color: #34d29e; }
+  #wv { border-color: var(--c-v); color: #e0a935; }
+  .aflow .ta-box { font-size: 11px; }
+  .pnotes { margin-top: 12px; display: flex; gap: 9px; align-items: center; font: 10.5px ui-monospace, monospace; color: #6b7284; flex-wrap: wrap; }
+  .pnotes .ta-tag { opacity: 0; }
+
+  #ffnviz { position: relative; height: 200px; }
+  #ffnviz .ta-chip { position: absolute; left: 254px; top: 0; }
+  #ffnviz .mod { position: absolute; left: 50%; transform: translateX(-50%); }
+  #ffnviz .fa { position: absolute; left: 50%; transform: translateX(-50%); color: #4a5066; font-size: 13px; }
+  .ghosttok { position: absolute; opacity: 0.22; }
+
+  #cost { position: absolute; left: 44px; top: 626px; display: flex; align-items: center; gap: 26px; opacity: 0; }
+  #cost .ta-splitbar { width: 470px; }
+  #cost .cl { font: 11px ui-monospace, monospace; color: var(--ink-2); }
+</style>
+</head>
+<body>
+<div class="stage">
+  <div class="slide-title">Transformer Anatomy</div>
+  <div class="slide-sub">tokenize → embed → N identical blocks → next token. Inside each block: two machines.</div>
+
+  <div id="pipe"></div>
+  <div id="price" class="ta-price"></div>
+  <svg id="wires" width="1280" height="720"></svg>
+  <div id="maplab">inside one block:</div>
+  <div id="map">
+    <span class="ta-arrow">→</span>
+    <div class="mod ln" style="width:34px;height:26px">LN</div>
+    <div class="mod attn" style="width:74px;height:30px" id="mapattn">attention</div>
+    <div class="mod plus" style="width:22px;height:22px">+</div>
+    <div class="mod ln" style="width:34px;height:26px">LN</div>
+    <div class="mod ffn" style="width:56px;height:30px" id="mapffn">FFN</div>
+    <div class="mod plus" style="width:22px;height:22px">+</div>
+    <span class="ta-arrow">→</span>
+  </div>
+
+  <div class="mpanel" id="pattn">
+    <h3 style="color:#6fb1ff">attention</h3>
+    <div class="role">moves information <b>between tokens</b></div>
+    <div class="inner">
+      <div id="tokrow"><svg id="tokarcs" width="548" height="92"></svg></div>
+      <div class="aflow">
+        <span class="ta-arrow">x →</span>
+        <div class="proj3">
+          <div class="mod proj" id="wq">W<sub>Q</sub></div>
+          <div class="mod proj" id="wk">W<sub>K</sub></div>
+          <div class="mod proj" id="wv">W<sub>V</sub></div>
+        </div>
+        <span class="ta-arrow">→</span>
+        <div class="ta-box">h heads</div>
+        <span class="ta-arrow">→</span>
+        <div class="ta-box">softmax(QKᵀ/√d)·V</div>
+        <span class="ta-arrow">→</span>
+        <div class="mod proj" style="border-color:#4a5066;color:#c7cce0;width:42px;height:24px">W<sub>O</sub></div>
+      </div>
+      <div class="pnotes">
+        <span id="attnnote"></span>
+        <span class="ta-tag kv" id="kvtag"></span>
+        <span class="ta-tag flash" id="flashtag"></span>
+      </div>
+    </div>
+  </div>
+
+  <div class="mpanel" id="pffn">
+    <h3 style="color:#e0a935">FFN</h3>
+    <div class="role">processes <b>within each token</b> — no token sees another</div>
+    <div class="inner">
+      <div id="ffnviz">
+        <div class="ta-chip ghosttok" style="left:154px; top:0"><span class="tt">per</span><span class="tid">583</span></div>
+        <div class="ta-chip ghosttok" style="left:354px; top:0"><span class="tt">mill</span><span class="tid">3211</span></div>
+        <div class="ta-chip"><span class="tt">tok</span><span class="tid">1151</span></div>
+        <div class="fa" style="top:34px">↓</div>
+        <div class="mod ffn" style="top:52px; width:200px; height:44px; font-size:12.5px">W₁ &nbsp;d → 4d</div>
+        <div class="fa" style="top:100px">↓ σ</div>
+        <div class="mod ffn" style="top:122px; width:140px; height:36px; font-size:12.5px">W₂ &nbsp;4d → d</div>
+        <div class="fa" style="top:162px">↓</div>
+        <div class="ta-chip" style="top:178px; left:254px; border-color:#2fd6b0"><span class="tt">tok′</span><span class="tid">richer</span></div>
+      </div>
+      <div class="pnotes">
+        <span id="ffnnote"></span>
+        <span class="ta-tag moe" id="moetag"></span>
+      </div>
+    </div>
+  </div>
+
+  <div id="cost">
+    <div>
+      <div class="cl">share of parameters (typical dense)</div>
+      <div class="ta-splitbar" id="splitbar" style="margin-top:5px"></div>
+    </div>
+    <div class="ta-caption" id="caption"></div>
+  </div>
+</div>
+
+<script src="../vendor/gsap.min.js"></script>
+<script src="shared/anatomy.js"></script>
+<script src="shared/manifest.js"></script>
+<script src="shared/deck.js"></script>
+<script>
+  document.getElementById("attnnote").textContent = TA.attnNote;
+  document.getElementById("ffnnote").textContent = TA.ffnNote;
+  document.getElementById("kvtag").textContent = TA.kvTag;
+  document.getElementById("flashtag").textContent = TA.flashTag;
+  document.getElementById("moetag").textContent = TA.moeTag;
+  document.getElementById("caption").textContent = TA.caption;
+  document.getElementById("price").textContent = TA.price;
+
+  var pipe = document.getElementById("pipe");
+  function add(html) { pipe.insertAdjacentHTML("beforeend", html); return pipe.lastElementChild; }
+  add('<div class="ta-box" style="width:120px">“K3 charges $3 per million tokens”</div>');
+  add('<span class="ta-arrow">→</span>');
+  add('<div class="ta-box">tokenizer</div>');
+  add('<span class="ta-arrow">→</span>');
+  TA.tokens.forEach(function (t) { add(TA.chipHTML(t)); });
+  add('<span class="ta-arrow">→</span>');
+  add('<div class="ta-box">embed</div>');
+  add('<span class="ta-arrow">→</span>');
+  add('<div id="stack"><i></i><i></i><i></i><span class="nx">× N</span></div>');
+  add('<span class="ta-arrow">→</span>');
+  add('<div class="ta-box">LM head</div>');
+  add('<span class="ta-arrow">→</span>');
+  add('<div class="ta-box">p(next)</div>');
+
+  // arcs between tokens inside the attention panel
+  var NS = "http://www.w3.org/2000/svg";
+  var ta = document.getElementById("tokarcs");
+  var tokX = [40, 150, 260, 370, 480];
+  ["K", "3", "char", "…", "tok"].forEach(function (t, i) {
+    var chip = document.createElement("div");
+    chip.className = "ta-chip";
+    chip.style.left = (tokX[i] - 16) + "px";
+    chip.innerHTML = '<span class="tt">' + t + "</span>";
+    document.getElementById("tokrow").appendChild(chip);
+  });
+  var arcs = [];
+  for (var i = 0; i < 4; i++) {
+    var p = document.createElementNS(NS, "path");
+    var x1 = tokX[i], x2 = tokX[4];
+    p.setAttribute("d", "M " + x1 + " 50 C " + x1 + " " + (12 - i * 2) + ", " + x2 + " 8, " + x2 + " 48");
+    p.setAttribute("stroke-width", 1.2 + i * 0.5);
+    ta.appendChild(p);
+    var len = p.getTotalLength();
+    p.style.strokeDasharray = len;
+    p.style.strokeDashoffset = len;
+    arcs.push(p);
+  }
+
+  // connector wires from the block map down to the panels
+  var wires = document.getElementById("wires");
+  function wline(x1, y1, x2, y2) {
+    var l = document.createElementNS(NS, "line");
+    l.setAttribute("x1", x1); l.setAttribute("y1", y1);
+    l.setAttribute("x2", x2); l.setAttribute("y2", y2);
+    l.style.opacity = 0;
+    wires.appendChild(l);
+    return l;
+  }
+  var w1 = wline(475, 228, 340, 258);
+  var w2 = wline(600, 228, 940, 258);
+
+  var tl = gsap.timeline({ paused: true });
+
+  // step 1: pipeline + billing unit
+  tl.to("#pipe > *", { opacity: 1, duration: 0.22, stagger: 0.05, ease: "power1.out" })
+    .call(function () {
+      var chips = pipe.querySelectorAll(".ta-chip");
+      var target = chips[chips.length - 2];
+      var pr = document.getElementById("price");
+      pr.style.left = (44 + target.offsetLeft - 16) + "px";
+      pr.style.top = "168px";
+    })
+    .fromTo("#price", { opacity: 0, y: -50, rotate: -8 }, { opacity: 1, y: 0, rotate: -8, duration: 0.5, ease: "bounce.out" });
+  DECK.markStep(tl);
+
+  // step 2: one block opens into the two machines
+  tl.fromTo("#maplab, #map", { opacity: 0, y: -10 }, { opacity: 1, y: 0, duration: 0.4 })
+    .to([w1, w2], { opacity: 1, duration: 0.35 })
+    .fromTo("#pattn", { opacity: 0, y: 24 }, { opacity: 1, y: 0, duration: 0.45, ease: "power2.out" })
+    .fromTo("#pffn", { opacity: 0, y: 24 }, { opacity: 1, y: 0, duration: 0.45, ease: "power2.out" }, "-=0.25");
+  DECK.markStep(tl);
+
+  // step 3: the attention machine
+  tl.to("#mapattn", { boxShadow: "0 0 14px rgba(57,135,229,0.7)", duration: 0.3 })
+    .fromTo("#pattn .inner", { opacity: 0 }, { opacity: 1, duration: 0.4 });
+  arcs.forEach(function (p, i) {
+    tl.to(p, { strokeDashoffset: 0, duration: 0.4, ease: "power2.out" }, i ? "-=0.28" : "+=0");
+  });
+  tl.fromTo("#kvtag", { opacity: 0, scale: 0.6 }, { opacity: 1, scale: 1, duration: 0.35, ease: "back.out(2)" })
+    .to(["#wk", "#wv"], { borderColor: "#9085e9", color: "#9085e9", duration: 0.35 }, "<")
+    .fromTo("#flashtag", { opacity: 0, scale: 0.6 }, { opacity: 1, scale: 1, duration: 0.35, ease: "back.out(2)" });
+  DECK.markStep(tl);
+
+  // step 4: the FFN machine
+  tl.to("#mapffn", { boxShadow: "0 0 14px rgba(201,133,0,0.7)", duration: 0.3 })
+    .fromTo("#pffn .inner", { opacity: 0 }, { opacity: 1, duration: 0.4 })
+    .fromTo("#moetag", { opacity: 0, scale: 0.6 }, { opacity: 1, scale: 1, duration: 0.35, ease: "back.out(2)" });
+  DECK.markStep(tl);
+
+  // step 5: where the parameters live
+  var sb = document.getElementById("splitbar");
+  TA.split.forEach(function (s) {
+    sb.insertAdjacentHTML("beforeend", '<div class="seg" style="background:' + s[2] + '" data-w="' + s[1] * 470 + '">' + s[0] + " " + (s[1] > 0.5 ? "⅔" : "⅓") + "</div>");
+  });
+  tl.fromTo("#cost", { opacity: 0, y: 14 }, { opacity: 1, y: 0, duration: 0.4 });
+  document.querySelectorAll("#splitbar .seg").forEach(function (s) {
+    tl.fromTo(s, { width: 0 }, { width: s.dataset.w + "px", duration: 0.55, ease: "power2.out" }, "<+0.1");
+  });
+
+  DECK.register(tl, {});
+</script>
+</body>
+</html>

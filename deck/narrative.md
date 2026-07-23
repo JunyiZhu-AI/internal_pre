@@ -195,6 +195,54 @@ capacity within a few seconds — let it hit the wall before clicking on.*
 
 ---
 
+## Page 05 — Transformer Anatomy
+
+*Same 5 beats for all three candidate variants (a: assembly line, b: zoom
+levels, c: two machines). This is the vocabulary slide — later slides point
+back at the two machines it names.*
+
+**Load:** title only.
+
+1. **[pipeline builds; price tag pins onto a token chip]** "The whole model
+   is a short pipeline: text, tokenizer, embeddings, N identical blocks, LM
+   head, a distribution over the next token. Two things to notice. The
+   token is the atomic unit of everything tonight — compute, memory, and
+   billing: that three-dollars-per-million on the rate card is literally
+   counting these chips, about three-quarters of a word each. And the N
+   blocks are structurally identical — every difference between model
+   families lives *inside* the block."
+
+2. **[one block opens: pre-LN diagram, residual highways]** "So open one.
+   Pre-LN block: normalise, attention, add it back; normalise, FFN, add it
+   back. Those two glowing bypasses are the residual highways that keep
+   gradients alive at depth. Which leaves exactly two machines to
+   understand."
+
+3. **[attention machine: QKV, heads, exit doors]** "Machine one: attention —
+   the only place tokens talk to each other. Three projections, heads in
+   parallel, softmax of QKᵀ over root-d times V, and an output projection.
+   Two doors here matter for the rest of the talk: the K and V projections
+   are exactly what gets *cached* at inference — that purple tag is the KV
+   cache from the last slide. And the n-by-n score matrix that just flashed
+   is the thing FlashAttention will refuse to materialise."
+
+4. **[FFN machine]** "Machine two: the FFN — two wide matmuls and a
+   nonlinearity, applied to every token independently. No token sees
+   another; sequence length doesn't enter. And this is the sub-layer MoE
+   will later replace with routed experts."
+
+5. **[parameter split + caption]** "Where do the parameters live? Roughly
+   two-thirds FFN, one-third attention — and their costs scale differently:
+   attention's compute grows quadratically with context and its KV state
+   linearly, while the FFN is constant per token. That split *is* the map of
+   this talk: one evolution line fixes attention's scaling, the other fixes
+   the FFN's parameter bill. Every technique tonight modifies one of these
+   two machines."
+
+*(final click → next page)*
+
+---
+
 ## Template page — QKᵀ: where attention scores come from
 
 **Load:** title only; empty score grid awaits.

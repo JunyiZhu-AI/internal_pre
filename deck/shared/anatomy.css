@@ -1,0 +1,45 @@
+/* Slide-05 shared pieces. */
+.ta-box {
+  background: var(--panel); border: 1.5px solid var(--line); border-radius: 10px;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  font-size: 12px; color: #c7cce0; text-align: center; padding: 6px 10px;
+}
+.ta-box .sub { font-size: 9.5px; color: var(--ink-2); margin-top: 2px; }
+.ta-arrow { color: #4a5066; font-size: 15px; }
+
+.ta-chip {
+  background: #232836; border: 1px solid #4a5066; border-radius: 6px;
+  padding: 3px 5px 2px; text-align: center; min-width: 30px;
+}
+.ta-chip .tt { display: block; font: 600 11px ui-monospace, monospace; color: #e8eaf0; white-space: nowrap; }
+.ta-chip .tid { display: block; font: 9px ui-monospace, monospace; color: #6b7284; }
+
+.ta-tag {
+  font: 700 10px ui-monospace, monospace; border: 1px solid; border-radius: 999px;
+  padding: 2px 9px; white-space: nowrap;
+}
+.ta-tag.kv { color: #9085e9; border-color: rgba(144,133,233,0.55); background: rgba(144,133,233,0.09); }
+.ta-tag.flash { color: #2fd6b0; border-color: rgba(47,214,176,0.5); background: rgba(47,214,176,0.07); }
+.ta-tag.moe { color: #e0a935; border-color: rgba(201,133,0,0.5); background: rgba(201,133,0,0.08); }
+
+.ta-price {
+  font: 700 11px ui-monospace, monospace; color: #e0a935;
+  border: 1.5px solid #c98500; border-radius: 6px; padding: 3px 8px;
+  background: rgba(11,13,18,0.9); white-space: nowrap;
+}
+
+.ta-splitbar { display: flex; height: 30px; border-radius: 8px; overflow: hidden; }
+.ta-splitbar .seg {
+  display: flex; align-items: center; justify-content: center;
+  font: 700 12px ui-monospace, monospace; color: #0c1116; width: 0;
+}
+
+.ta-caption { font-size: 18px; font-weight: 700; color: var(--accent); }
+
+/* module boxes inside the block diagram */
+.mod { border-radius: 10px; border: 2px solid; display: flex; align-items: center; justify-content: center; font-weight: 700; }
+.mod.ln { border-color: #4a5066; color: #9aa1b5; font-weight: 400; font-size: 11px; }
+.mod.attn { border-color: #3987e5; color: #6fb1ff; background: rgba(57,135,229,0.08); }
+.mod.ffn { border-color: #c98500; color: #e0a935; background: rgba(201,133,0,0.08); }
+.mod.plus { border-color: #2fd6b0; color: #2fd6b0; border-radius: 50%; font-size: 15px; }
+.mod.proj { font: 700 12px ui-monospace, monospace; }
