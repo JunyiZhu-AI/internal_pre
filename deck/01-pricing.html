@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>The K3 pricing paradox — the ledger</title>
+<title>Everyone Is Talking About K3's Token Cost</title>
 <link rel="stylesheet" href="shared/deck.css">
 <style>
   .ledger {
@@ -31,10 +31,12 @@
     position: absolute; border: 2px solid var(--accent); border-radius: 9px;
     pointer-events: none; opacity: 0; box-shadow: 0 0 18px rgba(47,214,176,0.25);
   }
-  #taskrow .lcell:not(.lab) { background: #10131a; border: 1px solid var(--line); font-weight: 700; font-size: 13.5px; }
-  #convpulse {
-    position: absolute; border: 2px solid var(--accent); border-radius: 9px; opacity: 0;
-    pointer-events: none; box-shadow: 0 0 20px rgba(47,214,176,0.3);
+  .stamp {
+    position: absolute; font-weight: 800; font-size: 15px; letter-spacing: 0.04em;
+    border: 3px solid #e04b38; color: #e04b38; padding: 4px 10px; border-radius: 5px;
+    transform: rotate(-9deg); opacity: 0; z-index: 6;
+    background: rgba(11,13,18,0.55); font-family: ui-monospace, monospace;
+    box-shadow: 0 4px 14px rgba(0,0,0,0.4);
   }
   .callout {
     position: absolute; font-size: 12.5px; font-family: ui-monospace, monospace;
@@ -43,11 +45,6 @@
   }
   .callout.amber { color: #e0a935; background: rgba(201,133,0,0.08); border-color: rgba(201,133,0,0.4); }
   #fn3 { position: absolute; left: 44px; top: 660px; width: 620px; font-size: 10px; color: #6b7284; line-height: 1.45; opacity: 0; }
-  #quote3 {
-    position: absolute; left: 46px; top: 595px; width: 600px;
-    font-size: 14.5px; font-style: italic; color: #c7cce0; opacity: 0; line-height: 1.5;
-  }
-  #quote3 .by { font-size: 11.5px; color: var(--ink-2); font-style: normal; }
   #qs3 { position: absolute; right: 44px; top: 452px; width: 520px; display: flex; flex-direction: column; gap: 8px; }
   .qchip {
     background: var(--panel); border: 1px solid var(--line); border-left: 3px solid var(--accent);
@@ -64,25 +61,24 @@
 </head>
 <body>
 <div class="stage">
-  <div class="slide-title">Half the price. The same bill.</div>
-  <div class="slide-sub">two tables, one paradox — July 2026</div>
+  <div class="slide-title">Everyone Is Talking About K3's Token Cost</div>
+  <div class="slide-sub">rate cards vs capability — July 2026</div>
 
   <div class="ledger" id="rate" style="left:44px; top:112px; width:560px">
     <h3>Rate card <span class="note">official, per 1M tokens</span></h3>
     <div id="raterows"></div>
   </div>
   <div id="k3glow"></div>
-  <div id="convpulse"></div>
+  <div class="stamp" id="st1" style="left:118px; top:458px">−40% vs Sol</div>
+  <div class="stamp" id="st2" style="left:315px; top:472px">−70% vs Fable</div>
 
   <div class="ledger" id="perf" style="right:44px; top:112px; width:560px; opacity:0">
     <h3>Performance <span class="note">July 2026</span></h3>
     <div id="perfrows"></div>
   </div>
 
-  <div class="callout" id="co1" style="left:46px; top:528px; width:250px">per token: −40% vs Sol,<br>−70% vs Fable — “a steal”</div>
-  <div class="callout amber" id="co2" style="left:330px; top:528px; width:274px">per task: ≈ even vs Sol<br>(2× tokens, 2–4× slower decode)</div>
+  <div class="callout amber" id="co2" style="left:46px; top:540px; width:440px">but per task: ≈ even vs Sol — K3 generates ~2× the tokens,<br>and decodes 2–4× slower</div>
 
-  <div id="quote3"></div>
   <div id="qs3"></div>
   <div id="fn3"></div>
   <div id="promise3"></div>
@@ -119,7 +115,6 @@
   rr.appendChild(row(["output (incl. reasoning)"].concat(M.map(function (m) { return $(m.output); })), { win: 0, id: "row-output" }));
   rr.appendChild(row(["context window"].concat(M.map(function (m) { return m.ctx; })), {}));
   rr.appendChild(row(["open weights"].concat(M.map(function (m) { return m.open; })), { win: 0, id: "row-open" }));
-  rr.appendChild(row(["<b>measured $/task</b>"].concat(M.map(function (m) { return $(m.task); })), { win: 0, id: "taskrow" }));
 
   var pr = document.getElementById("perfrows");
   pr.appendChild(row(["", "K3", "Sol", "Fable 5"], { hd: true }));
@@ -128,7 +123,6 @@
     pr.appendChild(row([b.label].concat(vals), { win: b.best, tag: b.src }));
   });
 
-  document.getElementById("quote3").innerHTML = PRICING.quote + ' <span class="by">' + PRICING.quoteBy + "</span>";
   var qs3 = document.getElementById("qs3");
   PRICING.questions.forEach(function (q, i) {
     qs3.innerHTML += '<div class="qchip" id="q' + i + '"><span class="qn">Q' + (i + 1) + "</span>" + q + "</div>";
@@ -136,14 +130,12 @@
   document.getElementById("fn3").textContent = PRICING.footnote;
   document.getElementById("promise3").textContent = "Promise: " + PRICING.promise;
 
-  // ? badges pinned next to rate-card rows (positions relative to stage)
   function badge(id, x, y) {
     var b = document.createElement("div");
     b.className = "qbadge"; b.id = id;
     b.style.left = x + "px"; b.style.top = y + "px";
     document.querySelector(".stage").appendChild(b);
   }
-  // rate ledger at (44,112): padding 14/16, title ~26, rows 37px pitch from ~152
   badge("qb1", 585, 275); // output row
   badge("qb2", 585, 238); // cached row
   badge("qb3", 330, 148); // K3 column header
@@ -152,7 +144,7 @@
 
   // step 1: rate card rows cascade; K3 column glows
   tl.fromTo("#rate", { opacity: 0, y: 24 }, { opacity: 1, y: 0, duration: 0.5, ease: "power3.out" })
-    .fromTo("#rate .lrow:not(#taskrow)", { opacity: 0, x: -14 }, { opacity: 1, x: 0, duration: 0.32, stagger: 0.09 }, "-=0.2")
+    .fromTo("#rate .lrow", { opacity: 0, x: -14 }, { opacity: 1, x: 0, duration: 0.32, stagger: 0.09 }, "-=0.2")
     .call(function () {
       var g = document.getElementById("k3glow");
       g.style.left = "218px"; g.style.top = "146px"; g.style.width = "126px"; g.style.height = "225px";
@@ -166,19 +158,13 @@
     .fromTo("#fn3", { opacity: 0 }, { opacity: 1, duration: 0.4 });
   DECK.markStep(tl);
 
-  // step 3: per-token verdict callout
-  tl.fromTo("#co1", { opacity: 0, scale: 0.7 }, { opacity: 1, scale: 1, duration: 0.4, ease: "back.out(1.8)" });
+  // step 3: the per-token verdict — discount stamps hit the rate card
+  tl.fromTo("#st1", { opacity: 0, scale: 2.2, rotate: -9 }, { opacity: 1, scale: 1, duration: 0.35, ease: "power3.in" })
+    .fromTo("#st2", { opacity: 0, scale: 2.2, rotate: -9 }, { opacity: 1, scale: 1, duration: 0.35, ease: "power3.in" }, "+=0.25");
   DECK.markStep(tl);
 
-  // step 4: the measured row — paradox lands
-  tl.fromTo("#taskrow", { opacity: 0, y: 16 }, { opacity: 1, y: 0, duration: 0.5, ease: "power2.out" })
-    .call(function () {
-      var c = document.getElementById("convpulse");
-      c.style.left = "215px"; c.style.top = "379px"; c.style.width = "252px"; c.style.height = "44px";
-    })
-    .fromTo("#convpulse", { opacity: 0, scale: 1.2 }, { opacity: 1, scale: 1, duration: 0.45, ease: "power3.out" })
-    .fromTo("#co2", { opacity: 0, scale: 0.7 }, { opacity: 1, scale: 1, duration: 0.4, ease: "back.out(1.8)" })
-    .fromTo("#quote3", { opacity: 0, y: 10 }, { opacity: 1, y: 0, duration: 0.5 });
+  // step 4: the counterpoint — per-task costs converge
+  tl.fromTo("#co2", { opacity: 0, scale: 0.7 }, { opacity: 1, scale: 1, duration: 0.4, ease: "back.out(1.8)" });
   DECK.markStep(tl);
 
   // steps 5-7: questions with pinned ? badges
@@ -188,7 +174,7 @@
     DECK.markStep(tl);
   }
 
-  // step 8: promise
+  // step 8: the promise
   tl.fromTo("#promise3", { opacity: 0 }, { opacity: 1, duration: 0.6 });
 
   DECK.register(tl, {});

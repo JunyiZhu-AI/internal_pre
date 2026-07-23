@@ -12,37 +12,31 @@ restart, loop (auto-plays all steps, for rehearsal or hallway mode). F = fullscr
 
 ---
 
-## Page 01 — Half the price. The same bill. (K3 pricing paradox)
-
-*The same 8 beats drive all three candidate variants (a: receipts, b: equation,
-c: ledger); the bracketed cue names what moves on screen in each.*
+## Page 01 — Everyone Is Talking About K3's Token Cost
 
 **Load:** title only.
 
-1. **[a: receipts print · b: price bars · c: rate table cascades]** "In July,
-   Moonshot launched Kimi K3 at three dollars in, fifteen out — half of GPT-5.6
-   Sol's rate card, a third of Fable 5's. A Chinese lab pricing *at* flagship
-   rates was itself the news. On paper: frontier capability at a discount."
+1. **[rate card cascades, K3 column glows]** "In July, Moonshot launched Kimi
+   K3 at three dollars in, fifteen out — half of GPT-5.6 Sol's rate card, a
+   third of Fable 5's. A Chinese lab pricing *at* flagship rates was itself
+   the news. On paper: frontier capability at a discount."
 
-2. **[a/c: benchmark panel, near-tie · b: (comes 4th)]** "And the capability
-   story holds up — mostly. On the independent numbers, it's a near-tie at the
-   top: two to three points of AA index, a few points of SWE-bench. The
-   agentic rows are vendor-run — each model in its own harness — so hold them
-   more loosely; the tension between those two kinds of numbers is part of
+2. **[performance table slides in, near-tie]** "And the capability story
+   holds up — mostly. On the independent numbers, it's a near-tie at the top:
+   two to three points of AA index, a few points of SWE-bench. The agentic
+   rows are vendor-run — each model in its own harness — so hold them more
+   loosely; the tension between those two kinds of numbers is part of
    tonight's story."
 
-3. **[a: −40%/−70% stamps · b: tokens-per-task bars · c: per-token callout]**
-   "So per *token*, K3 is a steal: forty percent under Sol, seventy under
-   Fable." *(variant b: "But watch the second line: on the same agentic task,
-   K3 generates about twice the tokens Sol does — and decodes two to four
-   times slower.")*
+3. **[red discount stamps hit the K3 column]** "So per *token*, K3 looks like
+   a steal: forty percent under Sol, seventy under Fable."
 
-4. **[all: the convergence — measured $/task lands, K3 ≈ Sol]** "Then
-   developers ran real workloads, and something odd happened: the bills came
-   out nearly identical. Ninety-four cents a task versus a dollar four. K3
-   talks twice as much, at half the rate — Theo Browne's viral verdict:
-   'Price evens out.' Though note — against Fable it genuinely *is* three
-   times cheaper per task."
+4. **[amber counterpoint callout]** "But developers who ran real workloads
+   found the bills much closer than the rate card promised: on the same
+   agentic tasks K3 generates roughly twice the tokens Sol does, and decodes
+   two to four times slower. Half the price, twice the words — the per-task
+   gap nearly closes. That debate is exactly why this rate card is worth a
+   whole talk."
 
 5. **[Q1 appears, ? lands on output price]** "So here's the first question
    this rate card begs: why is output five times the price of input — for
