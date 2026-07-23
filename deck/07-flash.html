@@ -27,14 +27,17 @@
   #idea { text-align: center; font: 12px ui-monospace, monospace; color: var(--ink-2); margin-top: 6px; }
   #verdict { position: absolute; left: 44px; top: 588px; font: 700 15px ui-monospace, monospace; color: #9aa1b5; opacity: 0; }
   #lesson { position: absolute; left: 44px; top: 630px; font-size: 26px; font-weight: 800; color: var(--accent); opacity: 0; }
-  #formula { position: absolute; right: 44px; top: 36px; font: 600 14px ui-monospace, monospace; color: #9aa1b5; }
+  #midformula {
+    position: absolute; left: 50%; top: 348px; transform: translateX(-50%);
+    text-align: center; font: 600 14px ui-monospace, monospace; color: #9aa1b5;
+    line-height: 2;
+  }
 </style>
 </head>
 <body>
 <div class="stage">
   <div class="slide-title">FlashAttention: The Bottleneck Was Memory, Not Compute</div>
   <div class="slide-sub">the same n×n matrix — handled two ways · n = 128k</div>
-  <div id="formula">O = softmax(QKᵀ/√d)·V &nbsp;— computed tile-by-tile</div>
 
   <div class="half" id="hN">
     <div class="word" style="color:#ff8a7a">NAÏVE — S and P cross the pipe four times</div>
@@ -62,6 +65,7 @@
     <div id="idea">online softmax: running max + running sum, tile by tile</div>
   </div>
 
+  <div id="midformula">S = QKᵀ &nbsp;∈ ℝⁿˣⁿ<br>O = softmax(S/√d)·V &nbsp;∈ ℝⁿˣᵈ</div>
   <div id="verdict"></div>
   <div id="lesson"></div>
 </div>
