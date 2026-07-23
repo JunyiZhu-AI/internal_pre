@@ -321,8 +321,8 @@ do.*
    left into a latent — MLA. Attend to fewer tokens — sparse. Watch the
    gauge: megabytes to hundreds of kilobytes to tens."
 3. "Then the radical half: replace the cache with a fixed-size state —
-   linear attention and SSMs. Mix linear with full attention — hybrids. And
-   the current frontier, inside K3: Kimi Delta Attention."
+   linear attention and SSMs. And the current frontier, inside K3: Kimi
+   Delta Attention — which, as we'll see, mixes linear with full attention."
 4. "Fewer bytes per decoded token, same quality. That's the whole story —
    let's walk it."
 

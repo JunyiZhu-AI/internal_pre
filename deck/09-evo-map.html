@@ -33,7 +33,7 @@
 <body>
 <div class="stage">
   <div class="slide-title">The Attention Evolution Map</div>
-  <div class="slide-sub">seven architectures — the same n×n matrix and purple strips, reshaped again and again</div>
+  <div class="slide-sub">six architectures — the same n×n matrix and purple strips, reshaped again and again</div>
 
   <div id="metric"></div>
   <div id="lineage"></div>
@@ -62,7 +62,6 @@
       return '<div class="g mat">' + s + "</div>";
     }
     if (key === "linear") { for (i = 0; i < 4; i++) s += '<u style="opacity:.55"></u>'; return '<div class="g"><span class="gsq" style="border-color:#2fd6b0">' + s + "</span></div>"; }
-    if (key === "hybrid") { for (i = 0; i < 4; i++) s += '<u style="opacity:.55"></u>'; return '<div class="g" style="gap:5px"><span class="gsq" style="border-color:#9085e9;width:28px;height:28px;padding:4px">' + s + '</span><i class="gs" style="width:8px;height:32px"></i></div>'; }
     if (key === "kda") { for (i = 0; i < 5; i++) s += '<u style="opacity:' + (0.15 + i * 0.2) + '"></u>'; return '<div class="g"><span class="gsq kda" style="border-color:#e04b38">' + s + "</span></div>"; }
     return "";
   }
@@ -85,7 +84,7 @@
 
   var tl = gsap.timeline({ paused: true });
 
-  // step 1: the skeleton — seven matrix-forms, one metric, gauge at MHA
+  // step 1: the skeleton — six matrix-forms, one metric, gauge at MHA
   tl.fromTo("#lineage", { opacity: 0, y: 16 }, { opacity: 1, y: 0, duration: 0.6, ease: "power2.out" })
     .fromTo(".conn", { scaleX: 0 }, { scaleX: 1, duration: 0.35, stagger: 0.06, ease: "power2.out" }, "<")
     .fromTo("#metric", { opacity: 0 }, { opacity: 1, duration: 0.45 })
@@ -99,9 +98,8 @@
     .call(function () { on("sparse"); setG("≤ window"); }).to({}, { duration: 0.9 });
   DECK.markStep(tl);
 
-  // step 3: the cache disappears — Linear, Hybrid, KDA
+  // step 3: the cache disappears — Linear, KDA
   tl.call(function () { on("linear"); setG("O(1) state"); }).to({}, { duration: 0.9 })
-    .call(function () { on("hybrid"); }).to({}, { duration: 0.9 })
     .call(function () { on("kda"); setG("~tens of KB (state)"); }).to({}, { duration: 0.9 });
   DECK.markStep(tl);
 
