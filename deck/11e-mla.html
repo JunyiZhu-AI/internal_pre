@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>MLA: Compress KV into a Latent</title>
+<link rel="stylesheet" href="shared/deck.css">
+<link rel="stylesheet" href="shared/evo.css">
+<style>
+  .kicker { position: absolute; top: 12px; left: 45px; font: 700 11px ui-monospace, monospace; letter-spacing: 0.22em; color: #6b7284; }
+  .lane { position: absolute; left: 44px; width: 1192px; background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 12px 18px; opacity: 0; }
+  .lane-head { display: flex; align-items: center; gap: 12px; height: 24px; }
+  .lane-tag { font: 800 13px ui-monospace, monospace; letter-spacing: 0.05em; }
+  .lane-sub { font: 11.5px ui-monospace, monospace; color: var(--ink-2); }
+  .lane-meter { margin-left: auto; display: flex; align-items: center; gap: 8px; }
+  .lm-bar { width: 240px; height: 9px; border-radius: 5px; background: #232836; position: relative; overflow: hidden; }
+  .lm-fill { position: absolute; left: 0; top: 0; bottom: 0; width: 0; border-radius: 5px; background: var(--c-o); }
+  .lm-lab { font: 700 12px ui-monospace, monospace; color: #c7cce0; min-width: 128px; text-align: right; }
+  .lane-foot { display: flex; align-items: center; gap: 10px; margin-top: 10px; }
+  .stream { flex: 1; display: flex; gap: 3px; align-items: center; height: 16px; overflow: hidden; justify-content: flex-end; border-left: 2px solid var(--line); padding-left: 8px; }
+  .stream i { flex: none; height: 11px; border-radius: 3px; background: var(--accent); opacity: 0.85; }
+  .tokct { font: 700 11px ui-monospace, monospace; color: var(--ink-2); width: 84px; text-align: right; }
+
+  .cachezone { display: flex; align-items: center; gap: 10px; margin-top: 12px; }
+  .cachelab { font: 700 10.5px ui-monospace, monospace; color: #6b7284; width: 70px; }
+  .cacherow { flex: 1; display: flex; gap: 4px; align-items: flex-end; height: 44px; overflow: hidden; }
+  .cacherow .kvp { flex: none; width: 12px; height: 40px; border-radius: 3px; background: linear-gradient(180deg, rgba(144,133,233,0.45), var(--c-o)); }
+  .cacherow .cap { flex: none; width: 12px; height: 13px; border-radius: 3px; background: var(--accent); opacity: 0.9; }
+
+  /* MLA mechanism */
+  #mech { display: flex; align-items: center; gap: 14px; margin-top: 12px; height: 96px; }
+  .kvcol { width: 26px; height: 84px; border-radius: 5px; background: linear-gradient(180deg, rgba(144,133,233,0.4), var(--c-o)); position: relative; }
+  .kvcol span { position: absolute; top: -2px; left: 0; right: 0; text-align: center; font: 800 12px ui-monospace, monospace; color: #12141a; }
+  #funnel { width: 64px; height: 84px; background: #232836; clip-path: polygon(0 0, 100% 34px, 100% 50px, 0 84px); }
+  #capsule { width: 30px; height: 30px; border-radius: 8px; background: var(--accent); box-shadow: 0 0 16px rgba(47,214,176,0.55); display: flex; align-items: center; justify-content: center; font: 800 12px ui-monospace, monospace; color: #0c1116; }
+  #mechlab { font: 600 11px ui-monospace, monospace; color: var(--ink-2); width: 150px; line-height: 1.6; }
+  #mecharrow { font: 700 15px ui-monospace, monospace; color: #4a5066; }
+
+  /* absorption trick */
+  #absorb { margin-left: auto; display: flex; align-items: center; gap: 10px; opacity: 0; }
+  .wbox { font: 700 13px ui-monospace, monospace; color: #c7cce0; border: 1.5px solid var(--line); border-radius: 8px; padding: 8px 12px; background: #161923; }
+  .wbox.up { color: #6fb1ff; border-color: rgba(111,177,255,0.5); }
+  #absnote { font: 700 11px ui-monospace, monospace; color: var(--accent); width: 128px; line-height: 1.5; opacity: 0; }
+
+  .fline { position: absolute; left: 44px; font: 600 12.5px ui-monospace, monospace; color: #9aa1b5; opacity: 0; }
+  #punch { position: absolute; left: 44px; bottom: 26px; font-size: 15.5px; font-weight: 700; color: var(--accent); opacity: 0; }
+</style>
+</head>
+<body>
+<div class="stage">
+  <div class="kicker">ATTENTION EVOLUTION · RACE 2</div>
+  <div class="slide-title" style="top:34px">MLA: Compress KV into a Latent</div>
+  <div class="slide-sub" style="top:78px">don't share the K,V heads — stop caching K,V at all</div>
+  <div id="map" style="left:680px;top:98px"></div>
+
+  <div class="lane" id="laneA" style="top:138px">
+    <div class="lane-head">
+      <span class="lane-tag" style="color:#3987e5">LANE 1 · GQA</span>
+      <span class="lane-sub">full K,V per token enters the cache</span>
+      <span class="lane-meter"><span class="lm-bar"><i class="lm-fill" id="fillA"></i></span><span class="lm-lab" id="labA"></span></span>
+    </div>
+    <div class="cachezone"><span class="cachelab">KV CACHE</span><div class="cacherow" id="cacheA"></div></div>
+    <div class="lane-foot"><span class="stream" id="stA"></span><span class="tokct" id="tcA">0 tok</span></div>
+  </div>
+
+  <div class="lane" id="laneB" style="top:322px">
+    <div class="lane-head">
+      <span class="lane-tag" style="color:#6fb1ff">LANE 2 · MLA</span>
+      <span class="lane-sub" id="subB"></span>
+      <span class="lane-meter"><span class="lm-bar"><i class="lm-fill" id="fillB"></i></span><span class="lm-lab" id="labB"></span></span>
+    </div>
+    <div id="mech">
+      <div class="kvcol" id="mk"><span>K</span></div>
+      <div class="kvcol" id="mv"><span>V</span></div>
+      <div id="funnel"></div>
+      <div id="capsule">c<sub>t</sub></div>
+      <span id="mecharrow">→ cache</span>
+      <div id="mechlab">low-rank down-projection; only the capsule is stored</div>
+      <div id="absorb">
+        <div class="wbox up" id="wuk">W<sub>UK</sub></div>
+        <div class="wbox" id="wq">W<sub>Q</sub></div>
+        <div class="wbox up" id="wuv">W<sub>UV</sub></div>
+        <div class="wbox" id="wo">W<sub>O</sub></div>
+        <div id="absnote">absorbed → zero extra decode compute</div>
+      </div>
+    </div>
+    <div class="cachezone"><span class="cachelab">KV CACHE</span><div class="cacherow" id="cacheB"></div></div>
+    <div class="lane-foot"><span class="stream" id="stB"></span><span class="tokct" id="tcB">0 tok</span></div>
+  </div>
+
+  <div class="fline" id="f1" style="top:592px; color:#e0a935"></div>
+  <div class="fline" id="f2" style="top:618px"></div>
+  <div id="punch"></div>
+</div>
+
+<script src="../vendor/gsap.min.js"></script>
+<script src="shared/attnevo.js"></script>
+<script src="shared/manifest.js"></script>
+<script src="shared/deck.js"></script>
+<script>
+  EV.mapStrip(document.getElementById("map"), 2);
+
+  document.getElementById("subB").textContent = EV.mla.latent;
+  document.getElementById("labA").textContent = EV.nodes[1].bytes + " / tok";
+  document.getElementById("labB").textContent = EV.nodes[2].bytes + " / tok ⚠";
+  document.getElementById("f1").textContent = EV.mla.bytes + " ⚠";
+  document.getElementById("f2").textContent = EV.mla.adopters;
+  document.getElementById("punch").textContent = EV.mla.framing;
+
+  function mkStream(streamId, ctId) {
+    var s = document.getElementById(streamId), c = document.getElementById(ctId), n = 0;
+    return {
+      tick: function () {
+        n++;
+        var i = document.createElement("i");
+        i.style.width = (6 + Math.random() * 16) + "px";
+        s.appendChild(i);
+        while (s.children.length > 44) s.removeChild(s.firstChild);
+        c.textContent = n + " tok";
+      },
+      reset: function () { n = 0; s.innerHTML = ""; c.textContent = "0 tok"; }
+    };
+  }
+  var strA = mkStream("stA", "tcA"), strB = mkStream("stB", "tcB");
+  var cacheA = document.getElementById("cacheA"), cacheB = document.getElementById("cacheB");
+
+  function push(row, cls, cap) {
+    var d = document.createElement("div");
+    d.className = cls;
+    row.appendChild(d);
+    while (row.children.length > cap) row.removeChild(row.firstChild);
+    gsap.fromTo(d, { scale: 0.3, opacity: 0 }, { scale: 1, opacity: 1, duration: 0.25, ease: "back.out(2)" });
+  }
+
+  var loopA = gsap.timeline({ repeat: -1, paused: true });
+  loopA.call(function () { strA.tick(); push(cacheA, "kvp", 66); }).to({}, { duration: 0.55 });
+  var loopB = gsap.timeline({ repeat: -1, paused: true });
+  loopB.call(function () {
+    strB.tick(); push(cacheB, "cap", 66);
+    gsap.fromTo("#capsule", { scale: 1.25 }, { scale: 1, duration: 0.3, ease: "power2.out" });
+  }).to({}, { duration: 0.55 });
+
+  var tl = gsap.timeline({ paused: true });
+
+  // step 1: GQA lane runs; MLA lane appears — K,V squeezed into a latent capsule
+  tl.fromTo("#laneA", { opacity: 0, y: 16 }, { opacity: 1, y: 0, duration: 0.5, ease: "power2.out" })
+    .fromTo("#fillA", { width: 0 }, { width: 240, duration: 0.6, ease: "power2.inOut" })
+    .call(function () { loopA.play(0); })
+    .to({}, { duration: 0.6 })
+    .fromTo("#laneB", { opacity: 0, y: 16 }, { opacity: 1, y: 0, duration: 0.5, ease: "power2.out" })
+    .fromTo("#mk, #mv", { x: 60, scaleY: 1 }, { x: 96, scaleX: 0.35, scaleY: 0.5, duration: 0.9, ease: "power2.in", stagger: 0.08 })
+    .fromTo("#capsule", { scale: 0, rotation: 90 }, { scale: 1, rotation: 0, duration: 0.5, ease: "back.out(2.5)" }, "-=0.15")
+    .to("#mk, #mv", { x: 0, scaleX: 1, scaleY: 1, duration: 0.6, ease: "power2.out" })
+    .call(function () { loopB.play(0); })
+    .to({}, { duration: 0.7 });
+  DECK.markStep(tl);
+
+  // step 2: the number — ~70 KB vs 330 KB
+  tl.fromTo("#fillB", { width: 0 }, { width: 51, duration: 0.9, ease: "power2.inOut" })
+    .fromTo("#labB", { scale: 1.25, transformOrigin: "right center", color: "#2fd6b0" }, { scale: 1, duration: 0.4, immediateRender: false })
+    .call(function () { loopB.timeScale(2.4); })
+    .fromTo("#f1", { opacity: 0, y: 8 }, { opacity: 1, y: 0, duration: 0.4 })
+    .to({}, { duration: 0.6 });
+  DECK.markStep(tl);
+
+  // step 3: the absorption trick — up-projections vanish into W_Q / W_O
+  tl.fromTo("#absorb", { opacity: 0, x: 20 }, { opacity: 1, x: 0, duration: 0.45, ease: "power2.out" })
+    .to("#wuk", { x: 52, opacity: 0, duration: 0.7, ease: "power2.in" })
+    .fromTo("#wq", { boxShadow: "0 0 0px rgba(111,177,255,0)" }, { boxShadow: "0 0 18px rgba(111,177,255,0.7)", duration: 0.25, yoyo: true, repeat: 1, immediateRender: false })
+    .to("#wuv", { x: 52, opacity: 0, duration: 0.7, ease: "power2.in" }, "-=0.3")
+    .fromTo("#wo", { boxShadow: "0 0 0px rgba(111,177,255,0)" }, { boxShadow: "0 0 18px rgba(111,177,255,0.7)", duration: 0.25, yoyo: true, repeat: 1, immediateRender: false })
+    .fromTo("#absnote", { opacity: 0 }, { opacity: 1, duration: 0.4 });
+  DECK.markStep(tl);
+
+  // step 4: adoption + framing
+  tl.fromTo("#f2", { opacity: 0, y: 8 }, { opacity: 1, y: 0, duration: 0.4 })
+    .fromTo("#punch", { opacity: 0, y: 10 }, { opacity: 1, y: 0, duration: 0.5 });
+
+  DECK.register(tl, {
+    reset: function () {
+      loopA.pause(0);
+      loopB.pause(0); loopB.timeScale(1);
+      strA.reset(); strB.reset();
+      cacheA.innerHTML = "";
+      cacheB.innerHTML = "";
+      gsap.set("#labB", { clearProps: "color,scale" });
+      gsap.set("#capsule", { clearProps: "scale,rotation" });
+      gsap.set("#mk, #mv", { clearProps: "x,scaleX,scaleY" });
+      gsap.set("#wuk, #wuv", { clearProps: "x,opacity" });
+    }
+  });
+</script>
+</body>
+</html>

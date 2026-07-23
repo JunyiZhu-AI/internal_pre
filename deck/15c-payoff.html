@@ -1,0 +1,157 @@
+<!DOCTYPE html><html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Attention Line: The Payoff</title>
+<link rel="stylesheet" href="shared/deck.css">
+<link rel="stylesheet" href="shared/evo.css">
+<link rel="stylesheet" href="shared/bottlenecks.css">
+<style>
+  #map { left: 660px; top: 96px; }
+  #ladder { position: absolute; left: 90px; top: 152px; opacity: 0; }
+  .lrow { display: flex; align-items: center; gap: 12px; height: 50px; }
+  .lrow .ll { width: 108px; text-align: right; font: 700 13px ui-monospace, monospace; }
+  .lrow .lb { height: 24px; border-radius: 6px; background: linear-gradient(180deg, rgba(144,133,233,0.6), #9085e9); transform-origin: left center; }
+  .lrow .lv { font: 800 13px ui-monospace, monospace; color: #e8eaf0; white-space: nowrap; }
+  #lognote { position: absolute; left: 210px; top: 356px; font: 10.5px ui-monospace, monospace; color: #6b7284; opacity: 0; }
+  #qchip { position: absolute; left: 90px; top: 396px; font: 700 13px ui-monospace, monospace; color: var(--accent); border: 1.5px solid rgba(47,214,176,0.55); border-radius: 999px; padding: 7px 16px; background: var(--panel); opacity: 0; }
+  #sim { left: 760px; top: 150px; width: 430px; height: 168px; opacity: 0; }
+  #badge { position: absolute; left: 760px; top: 338px; display: flex; align-items: baseline; gap: 7px; opacity: 0; }
+  #badge b { font: 800 58px ui-monospace, monospace; color: var(--accent); text-shadow: 0 0 26px rgba(47,214,176,0.45); }
+  #badge span { font: 600 12.5px ui-monospace, monospace; color: var(--ink-2); width: 210px; line-height: 1.5; }
+  #kvchip { position: absolute; left: 760px; top: 418px; font: 700 13px ui-monospace, monospace; color: #e0a935; border: 1.5px solid rgba(201,133,0,0.55); border-radius: 999px; padding: 7px 16px; background: var(--panel); opacity: 0; }
+  #bridge { position: absolute; left: 44px; bottom: 14px; font-size: 17px; font-weight: 700; color: var(--accent); opacity: 0; }
+
+  /* —— the two eras of the same HBM box —— */
+  .era { position: absolute; left: 90px; width: 1100px; }
+  #eraM { top: 452px; opacity: 0; }
+  #eraK { top: 552px; opacity: 0; }
+  .era .cb-lab { font: 700 10.5px ui-monospace, monospace; letter-spacing: 0.14em; color: #e0a935; opacity: 0.75; margin-bottom: 5px; }
+  .era .cb-box { position: relative; border: 2px solid rgba(201,133,0,0.55); border-radius: 10px; background: rgba(18,20,26,0.6); display: flex; overflow: hidden; }
+  #eraM .cb-box { height: 46px; opacity: 0.8; }
+  #eraK .cb-box { height: 62px; }
+  .era .cb-w { flex: none; width: 300px; display: flex; align-items: center; justify-content: center; font: 700 12px ui-monospace, monospace; color: #e0a935; background: repeating-linear-gradient(90deg, rgba(201,133,0,0.26) 0 7px, rgba(201,133,0,0.12) 7px 14px); border-right: 1.5px solid rgba(201,133,0,0.35); }
+  .era .cb-kv { flex: none; width: 0; display: flex; align-items: center; justify-content: center; font: 800 11.5px ui-monospace, monospace; color: #0c1116; white-space: nowrap; overflow: hidden; background: linear-gradient(180deg, rgba(144,133,233,0.62), #9085e9); }
+  .era .cb-st { flex: none; width: 0; display: flex; align-items: center; justify-content: center; font: 800 11.5px ui-monospace, monospace; color: #0c1116; overflow: hidden; background: linear-gradient(180deg, rgba(47,214,176,0.62), #2fd6b0); }
+  .era .cb-b { flex: 1; position: relative; }
+  .era .cb-slot { position: absolute; top: 0; bottom: 0; border-left: 1.5px dashed rgba(74,80,102,0.55); opacity: 0; }
+  .era .cb-blab { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font: 700 11.5px ui-monospace, monospace; color: #9aa1b5; }
+  .era .cb-over { position: absolute; right: 8px; top: 50%; transform: translateY(-50%); font: 800 11.5px ui-monospace, monospace; color: #ff8a7a; background: rgba(11,13,18,0.85); border: 1px solid rgba(224,75,56,0.6); border-radius: 7px; padding: 4px 9px; opacity: 0; }
+</style>
+</head>
+<body>
+<div class="stage">
+  <div class="slide-title">Attention Line: The Payoff</div>
+  <div class="slide-sub">seven years of cache shrinking, cashed in by K3</div>
+  <div id="map"></div>
+
+  <div id="ladder"></div>
+  <div id="lognote">bar length ∝ log(bytes / token)</div>
+  <div id="qchip"></div>
+  <div id="sim" class="sim"></div>
+  <div id="badge"><b></b><span></span></div>
+  <div id="kvchip"></div>
+
+  <div class="era" id="eraM">
+    <div class="cb-lab">2019 · MHA ERA — HBM</div>
+    <div class="cb-box"><div class="cb-w">weights</div>
+      <div class="cb-kv" id="mkv">KV · 2.6 MB / token</div>
+      <div class="cb-over" id="mover">≈ 341 GB @128k — does not fit ✗</div></div>
+  </div>
+  <div class="era" id="eraK">
+    <div class="cb-lab">2026 · K3 ERA — SAME HBM</div>
+    <div class="cb-box"><div class="cb-w">weights</div>
+      <div class="cb-st" id="kst">S</div>
+      <div class="cb-kv" id="kkv">MLA ¼</div>
+      <div class="cb-b" id="kb"><div class="cb-blab" id="kblab"></div></div></div>
+  </div>
+
+  <div id="bridge"></div>
+</div>
+
+<script src="../vendor/gsap.min.js"></script>
+<script src="shared/attnevo.js"></script>
+<script src="shared/bottlenecks.js"></script>
+<script src="shared/manifest.js"></script>
+<script src="shared/deck.js"></script>
+<script>
+  EV.mapStrip(document.getElementById("map"), 6);
+  document.getElementById("badge").querySelector("b").textContent = EV.payoff.speed;
+  document.getElementById("badge").querySelector("span").textContent = EV.payoff.speedLabel;
+  document.getElementById("kvchip").textContent = EV.payoff.kvcut;
+  document.getElementById("qchip").textContent = EV.payoff.quality;
+  document.getElementById("bridge").textContent = EV.payoff.bridge;
+
+  // ---- the ladder (log-scaled) ----
+  var LW = [380, 280, 205, 145];
+  var LC = ["#9aa1b5", "#3987e5", "#6fb1ff", "#e04b38"];
+  var ladder = document.getElementById("ladder");
+  EV.payoff.ladder.forEach(function (p, i) {
+    ladder.insertAdjacentHTML("beforeend",
+      '<div class="lrow"><div class="ll" style="color:' + LC[i] + '">' + p[0] + '</div>' +
+      '<div class="lb" id="lb' + i + '" style="width:' + LW[i] + 'px"></div>' +
+      '<div class="lv">' + p[1] + (i >= 2 ? ' <span class="ev-warn">⚠</span>' : "") + "</div></div>");
+  });
+
+  // ---- K3-era batch slots ----
+  var kb = document.getElementById("kb");
+  for (var i = 1; i <= 11; i++) {
+    var s = document.createElement("div");
+    s.className = "cb-slot"; s.style.left = ((i * 100) / 12) + "%";
+    kb.appendChild(s);
+  }
+
+  var sim = BN.buildSim(document.getElementById("sim"), {});
+
+  var tl = gsap.timeline({ paused: true });
+
+  // step 1: the ladder sweeps down; both eras of the box appear
+  tl.fromTo("#ladder", { opacity: 0 }, { opacity: 1, duration: 0.3 });
+  for (var i = 0; i < 4; i++) {
+    tl.fromTo("#lb" + i, { scaleX: 0 }, { scaleX: 1, duration: 0.45, ease: "power2.out" }, i ? "-=0.18" : "+=0");
+  }
+  tl.fromTo("#lognote", { opacity: 0 }, { opacity: 1, duration: 0.3 })
+    .fromTo("#eraM", { opacity: 0, y: 12 }, { opacity: 1, y: 0, duration: 0.45 })
+    .to("#mkv", { width: 796, duration: 0.8, ease: "power2.inOut" })
+    .to("#mover", { opacity: 1, duration: 0.3 })
+    .fromTo("#eraK", { opacity: 0, y: 12 }, { opacity: 1, y: 0, duration: 0.45 })
+    .fromTo("#sim", { opacity: 0 }, { opacity: 1, duration: 0.4 })
+    .call(function () { sim.start(); });
+  DECK.markStep(tl);
+
+  // step 2: K3 numbers — tiny cache, freed batch, and the sim floors it
+  tl.to("#kst", { width: 40, duration: 0.45, ease: "power2.out" })
+    .to("#kkv", { width: 64, duration: 0.45, ease: "power2.out" }, "-=0.15")
+    .call(function () { document.getElementById("kblab").textContent = "freed space → batch ×N"; })
+    .to("#eraK .cb-slot", { opacity: 1, duration: 0.25, stagger: 0.05 })
+    .fromTo("#kvchip", { opacity: 0, y: 8 }, { opacity: 1, y: 0, duration: 0.4 })
+    .call(function () { sim.setSpeed(1.8); })
+    .to({}, { duration: 0.4 })
+    .call(function () { sim.setSpeed(3.2); })
+    .to({}, { duration: 0.4 })
+    .call(function () { sim.setSpeed(4.7); })
+    .to({}, { duration: 0.4 })
+    .call(function () { sim.setSpeed(6.3); })
+    .fromTo("#badge", { opacity: 0, scale: 0.5 }, { opacity: 1, scale: 1, duration: 0.55, ease: "back.out(2)" })
+    .to({}, { duration: 0.8 });
+  DECK.markStep(tl);
+
+  // step 3: and quality held
+  tl.fromTo("#qchip", { opacity: 0, y: 8 }, { opacity: 1, y: 0, duration: 0.45 });
+  DECK.markStep(tl);
+
+  // step 4: bridge to the next section
+  tl.fromTo("#bridge", { opacity: 0, y: 10 }, { opacity: 1, y: 0, duration: 0.55 });
+
+  DECK.register(tl, {
+    reset: function () {
+      sim.stop();
+      gsap.set("#ladder, #lognote, #eraM, #eraK, #sim, #badge, #kvchip, #qchip, #bridge, #mover, #eraK .cb-slot", { opacity: 0 });
+      gsap.set("#mkv, #kst, #kkv", { width: 0 });
+      document.getElementById("kblab").textContent = "";
+      sim.setSpeed(1);
+    }
+  });
+</script>
+</body>
+</html>

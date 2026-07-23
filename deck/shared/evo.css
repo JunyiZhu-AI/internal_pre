@@ -1,0 +1,24 @@
+/* Shared pieces for the attention-evolution slides (09-15). */
+
+/* recurring mini-map strip, usually top-right of technique slides */
+.ev-strip { position: absolute; display: flex; align-items: center; gap: 5px; }
+.ev-strip .ev-sn { display: flex; align-items: center; gap: 4px; opacity: 0.45; }
+.ev-strip .ev-sn.done { opacity: 0.7; }
+.ev-strip .ev-sn.on { opacity: 1; }
+.ev-strip .ev-sn i { width: 9px; height: 9px; border-radius: 50%; display: block; }
+.ev-strip .ev-sn.on i { box-shadow: 0 0 10px currentColor; }
+.ev-strip .ev-sn span { font: 600 9.5px ui-monospace, monospace; color: #9aa1b5; white-space: nowrap; }
+.ev-strip .ev-sn.on span { color: #e8eaf0; font-weight: 700; }
+.ev-strip .ev-seg { width: 14px; height: 1.5px; background: #2a2e3b; display: block; }
+.ev-strip .ev-seg.done { background: #4a5066; }
+
+/* bytes/token gauge chip */
+.ev-gauge {
+  font: 700 13px ui-monospace, monospace; color: #e8eaf0;
+  border: 1.5px solid var(--line); border-radius: 999px; padding: 5px 14px;
+  background: var(--panel);
+}
+.ev-gauge b { color: var(--accent); }
+
+/* generic warn mark */
+.ev-warn { color: #e0a935; }

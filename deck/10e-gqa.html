@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>MQA / GQA: Share the KV Heads</title>
+<link rel="stylesheet" href="shared/deck.css">
+<link rel="stylesheet" href="shared/evo.css">
+<style>
+  .kicker { position: absolute; top: 12px; left: 45px; font: 700 11px ui-monospace, monospace; letter-spacing: 0.22em; color: #6b7284; }
+  .lane { position: absolute; left: 44px; width: 1192px; background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 12px 18px; opacity: 0; }
+  .lane-head { display: flex; align-items: center; gap: 12px; height: 24px; }
+  .lane-tag { font: 800 13px ui-monospace, monospace; letter-spacing: 0.05em; }
+  .lane-sub { font: 11.5px ui-monospace, monospace; color: var(--ink-2); }
+  .lane-mode { font: 800 12px ui-monospace, monospace; color: #e0a935; }
+  .lane-meter { margin-left: auto; display: flex; align-items: center; gap: 8px; }
+  .lm-bar { width: 240px; height: 9px; border-radius: 5px; background: #232836; position: relative; overflow: hidden; }
+  .lm-fill { position: absolute; left: 0; top: 0; bottom: 0; width: 0; border-radius: 5px; background: var(--c-o); }
+  .lm-lab { font: 700 12px ui-monospace, monospace; color: #c7cce0; min-width: 118px; text-align: right; }
+  .groups { display: flex; gap: 14px; margin-top: 12px; align-items: center; }
+  .grp { background: #161923; border: 1px solid var(--line); border-radius: 8px; padding: 8px; }
+  .qrow { display: grid; grid-template-columns: repeat(4, 10px); gap: 3px; margin-bottom: 8px; }
+  .qrow i { width: 10px; height: 10px; border-radius: 50%; background: var(--c-q); }
+  .kvrow { display: grid; grid-template-columns: repeat(4, 10px); gap: 3px; position: relative; height: 23px; }
+  .kvrow .sq { width: 10px; height: 10px; border-radius: 2px; background: var(--c-o); }
+  .kvrow .gbar { position: absolute; left: 0; top: 6px; width: 49px; height: 10px; border-radius: 3px; background: var(--c-o); opacity: 0; }
+  .kvcount { margin-left: 18px; font: 800 20px ui-monospace, monospace; color: var(--c-o); white-space: nowrap; }
+  .kvcount .kc-sub { display: block; font: 600 10px ui-monospace, monospace; color: #6b7284; margin-top: 3px; }
+  .legend { margin-left: auto; font: 600 10.5px ui-monospace, monospace; color: #6b7284; align-self: flex-end; }
+  .legend i { display: inline-block; width: 9px; height: 9px; border-radius: 50%; background: var(--c-q); margin-right: 4px; }
+  .legend b { display: inline-block; width: 9px; height: 9px; border-radius: 2px; background: var(--c-o); margin: 0 4px 0 12px; }
+  .lane-foot { display: flex; align-items: center; gap: 10px; margin-top: 12px; }
+  .stream { flex: 1; display: flex; gap: 3px; align-items: center; height: 16px; overflow: hidden; justify-content: flex-end; border-left: 2px solid var(--line); padding-left: 8px; }
+  .stream i { flex: none; height: 11px; border-radius: 3px; background: var(--accent); opacity: 0.85; }
+  .tokct { font: 700 11px ui-monospace, monospace; color: var(--ink-2); width: 84px; text-align: right; }
+  .fline { position: absolute; left: 44px; font: 600 12.5px ui-monospace, monospace; color: #9aa1b5; opacity: 0; }
+  #punch { position: absolute; left: 44px; bottom: 26px; font-size: 15.5px; font-weight: 700; color: var(--accent); opacity: 0; }
+</style>
+</head>
+<body>
+<div class="stage">
+  <div class="kicker">ATTENTION EVOLUTION · RACE 1</div>
+  <div class="slide-title" style="top:34px">MQA / GQA: Share the KV Heads</div>
+  <div class="slide-sub" style="top:78px">two decoders, same model size — only the K,V head count differs</div>
+  <div id="map" style="left:680px;top:98px"></div>
+
+  <div class="lane" id="laneA" style="top:138px">
+    <div class="lane-head">
+      <span class="lane-tag" style="color:#6b7284">LANE 1 · MHA</span>
+      <span class="lane-sub" id="subA"></span>
+      <span class="lane-meter"><span class="lm-bar"><i class="lm-fill" id="fillA"></i></span><span class="lm-lab" id="labA"></span></span>
+    </div>
+    <div class="groups" id="grpA"></div>
+    <div class="lane-foot"><span class="stream" id="stA"></span><span class="tokct" id="tcA">0 tok</span></div>
+  </div>
+
+  <div class="lane" id="laneB" style="top:342px">
+    <div class="lane-head">
+      <span class="lane-tag" style="color:#3987e5">LANE 2 · ?</span>
+      <span class="lane-sub" id="subB"></span>
+      <span class="lane-mode" id="modeB"></span>
+      <span class="lane-meter"><span class="lm-bar"><i class="lm-fill" id="fillB"></i></span><span class="lm-lab" id="labB"></span></span>
+    </div>
+    <div class="groups" id="grpB"></div>
+    <div class="lane-foot"><span class="stream" id="stB"></span><span class="tokct" id="tcB">0 tok</span></div>
+  </div>
+
+  <div class="fline" id="f1" style="top:556px"></div>
+  <div class="fline" id="f2" style="top:582px; color:#e0a935"></div>
+  <div class="fline" id="f3" style="top:608px"></div>
+  <div id="punch"></div>
+</div>
+
+<script src="../vendor/gsap.min.js"></script>
+<script src="shared/attnevo.js"></script>
+<script src="shared/manifest.js"></script>
+<script src="shared/deck.js"></script>
+<script>
+  EV.mapStrip(document.getElementById("map"), 1);
+
+  var G = EV.gqa;
+  var subA0 = G.mhaHeads + " Q heads · " + G.mhaHeads + " private K,V heads";
+  var subB0 = G.mhaHeads + " Q heads · K,V heads: ?";
+  var subB1 = G.mhaHeads + " Q heads · " + G.kvHeads + " shared K,V heads";
+  document.getElementById("subA").textContent = subA0;
+  document.getElementById("subB").textContent = subB0;
+  document.getElementById("labA").textContent = EV.nodes[0].bytes + " / tok";
+  document.getElementById("labB").textContent = EV.nodes[0].bytes + " / tok";
+  document.getElementById("f1").textContent = G.note;
+  document.getElementById("f2").textContent = G.already;
+  document.getElementById("f3").textContent = G.adopters;
+  document.getElementById("punch").textContent = G.pattern;
+
+  function buildGroups(host, gqa) {
+    var qs = "", i;
+    for (i = 0; i < 8; i++) qs += "<i></i>";
+    for (var g = 0; g < 8; g++) {
+      var b = document.createElement("div");
+      b.className = "grp";
+      var kv = "";
+      for (i = 0; i < 8; i++) kv += '<i class="sq' + (gqa ? " sqB" : "") + '"></i>';
+      if (gqa) kv += '<b class="gbar"' + (g === 3 ? ' id="gbarMid"' : "") + "></b>";
+      b.innerHTML = '<div class="qrow">' + qs + '</div><div class="kvrow">' + kv + "</div>";
+      host.appendChild(b);
+    }
+    var kc = document.createElement("div");
+    kc.className = "kvcount";
+    kc.innerHTML = (gqa ? '<span id="kvcB">' + G.mhaHeads + "</span>" : G.mhaHeads) +
+      ' × K,V<span class="kc-sub">cached every token, every layer</span>';
+    host.appendChild(kc);
+    var lg = document.createElement("div");
+    lg.className = "legend";
+    lg.innerHTML = "<i></i>Q head<b></b>K,V head";
+    host.appendChild(lg);
+  }
+  buildGroups(document.getElementById("grpA"), false);
+  buildGroups(document.getElementById("grpB"), true);
+
+  function mkStream(streamId, ctId) {
+    var s = document.getElementById(streamId), c = document.getElementById(ctId), n = 0;
+    return {
+      tick: function () {
+        n++;
+        var i = document.createElement("i");
+        i.style.width = (6 + Math.random() * 16) + "px";
+        s.appendChild(i);
+        while (s.children.length > 44) s.removeChild(s.firstChild);
+        c.textContent = n + " tok";
+      },
+      reset: function () { n = 0; s.innerHTML = ""; c.textContent = "0 tok"; }
+    };
+  }
+  var strA = mkStream("stA", "tcA"), strB = mkStream("stB", "tcB");
+  var loopA = gsap.timeline({ repeat: -1, paused: true });
+  loopA.call(function () { strA.tick(); }).to({}, { duration: 0.55 });
+  var loopB = gsap.timeline({ repeat: -1, paused: true });
+  loopB.call(function () { strB.tick(); }).to({}, { duration: 0.55 });
+
+  var modeB = document.getElementById("modeB");
+  var tagB = document.querySelector("#laneB .lane-tag");
+  var kvcB = function () { return document.getElementById("kvcB"); };
+
+  var tl = gsap.timeline({ paused: true });
+
+  // step 1: the incumbent — every query head hauls its own K,V
+  tl.fromTo("#laneA", { opacity: 0, y: 16 }, { opacity: 1, y: 0, duration: 0.5, ease: "power2.out" })
+    .fromTo("#grpA .grp", { opacity: 0, scale: 0.7 }, { opacity: 1, scale: 1, duration: 0.3, stagger: 0.04, ease: "back.out(1.7)" })
+    .fromTo("#fillA", { width: 0 }, { width: 240, duration: 0.7, ease: "power2.inOut" })
+    .call(function () { loopA.play(0); })
+    .to({}, { duration: 0.8 });
+  DECK.markStep(tl);
+
+  // step 2: the challenger — collapse to MQA (flash), settle on GQA
+  tl.fromTo("#laneB", { opacity: 0, y: 16 }, { opacity: 1, y: 0, duration: 0.5, ease: "power2.out" })
+    .fromTo("#grpB .grp", { opacity: 0, scale: 0.7 }, { opacity: 1, scale: 1, duration: 0.25, stagger: 0.03, ease: "back.out(1.7)" })
+    .fromTo("#fillB", { width: 0 }, { width: 240, duration: 0.5, ease: "power2.inOut" })
+    .to("#grpB .sqB", { opacity: 0, scale: 0.2, duration: 0.35, stagger: { each: 0.004 } })
+    .fromTo("#grpB .gbar", { opacity: 0, scaleX: 0.25 }, { opacity: 1, scaleX: 1, duration: 0.3, stagger: 0.02, ease: "power2.out" })
+    .call(function () { modeB.textContent = "MQA · 1 shared K,V"; kvcB().textContent = "1"; })
+    .to("#grpB .gbar", { opacity: 0.1, duration: 0.35 })
+    .to("#gbarMid", { opacity: 1, boxShadow: "0 0 14px rgba(144,133,233,0.9)", duration: 0.3 })
+    .to({}, { duration: 0.7 })
+    .call(function () {
+      modeB.textContent = "GQA · " + (G.mhaHeads / G.kvHeads) + " Q share 1 K,V";
+      tagB.textContent = "LANE 2 · GQA";
+      kvcB().textContent = String(G.kvHeads);
+      document.getElementById("subB").textContent = subB1;
+    })
+    .to("#grpB .gbar", { opacity: 1, boxShadow: "0 0 0px rgba(144,133,233,0)", duration: 0.4 })
+    .call(function () { loopB.play(0); });
+  DECK.markStep(tl);
+
+  // step 3: the bill — cache ÷ 8, GQA lane pulls away
+  tl.call(function () { document.getElementById("labB").textContent = EV.nodes[1].bytes + " / tok"; })
+    .to("#fillB", { width: 30, duration: 0.9, ease: "power2.inOut" })
+    .fromTo("#labB", { scale: 1.25, transformOrigin: "right center", color: "#2fd6b0" }, { scale: 1, duration: 0.4, immediateRender: false })
+    .call(function () { loopB.timeScale(3); })
+    .fromTo("#f1", { opacity: 0, y: 8 }, { opacity: 1, y: 0, duration: 0.4 })
+    .fromTo("#f2", { opacity: 0, y: 8 }, { opacity: 1, y: 0, duration: 0.4 }, "+=0.3")
+    .to({}, { duration: 0.6 });
+  DECK.markStep(tl);
+
+  // step 4: who runs it — and what it started
+  tl.fromTo("#f3", { opacity: 0, y: 8 }, { opacity: 1, y: 0, duration: 0.4 })
+    .fromTo("#punch", { opacity: 0, y: 10 }, { opacity: 1, y: 0, duration: 0.5 });
+
+  DECK.register(tl, {
+    reset: function () {
+      loopA.pause(0);
+      loopB.pause(0); loopB.timeScale(1);
+      strA.reset(); strB.reset();
+      modeB.textContent = "";
+      tagB.textContent = "LANE 2 · ?";
+      document.getElementById("subB").textContent = subB0;
+      document.getElementById("labB").textContent = EV.nodes[0].bytes + " / tok";
+      gsap.set("#labB", { clearProps: "color,scale" });
+      var kc = kvcB(); if (kc) kc.textContent = String(G.mhaHeads);
+    }
+  });
+</script>
+</body>
+</html>

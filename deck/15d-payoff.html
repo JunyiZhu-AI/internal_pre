@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Attention Line: The Payoff</title>
+<link rel="stylesheet" href="shared/deck.css">
+<link rel="stylesheet" href="shared/evo.css">
+<link rel="stylesheet" href="shared/bottlenecks.css">
+<style>
+  #map { left: 690px; top: 96px; }
+  #film { position: absolute; left: 292px; top: 128px; display: flex; gap: 14px; }
+  .fcard { width: 124px; height: 92px; background: var(--panel); border-radius: 6px; opacity: 0;
+           border-top: 2px dotted #4a5066; border-bottom: 2px dotted #4a5066;
+           display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; }
+  .fcard .fn { font: 800 11px ui-monospace, monospace; }
+  .g { display: flex; align-items: flex-end; justify-content: center; gap: 2px; }
+  .gs { display: block; height: 36px; border-radius: 2px; background: linear-gradient(180deg, rgba(144,133,233,0.45), #9085e9); }
+  .gs.cap { border-radius: 6px; box-shadow: 0 0 10px rgba(144,133,233,0.8); }
+  .g.mat { display: grid; grid-template-columns: repeat(6, 6px); gap: 1px; }
+  .g.mat b { width: 6px; height: 6px; border-radius: 1.5px; display: block; }
+  .gsq { width: 36px; height: 36px; border: 2px solid; border-radius: 7px; display: flex; flex-direction: column;
+         justify-content: space-evenly; padding: 4px; background: rgba(224,75,56,0.05); }
+  .gsq u { display: block; height: 3.5px; border-radius: 2px; background: #2fd6b0; }
+  #gauge { position: absolute; left: 44px; top: 242px; opacity: 0; }
+  #lad { position: absolute; left: 44px; top: 306px; width: 600px; }
+  .lr { display: flex; align-items: center; gap: 12px; height: 46px; opacity: 0; }
+  .lr .ln { width: 112px; font: 700 13px ui-monospace, monospace; }
+  .lr .lb { height: 18px; border-radius: 4px; transform-origin: left; }
+  .lr .lv { font: 700 13px ui-monospace, monospace; color: #c7cce0; white-space: nowrap; }
+  #cut { position: absolute; left: 700px; top: 252px; font: 700 13px ui-monospace, monospace; color: #e0a935;
+         border: 1.5px solid rgba(201,133,0,0.55); border-radius: 999px; padding: 6px 14px; background: var(--panel); opacity: 0; }
+  #x63 { position: absolute; left: 1078px; top: 196px; text-align: center; opacity: 0; }
+  #x63 .big { font: 900 44px ui-monospace, monospace; color: var(--accent); line-height: 1; }
+  #x63 .sm { font: 600 9.5px ui-monospace, monospace; color: #9aa1b5; margin-top: 4px; width: 150px; }
+  #simh { position: absolute; left: 700px; top: 306px; width: 520px; height: 218px; opacity: 0; }
+  #parity { position: absolute; left: 700px; top: 546px; opacity: 0; }
+  #bridge { position: absolute; left: 44px; bottom: 28px; font-size: 17px; font-weight: 800; color: var(--accent); opacity: 0; }
+</style>
+</head>
+<body>
+<div class="stage">
+  <div class="slide-title">Attention Line: The Payoff</div>
+  <div class="slide-sub">the whole lineage on one filmstrip — and what K3 buys with it</div>
+
+  <div id="map"></div>
+  <div id="film"></div>
+  <div id="gauge"><span class="ev-gauge">KV bytes / token · <b id="gv">—</b></span></div>
+  <div id="lad"></div>
+  <div id="cut"></div>
+  <div id="x63"><div class="big"></div><div class="sm"></div></div>
+  <div id="simh"></div>
+  <div id="parity" class="op-chip"></div>
+  <div id="bridge"></div>
+</div>
+
+<script src="../vendor/gsap.min.js"></script>
+<script src="shared/attnevo.js"></script>
+<script src="shared/bottlenecks.js"></script>
+<script src="shared/manifest.js"></script>
+<script src="shared/deck.js"></script>
+<script>
+  EV.mapStrip(document.getElementById("map"), 6);
+  document.getElementById("cut").textContent = EV.payoff.kvcut;
+  document.querySelector("#x63 .big").textContent = EV.payoff.speed + "×";
+  document.querySelector("#x63 .sm").textContent = "decode throughput at 1M context ⚠";
+  document.getElementById("parity").textContent = EV.payoff.quality;
+  document.getElementById("bridge").textContent = EV.payoff.bridge;
+
+  function glyphHTML(key) {
+    var s = "", i, r, c;
+    if (key === "mha") { for (i = 0; i < 14; i++) s += '<i class="gs" style="width:3px"></i>'; return '<div class="g">' + s + "</div>"; }
+    if (key === "gqa") { for (i = 0; i < 4; i++) s += '<i class="gs" style="width:8px"></i>'; return '<div class="g">' + s + "</div>"; }
+    if (key === "mla") return '<div class="g"><i class="gs cap" style="width:10px"></i></div>';
+    if (key === "sparse") {
+      for (r = 0; r < 6; r++) for (c = 0; c < 6; c++) {
+        var bg = c > r ? "transparent" : (r - c < 2 ? "rgba(224,169,53,0.85)" : "rgba(57,135,229,0.14)");
+        s += '<b style="background:' + bg + '"></b>';
+      }
+      return '<div class="g mat">' + s + "</div>";
+    }
+    if (key === "kda") { for (i = 0; i < 5; i++) s += '<u style="opacity:' + (0.15 + i * 0.2) + '"></u>'; return '<div class="g"><span class="gsq" style="border-color:#e04b38">' + s + "</span></div>"; }
+    return "";
+  }
+
+  var FILM = [["mha", "MHA", "#6b7284"], ["gqa", "GQA", "#3987e5"], ["mla", "MLA", "#6fb1ff"],
+              ["sparse", "Sparse", "#e0a935"], ["kda", "KDA state", "#e04b38"]];
+  var film = document.getElementById("film");
+  FILM.forEach(function (f) {
+    film.insertAdjacentHTML("beforeend",
+      '<div class="fcard">' + glyphHTML(f[0]) + '<div class="fn" style="color:' + f[2] + '">' + f[1] + "</div></div>");
+  });
+
+  // the bytes/token ladder — bar widths on a log scale
+  var LW = [380, 238, 134, 75];
+  var LC = ["#6b7284", "#3987e5", "#6fb1ff", "#e04b38"];
+  var lad = document.getElementById("lad");
+  EV.payoff.ladder.forEach(function (row, i) {
+    lad.insertAdjacentHTML("beforeend",
+      '<div class="lr"><span class="ln" style="color:' + LC[i] + '">' + row[0] + "</span>" +
+      '<div class="lb" style="width:' + LW[i] + "px;background:linear-gradient(90deg," + LC[i] + "55," + LC[i] + ')"></div>' +
+      '<span class="lv">' + row[1] + "</span></div>");
+  });
+
+  var sim = BN.buildSim(document.getElementById("simh"), {});
+  function setG(txt) {
+    document.getElementById("gv").textContent = txt;
+    gsap.fromTo("#gauge", { scale: 1.1 }, { scale: 1, duration: 0.35, ease: "power2.out" });
+  }
+
+  var tl = gsap.timeline({ paused: true });
+
+  // step 1: the filmstrip + the ladder sweeps down, gauge riding along
+  tl.fromTo(".fcard", { opacity: 0, y: 14 }, { opacity: 1, y: 0, duration: 0.4, stagger: 0.1, ease: "power2.out" })
+    .fromTo("#gauge", { opacity: 0 }, { opacity: 1, duration: 0.35 });
+  document.querySelectorAll(".lr").forEach(function (r, i) {
+    tl.call(function () { setG(EV.payoff.ladder[i][1]); })
+      .fromTo(r, { opacity: 0, x: -16 }, { opacity: 1, x: 0, duration: 0.4, ease: "power2.out" })
+      .fromTo(r.querySelector(".lb"), { scaleX: 0 }, { scaleX: 1, duration: 0.5, ease: "power2.out" }, "<0.1");
+  });
+  DECK.markStep(tl);
+
+  // step 2: K3's bill — 75% KV cut, and the speedometer winds up to 6.3×
+  tl.fromTo("#cut", { opacity: 0, y: 10 }, { opacity: 1, y: 0, duration: 0.45 })
+    .fromTo("#simh", { opacity: 0, y: 12 }, { opacity: 1, y: 0, duration: 0.45 })
+    .call(function () { sim.setSpeed(1); sim.start(); })
+    .to({}, { duration: 1.0 })
+    .call(function () { sim.setSpeed(2.0); }).to({}, { duration: 0.5 })
+    .call(function () { sim.setSpeed(3.5); }).to({}, { duration: 0.5 })
+    .call(function () { sim.setSpeed(5.0); }).to({}, { duration: 0.5 })
+    .call(function () { sim.setSpeed(6.3); })
+    .fromTo("#x63", { opacity: 0, scale: 0.4 }, { opacity: 1, scale: 1, duration: 0.5, ease: "back.out(2)" })
+    .to({}, { duration: 0.8 });
+  DECK.markStep(tl);
+
+  // step 3: and quality holds
+  tl.fromTo("#parity", { opacity: 0, y: 8 }, { opacity: 1, y: 0, duration: 0.45 });
+  DECK.markStep(tl);
+
+  // step 4: bridge to the next section
+  tl.fromTo("#bridge", { opacity: 0, y: 10 }, { opacity: 1, y: 0, duration: 0.5 });
+
+  DECK.register(tl, {
+    reset: function () {
+      sim.stop(); sim.setSpeed(1);
+      document.getElementById("gv").textContent = "—";
+      gsap.set("#gauge", { scale: 1 });
+    }
+  });
+</script>
+</body>
+</html>

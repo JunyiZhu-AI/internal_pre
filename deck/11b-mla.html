@@ -1,0 +1,208 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>MLA: Compress KV into a Latent</title>
+<link rel="stylesheet" href="shared/deck.css">
+<link rel="stylesheet" href="shared/evo.css">
+<style>
+  #fwrap { position: absolute; left: 44px; top: 122px; display: flex; align-items: flex-start; gap: 8px; opacity: 0; }
+  #fwrap .feq { font: 600 12px ui-monospace, monospace; color: #9aa1b5; padding-top: 5px; }
+  #fwrap .fop { font: 700 15px ui-monospace, monospace; color: #4a5066; padding-top: 2px; }
+  .fbr { font: 800 22px ui-monospace, monospace; color: #4a5066; padding-top: 0; }
+  .ft { text-align: center; position: relative; padding: 0 2px 6px; }
+  .ft .fv { font: 800 18px ui-monospace, monospace; color: #9085e9; white-space: nowrap; }
+  .ft .fl { font: 9.5px ui-monospace, monospace; color: #6b7284; margin-top: 1px; white-space: nowrap; }
+  .ft.hot .fv { color: var(--hot); }
+  .ft.hot .fl { color: var(--hot); opacity: 0.7; }
+  .ft.hot::after { content: ""; position: absolute; left: 2px; right: 2px; bottom: 0; height: 2.5px; border-radius: 2px; background: var(--hot); box-shadow: 0 0 10px var(--hot); }
+  #fres { font: 800 18px ui-monospace, monospace; color: var(--c-o); padding-top: 2px; white-space: nowrap; }
+  #latlab { position: absolute; left: 230px; top: 178px; font: 700 12px ui-monospace, monospace; color: #6fb1ff; opacity: 0; }
+  /* squeeze pipeline */
+  #pipe { position: absolute; left: 60px; top: 226px; width: 580px; height: 200px; opacity: 0; }
+  .col { position: absolute; top: 22px; width: 34px; height: 140px; border-radius: 7px; background: linear-gradient(180deg, rgba(144,133,233,0.45), #9085e9); }
+  .collab { position: absolute; top: 0; width: 34px; text-align: center; font: 800 12px ui-monospace, monospace; color: var(--c-o); }
+  #funnel { position: absolute; inset: 0; pointer-events: none; }
+  #funnel line { stroke: #6fb1ff; stroke-width: 1.6; stroke-dasharray: 5 5; opacity: 0.75; }
+  #funlab { position: absolute; left: 108px; top: 172px; width: 120px; text-align: center; font: 600 10px ui-monospace, monospace; color: #6b7284; }
+  #cap { position: absolute; left: 234px; top: 78px; width: 70px; height: 28px; border: 2px solid #6fb1ff; border-radius: 999px; background: rgba(111,177,255,0.14); display: flex; align-items: center; justify-content: center; font: 800 13px ui-monospace, monospace; color: #6fb1ff; opacity: 0; }
+  #cachebox { position: absolute; left: 380px; top: 8px; width: 180px; height: 176px; border: 1.5px dashed rgba(144,133,233,0.7); border-radius: 10px; opacity: 0; }
+  #cachebox .cl { position: absolute; bottom: -22px; width: 100%; text-align: center; font: 700 11px ui-monospace, monospace; color: var(--c-o); }
+  .sc, #ghostC { position: absolute; width: 110px; height: 22px; border: 1.5px solid #6fb1ff; border-radius: 999px; background: rgba(111,177,255,0.13); font: 700 10px ui-monospace, monospace; color: #6fb1ff; display: flex; align-items: center; justify-content: center; opacity: 0; }
+  .gcol { position: absolute; width: 12px; height: 70px; border-radius: 4px; background: #9085e9; opacity: 0; }
+  /* the number */
+  #cmp { position: absolute; left: 690px; top: 250px; opacity: 0; }
+  .cmprow { display: flex; align-items: center; gap: 10px; margin-bottom: 16px; }
+  .cmprow .cb { height: 22px; border-radius: 5px; }
+  .cmprow .cn { font: 700 12.5px ui-monospace, monospace; white-space: nowrap; }
+  #mlabytes { position: absolute; left: 690px; top: 342px; width: 520px; font: 600 12.5px ui-monospace, monospace; color: #6fb1ff; opacity: 0; }
+  /* absorption */
+  #absorb { position: absolute; left: 60px; top: 462px; width: 1160px; opacity: 0; }
+  #absorb .al { font: 600 11.5px ui-monospace, monospace; color: var(--ink-2); margin-bottom: 10px; }
+  .wchip { position: absolute; width: 74px; height: 32px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font: 700 12.5px ui-monospace, monospace; }
+  #wuk, #wuv { border: 1.5px solid #6fb1ff; color: #6fb1ff; background: rgba(111,177,255,0.1); }
+  #wq { border: 1.5px solid var(--c-q); color: #7fb3f5; background: rgba(57,135,229,0.12); }
+  #wo { border: 1.5px solid var(--c-o); color: #b3aaff; background: rgba(144,133,233,0.12); }
+  #absorbtxt { position: absolute; left: 640px; top: 496px; width: 560px; font: 600 13px ui-monospace, monospace; color: var(--accent); opacity: 0; }
+  #adopters { position: absolute; left: 44px; bottom: 66px; font-size: 14px; color: #c7cce0; opacity: 0; }
+  #framing { position: absolute; left: 44px; bottom: 30px; width: 940px; font-size: 15.5px; font-weight: 700; color: var(--accent); opacity: 0; }
+</style></head>
+<body>
+<div class="stage">
+  <div class="slide-title">MLA: Compress KV into a Latent</div>
+  <div class="slide-sub">second knob: replace heads &times; dim with one low-rank latent</div>
+  <div id="strip"></div>
+
+  <div id="fwrap"></div>
+  <div id="latlab"></div>
+
+  <div id="pipe">
+    <span class="collab" style="left:20px">K</span><span class="collab" style="left:64px">V</span>
+    <div class="col" style="left:20px"></div>
+    <div class="col" style="left:64px"></div>
+    <svg id="funnel" viewBox="0 0 580 200" width="580" height="200">
+      <line x1="112" y1="24" x2="228" y2="84"/>
+      <line x1="112" y1="162" x2="228" y2="102"/>
+    </svg>
+    <div id="funlab">low-rank down-projection</div>
+    <div id="cap">c_t</div>
+    <div class="gcol" id="gk"></div>
+    <div class="gcol" id="gv"></div>
+    <div id="ghostC">c_t</div>
+    <div id="cachebox">
+      <div class="sc" id="sc0" style="left:34px; top:141px">c_1</div>
+      <div class="sc" id="sc1" style="left:34px; top:110px">c_2</div>
+      <div class="sc" id="sc2" style="left:34px; top:79px">c_3</div>
+      <div class="sc" id="sc3" style="left:34px; top:48px">c_4</div>
+      <div class="cl">KV cache — capsules only</div>
+    </div>
+  </div>
+
+  <div id="cmp">
+    <div class="cmprow"><div class="cb" id="cbG" style="background:linear-gradient(90deg, rgba(144,133,233,0.5), #9085e9); width:330px"></div><span class="cn" style="color:var(--c-o)">GQA &middot; 330 KB</span></div>
+    <div class="cmprow"><div class="cb" id="cbM" style="background:linear-gradient(90deg, rgba(111,177,255,0.5), #6fb1ff); width:70px"></div><span class="cn" style="color:#6fb1ff" id="cbMlab">MLA &middot; ~70 KB ⚠</span></div>
+  </div>
+  <div id="mlabytes"></div>
+
+  <div id="absorb">
+    <div class="al">decode trick: absorb the up-projections</div>
+    <div class="wchip" id="wuk" style="left:240px; top:28px">W_UK</div>
+    <div class="wchip" id="wq" style="left:440px; top:28px">W_Q</div>
+    <div class="wchip" id="wuv" style="left:240px; top:70px">W_UV</div>
+    <div class="wchip" id="wo" style="left:440px; top:70px">W_O</div>
+  </div>
+  <div id="absorbtxt"></div>
+  <div id="adopters"></div>
+  <div id="framing"></div>
+</div>
+
+<script src="../vendor/gsap.min.js"></script>
+<script src="shared/attnevo.js"></script>
+<script src="shared/manifest.js"></script>
+<script src="shared/deck.js"></script>
+<script>
+  EV.mapStrip(document.getElementById("strip"), 2);
+  var strip = document.getElementById("strip");
+  strip.style.left = "660px"; strip.style.top = "96px";
+
+  function T(v, l, id) { return '<div class="ft" id="' + id + '"><div class="fv">' + v + '</div><div class="fl">' + l + "</div></div>"; }
+  document.getElementById("fwrap").innerHTML =
+    '<span class="feq">per token =</span>' +
+    T("2", "K and V", "t-2") + '<span class="fop">&times;</span>' +
+    T("80", "layers", "t-nl") + '<span class="fop">&times;</span>' +
+    '<span class="fbr" id="br1">[</span>' +
+    T("8", "KV heads", "t-kv") + '<span class="fop">&times;</span>' +
+    T("128", "head dim", "t-dh") +
+    '<span class="fbr" id="br2">]</span>' + '<span class="fop">&times;</span>' +
+    T("2 B", "BF16", "t-by") + '<span class="fop">=</span>' +
+    '<span id="fres">330 KB</span>';
+
+  document.getElementById("latlab").textContent = "→ " + EV.mla.latent;
+  document.getElementById("mlabytes").textContent = EV.mla.bytes + " ⚠";
+  document.getElementById("absorbtxt").textContent = EV.mla.absorb;
+  document.getElementById("adopters").textContent = EV.mla.adopters;
+  document.getElementById("framing").textContent = EV.mla.framing;
+
+  function hot(id) {
+    var el = document.getElementById(id);
+    el.classList.add("hot"); el.style.setProperty("--hot", "#6fb1ff");
+  }
+  var fres = document.getElementById("fres");
+  var ctr = { v: 3.3e5 };
+
+  // ---- ambient squeeze loop: K,V pair -> funnel -> capsule -> cache stack ----
+  var cnt = 0;
+  var loop = gsap.timeline({ repeat: -1, paused: true });
+  loop.call(function () {
+    if (cnt >= 4) {
+      cnt = 0;
+      gsap.set(".sc", { opacity: 0 });
+    }
+  })
+    .fromTo("#gk", { x: 25, y: 55, scaleY: 1, opacity: 1 }, { x: 150, y: 68, scaleY: 0.32, opacity: 0.55, duration: 0.55, ease: "power1.in" })
+    .fromTo("#gv", { x: 70, y: 55, scaleY: 1, opacity: 1 }, { x: 168, y: 68, scaleY: 0.32, opacity: 0.55, duration: 0.55, ease: "power1.in" }, "<")
+    .set("#gk, #gv", { opacity: 0 })
+    .fromTo("#cap", { scale: 0.75 }, { scale: 1.12, duration: 0.16, yoyo: true, repeat: 1 })
+    .fromTo("#ghostC", { x: 214, y: 81, opacity: 1, scale: 0.8 },
+      { x: 414, y: function () { return 149 - cnt * 31; }, scale: 1, duration: 0.55, ease: "power2.inOut" })
+    .call(function () {
+      gsap.set("#sc" + cnt, { opacity: 1 });
+      gsap.set("#ghostC", { opacity: 0 });
+      cnt++;
+    })
+    .to({}, { duration: 0.5 });
+
+  var tl = gsap.timeline({ paused: true });
+
+  // step 1: squeeze K,V through the bottleneck — only c_t enters the cache
+  tl.fromTo("#fwrap", { opacity: 0, y: 10 }, { opacity: 1, y: 0, duration: 0.4 })
+    .call(function () {
+      hot("t-kv"); hot("t-dh");
+      document.getElementById("br1").style.color = "#6fb1ff";
+      document.getElementById("br2").style.color = "#6fb1ff";
+    })
+    .fromTo("#latlab", { opacity: 0, y: -6 }, { opacity: 1, y: 0, duration: 0.4 })
+    .fromTo("#pipe", { opacity: 0 }, { opacity: 1, duration: 0.4 })
+    .fromTo("#cap", { opacity: 0, scale: 0.4 }, { opacity: 1, scale: 1, duration: 0.4, ease: "back.out(2)" })
+    .fromTo("#cachebox", { opacity: 0, x: 12 }, { opacity: 1, x: 0, duration: 0.45 })
+    .call(function () { loop.play(0); })
+    .to({}, { duration: 2.0 });
+  DECK.markStep(tl);
+
+  // step 2: the number — an order of magnitude below GQA
+  tl.fromTo("#cmp", { opacity: 0, y: 10 }, { opacity: 1, y: 0, duration: 0.4 })
+    .fromTo("#cbG", { width: 0 }, { width: 330, duration: 0.7, ease: "power2.out" })
+    .fromTo("#cbM", { width: 0 }, { width: 70, duration: 0.5, ease: "power2.out" })
+    .fromTo(ctr, { v: 3.3e5 }, {
+      v: 7e4, duration: 0.9, ease: "power2.inOut",
+      onUpdate: function () { fres.textContent = Math.round(ctr.v / 1e3) + " KB"; }
+    })
+    .call(function () { fres.textContent = "~70 KB ⚠"; fres.style.color = "#6fb1ff"; })
+    .fromTo("#mlabytes", { opacity: 0 }, { opacity: 1, duration: 0.45 });
+  DECK.markStep(tl);
+
+  // step 3: the absorption trick — zero extra decode compute
+  tl.fromTo("#absorb", { opacity: 0, y: 10 }, { opacity: 1, y: 0, duration: 0.4 })
+    .to("#wuk", { x: 200, scale: 0.25, opacity: 0, duration: 0.7, ease: "power2.in" })
+    .to("#wuv", { x: 200, scale: 0.25, opacity: 0, duration: 0.7, ease: "power2.in" }, "<0.15")
+    .to("#wq", { boxShadow: "0 0 18px rgba(47,214,176,0.9)", borderColor: "#2fd6b0", duration: 0.3, yoyo: true, repeat: 1 }, "-=0.3")
+    .to("#wo", { boxShadow: "0 0 18px rgba(47,214,176,0.9)", borderColor: "#2fd6b0", duration: 0.3, yoyo: true, repeat: 1 }, "<0.15")
+    .fromTo("#absorbtxt", { opacity: 0 }, { opacity: 1, duration: 0.45 });
+  DECK.markStep(tl);
+
+  // step 4: adoption + framing
+  tl.fromTo("#adopters", { opacity: 0, y: 8 }, { opacity: 1, y: 0, duration: 0.4 })
+    .fromTo("#framing", { opacity: 0, y: 8 }, { opacity: 1, y: 0, duration: 0.45 })
+    .fromTo(strip.children[4], { scale: 1 }, { scale: 1.25, duration: 0.3, yoyo: true, repeat: 1 });
+
+  DECK.register(tl, {
+    reset: function () {
+      loop.pause(0);
+      cnt = 0;
+      gsap.set(".sc, #ghostC, #gk, #gv", { opacity: 0 });
+      var b1 = document.getElementById("br1"), b2 = document.getElementById("br2");
+      b1.style.color = ""; b2.style.color = "";
+      ["t-kv", "t-dh"].forEach(function (id) { document.getElementById(id).classList.remove("hot"); });
+      fres.textContent = "330 KB"; fres.style.color = "";
+    }
+  });
+</script>
+</body></html>

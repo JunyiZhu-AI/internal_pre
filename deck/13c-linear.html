@@ -1,0 +1,191 @@
+<!DOCTYPE html><html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Linear Attention &amp; SSMs: Replace the Cache with a State</title>
+<link rel="stylesheet" href="shared/deck.css">
+<link rel="stylesheet" href="shared/evo.css">
+<style>
+  #map { left: 660px; top: 96px; }
+  .pan { position: absolute; top: 150px; width: 480px; height: 290px; background: var(--panel); border: 1.5px solid var(--line); border-radius: 12px; padding: 14px 16px; opacity: 0; }
+  #pfull { left: 90px; }
+  #plin { left: 610px; border-color: rgba(47,214,176,0.4); }
+  .pan h4 { margin: 0 0 10px; font: 700 13.5px ui-monospace, monospace; color: #e8eaf0; }
+  #cnt { font: 700 13px ui-monospace, monospace; color: #ff8a7a; margin-bottom: 10px; }
+  #kvlist { display: flex; flex-wrap: wrap; gap: 3px; width: 300px; }
+  #kvlist i { width: 18px; height: 13px; border-radius: 3px; background: linear-gradient(180deg, rgba(144,133,233,0.5), #9085e9); }
+  #fnote { position: absolute; left: 16px; bottom: 12px; font: 600 11.5px ui-monospace, monospace; color: #6b7284; }
+  #recur { font: 600 11.5px ui-monospace, monospace; color: var(--ink-2); margin-bottom: 8px; }
+  #formula { font: 800 19px ui-monospace, monospace; color: var(--accent); margin-bottom: 12px; }
+  #srow { display: flex; gap: 16px; align-items: flex-start; }
+  #sgrid { display: grid; grid-template-columns: repeat(6, 22px); gap: 3px; padding: 6px; border: 1.5px solid rgba(47,214,176,0.5); border-radius: 8px; }
+  #sgrid i { width: 22px; height: 22px; border-radius: 4px; background: rgba(47,214,176,0.22); }
+  #slab { width: 240px; font: 600 11.5px ui-monospace, monospace; color: var(--ink-2); line-height: 1.6; }
+  #gate { margin-top: 12px; opacity: 0; }
+  #gate .gl { font: 700 11px ui-monospace, monospace; color: #e0a935; margin-bottom: 5px; }
+  #gate .gt { position: relative; width: 110px; height: 4px; border-radius: 2px; background: #2a2e3b; }
+  #gate .gh { position: absolute; left: 0; top: -4px; width: 12px; height: 12px; border-radius: 50%; background: #e0a935; }
+  #ssm { position: absolute; left: 610px; top: 452px; width: 480px; font: 600 12.5px ui-monospace, monospace; color: var(--ink-2); border: 1px dashed rgba(47,214,176,0.5); border-radius: 8px; padding: 8px 12px; background: rgba(27,30,39,0.6); opacity: 0; }
+  #ssm b { color: var(--accent); }
+  #dcap { position: absolute; left: 90px; top: 452px; width: 490px; font: 600 12.5px ui-monospace, monospace; color: var(--ink-2); opacity: 0; line-height: 1.55; }
+  #dcap b { color: #b9b0ff; }
+  #catch { position: absolute; left: 44px; bottom: 14px; font-size: 15.5px; font-weight: 700; color: #ff8a7a; opacity: 0; }
+
+  /* —— recurring cache bar —— */
+  #cbar { position: absolute; left: 90px; top: 552px; width: 1100px; }
+  #cbar .cb-lab { font: 700 10.5px ui-monospace, monospace; letter-spacing: 0.14em; color: #e0a935; opacity: 0.75; margin-bottom: 5px; }
+  #cbar .cb-box { position: relative; height: 62px; border: 2px solid rgba(201,133,0,0.55); border-radius: 10px; background: rgba(18,20,26,0.6); display: flex; overflow: hidden; }
+  #cbar .cb-w { flex: none; width: 300px; display: flex; align-items: center; justify-content: center; font: 700 12px ui-monospace, monospace; color: #e0a935; background: repeating-linear-gradient(90deg, rgba(201,133,0,0.26) 0 7px, rgba(201,133,0,0.12) 7px 14px); border-right: 1.5px solid rgba(201,133,0,0.35); }
+  #cbar .cb-kv { flex: none; width: 0; display: flex; align-items: center; justify-content: center; font: 800 11.5px ui-monospace, monospace; color: #0c1116; white-space: nowrap; overflow: hidden; background: linear-gradient(180deg, rgba(144,133,233,0.62), #9085e9); }
+  #cbar .cb-kv.state { background: linear-gradient(180deg, rgba(47,214,176,0.62), #2fd6b0); }
+  #cbar .cb-b { flex: 1; position: relative; }
+  #cbar .cb-slots { position: absolute; inset: 0; display: flex; }
+  #cbar .cb-slot { flex: 1; border-left: 1.5px dashed rgba(74,80,102,0.55); }
+  #cbar .cb-blab { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font: 700 11px ui-monospace, monospace; color: #9aa1b5; }
+</style>
+</head>
+<body>
+<div class="stage">
+  <div class="slide-title">Linear Attention &amp; SSMs: Replace the Cache with a State</div>
+  <div class="slide-sub">the radical move — no growing cache at all</div>
+  <div id="map"></div>
+
+  <div class="pan" id="pfull">
+    <h4>full attention — decode</h4>
+    <div id="cnt">cache: n = 0</div>
+    <div id="kvlist"></div>
+    <div id="fnote">the KV list grows with every token — and is re-read every step</div>
+  </div>
+  <div class="pan" id="plin">
+    <h4>linear attention — decode</h4>
+    <div id="recur"></div>
+    <div id="formula">Sₜ = Sₜ₋₁ + vₜkₜᵀ</div>
+    <div id="srow">
+      <div id="sgrid"></div>
+      <div>
+        <div id="slab"></div>
+        <div id="gate"><div class="gl">forget gate α — Gated DeltaNet</div><div class="gt"><div class="gh"></div></div></div>
+      </div>
+    </div>
+  </div>
+  <div id="dcap"></div>
+  <div id="ssm"></div>
+  <div id="cbar"></div>
+  <div id="catch"></div>
+</div>
+
+<script src="../vendor/gsap.min.js"></script>
+<script src="shared/attnevo.js"></script>
+<script src="shared/manifest.js"></script>
+<script src="shared/deck.js"></script>
+<script>
+  EV.mapStrip(document.getElementById("map"), 4);
+  document.getElementById("recur").textContent = EV.linear.recur;
+  document.getElementById("slab").textContent = EV.linear.state;
+  document.getElementById("ssm").innerHTML = EV.linear.ssm.replace("Mamba", "<b>Mamba</b>");
+  document.getElementById("dcap").innerHTML = EV.linear.delta
+    .replace("DeltaNet:", "<b>DeltaNet:</b>").replace("Gated DeltaNet", "<b>Gated DeltaNet</b>");
+  document.getElementById("catch").textContent = EV.linear.catch;
+
+  // ---- state grid ----
+  var sgrid = document.getElementById("sgrid"), scells = [];
+  for (var i = 0; i < 36; i++) {
+    var c = document.createElement("i");
+    sgrid.appendChild(c); scells.push(c);
+  }
+
+  // ---- cache bar (recurring) ----
+  var cb = (function () {
+    var host = document.getElementById("cbar");
+    host.innerHTML = '<div class="cb-lab">HBM · FIXED CAPACITY</div>' +
+      '<div class="cb-box"><div class="cb-w">weights</div>' +
+      '<div class="cb-kv"><span class="cb-kvt"></span></div>' +
+      '<div class="cb-b"><div class="cb-slots"></div><div class="cb-blab"></div></div></div>';
+    var api = {
+      kv: host.querySelector(".cb-kv"), kvt: host.querySelector(".cb-kvt"),
+      blab: host.querySelector(".cb-blab"), slotBox: host.querySelector(".cb-slots"),
+      slots: function (n) {
+        api.slotBox.innerHTML = "";
+        for (var i = 0; i < n; i++) { var d = document.createElement("div"); d.className = "cb-slot"; api.slotBox.appendChild(d); }
+      }
+    };
+    return api;
+  })();
+  function barInit() {
+    gsap.set(cb.kv, { width: 390, filter: "none" });
+    cb.kv.classList.remove("state");
+    cb.kvt.textContent = "KV · full history";
+    cb.blab.textContent = "batch ×1";
+    cb.slots(0);
+  }
+  barInit();
+
+  // ---- ambient decode loop: left grows, right stays fixed ----
+  var n = 0;
+  var kvlist = document.getElementById("kvlist");
+  var cnt = document.getElementById("cnt");
+  var loop = gsap.timeline({ repeat: -1, paused: true });
+  loop.call(function () {
+    if (n >= 28) { kvlist.innerHTML = ""; n = 0; }
+    n++;
+    kvlist.appendChild(document.createElement("i"));
+    cnt.textContent = "cache: n = " + n + "  ↑";
+    var c = scells[(Math.random() * 36) | 0];
+    gsap.fromTo(c, { backgroundColor: "#2fd6b0" }, { backgroundColor: "rgba(47,214,176,0.22)", duration: 0.45 });
+    gsap.fromTo(cb.kv, { filter: "brightness(1.35)" }, { filter: "brightness(1)", duration: 0.4 });
+  }).to({}, { duration: 0.5 });
+
+  var tl = gsap.timeline({ paused: true });
+
+  // step 1: two decode loops — a growing list vs a fixed d×d state
+  tl.fromTo("#pfull", { opacity: 0, x: -14 }, { opacity: 1, x: 0, duration: 0.45, ease: "power2.out" })
+    .fromTo("#plin", { opacity: 0, x: 14 }, { opacity: 1, x: 0, duration: 0.45, ease: "power2.out" }, "-=0.25")
+    .call(function () { loop.play(0); })
+    .call(function () {
+      cb.kv.classList.add("state");
+      cb.kvt.textContent = "S";
+      cb.blab.textContent = "batch ×many"; cb.slots(12);
+    })
+    .to(cb.kv, { width: 40, duration: 0.8, ease: "power2.inOut" })
+    .to({}, { duration: 1.6 });
+  DECK.markStep(tl);
+
+  // step 2: the SSM branch
+  tl.fromTo("#ssm", { opacity: 0, y: 10 }, { opacity: 1, y: 0, duration: 0.45 })
+    .to({}, { duration: 0.3 });
+  DECK.markStep(tl);
+
+  // step 3: the delta rule — correct the state, don't append to it
+  tl.fromTo("#dcap", { opacity: 0, y: 10 }, { opacity: 1, y: 0, duration: 0.45 })
+    .call(function () {
+      var c = scells[15];
+      gsap.timeline()
+        .to(c, { backgroundColor: "#e04b38", scale: 1.25, duration: 0.3 })
+        .to(c, { backgroundColor: "#b9b0ff", duration: 0.35 })
+        .to(c, { backgroundColor: "rgba(47,214,176,0.22)", scale: 1, duration: 0.5, delay: 0.3 });
+    })
+    .to({}, { duration: 1.0 })
+    .fromTo("#gate", { opacity: 0, y: 8 }, { opacity: 1, y: 0, duration: 0.4 })
+    .fromTo("#gate .gh", { x: 0 }, { x: 98, duration: 0.7, yoyo: true, repeat: 1, ease: "sine.inOut" });
+  DECK.markStep(tl);
+
+  // step 4: the catch — a fixed state forgets
+  tl.call(function () {
+    gsap.fromTo("#sgrid", { borderColor: "rgba(224,75,56,0.9)" }, { borderColor: "rgba(47,214,176,0.5)", duration: 0.6, repeat: 2 });
+  })
+    .fromTo("#catch", { opacity: 0, y: 8 }, { opacity: 1, y: 0, duration: 0.5 });
+
+  DECK.register(tl, {
+    reset: function () {
+      loop.pause(0);
+      n = 0; kvlist.innerHTML = ""; cnt.textContent = "cache: n = 0";
+      gsap.set("#pfull, #plin, #ssm, #dcap, #catch, #gate", { opacity: 0 });
+      gsap.set("#gate .gh", { x: 0 });
+      scells.forEach(function (c) { gsap.killTweensOf(c); gsap.set(c, { scale: 1, clearProps: "backgroundColor" }); });
+      gsap.killTweensOf("#sgrid"); gsap.set("#sgrid", { clearProps: "borderColor" });
+      barInit();
+    }
+  });
+</script>
+</body>
+</html>

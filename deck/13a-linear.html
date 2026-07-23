@@ -1,0 +1,173 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Linear Attention &amp; SSMs: Replace the Cache with a State</title>
+<link rel="stylesheet" href="shared/deck.css">
+<link rel="stylesheet" href="shared/evo.css">
+<style>
+  #stsign { position: absolute; left: 44px; top: 116px; display: flex; align-items: center; gap: 10px; }
+  #stsign .rnd { width: 26px; height: 26px; border-radius: 50%; border: 3px solid #2fd6b0; background: #0c1116;
+    display: flex; align-items: center; justify-content: center; font: 800 13px ui-monospace, monospace; color: #e8eaf0; }
+  #stsign .snm { font: 600 12px ui-monospace, monospace; color: #9aa1b5; }
+  #stsign .sfare { font: 700 11px ui-monospace, monospace; color: #2fd6b0; border: 1px solid var(--line);
+    border-radius: 999px; padding: 3px 10px; background: var(--panel); }
+  .panel { position: absolute; top: 178px; width: 520px; height: 252px; background: var(--panel);
+    border: 1px solid var(--line); border-radius: 12px; padding: 14px 18px; opacity: 0; }
+  #pfull { left: 90px; }
+  #plin { left: 664px; }
+  .ph { font: 800 13px ui-monospace, monospace; margin-bottom: 10px; }
+  #pfull .ph { color: #9085e9; }
+  #plin .ph { color: var(--accent); }
+  .ts { display: flex; gap: 4px; margin-bottom: 14px; }
+  .ts i { width: 22px; height: 22px; border-radius: 5px; background: #232836; display: block;
+    transition: background 0.2s, box-shadow 0.2s; }
+  .ts i.cur { background: var(--accent); box-shadow: 0 0 8px rgba(47,214,176,0.7); }
+  #kvlab { font: 600 11.5px ui-monospace, monospace; color: #9085e9; margin-bottom: 6px; }
+  #kvticks { display: flex; gap: 3px; flex-wrap: wrap; width: 480px; }
+  #kvticks i { width: 20px; height: 26px; border-radius: 4px; background: #9085e9; display: block; opacity: 0; }
+  #pfoot { position: absolute; left: 18px; bottom: 12px; font: 700 12px ui-monospace, monospace; color: #ff8a7a; }
+  #stwrap { display: flex; gap: 18px; align-items: flex-start; }
+  #stategrid { display: grid; grid-template-columns: repeat(6, 16px); gap: 3px; padding: 7px;
+    border: 2px solid var(--accent); border-radius: 9px; background: rgba(47,214,176,0.05); }
+  #stategrid i { width: 16px; height: 16px; border-radius: 3px; background: rgba(47,214,176,0.35); display: block; }
+  #strec { font: 600 12px ui-monospace, monospace; color: #9aa1b5; width: 300px; line-height: 1.7; }
+  #strec .f { color: #d3f9dc; font-weight: 700; }
+  #lfoot { position: absolute; left: 18px; bottom: 12px; font: 700 12px ui-monospace, monospace; color: var(--accent); }
+  #ssm { position: absolute; left: 664px; top: 452px; display: flex; align-items: center; gap: 12px; opacity: 0; }
+  #ssm .mchip { font: 800 13px ui-monospace, monospace; color: var(--accent); border: 1.5px solid var(--accent);
+    border-radius: 8px; padding: 5px 12px; background: rgba(47,214,176,0.08); }
+  #ssm .mtxt { font: 600 12px ui-monospace, monospace; color: #9aa1b5; width: 380px; line-height: 1.5; }
+  #delta { position: absolute; left: 90px; top: 452px; width: 520px; opacity: 0; }
+  #delta .dh { font: 800 12.5px ui-monospace, monospace; color: #e8eaf0; margin-bottom: 6px; }
+  #delta .dt { font: 600 12px ui-monospace, monospace; color: #9aa1b5; line-height: 1.6; }
+  #gate { position: absolute; left: 664px; top: 522px; display: flex; align-items: center; gap: 10px; opacity: 0; }
+  #gate .gl { font: 600 11.5px ui-monospace, monospace; color: #9aa1b5; }
+  #gtrack { width: 130px; height: 8px; border-radius: 4px; background: #232836; position: relative; }
+  #gknob { position: absolute; top: -4px; left: 90px; width: 16px; height: 16px; border-radius: 50%;
+    background: var(--accent); box-shadow: 0 0 8px rgba(47,214,176,0.7); }
+  #punch { position: absolute; left: 44px; bottom: 26px; font-size: 16px; font-weight: 700; color: #ff8a7a; opacity: 0; }
+</style></head><body>
+<div class="stage">
+  <div class="slide-title">Linear Attention &amp; SSMs: Replace the Cache with a State</div>
+  <div class="slide-sub">the express line — per-token decode cost independent of context length</div>
+  <div id="stsign"><b class="rnd">5</b><span class="snm">arriving at</span><span class="sfare">growing KV → O(1) state</span></div>
+  <div id="strip"></div>
+
+  <div class="panel" id="pfull">
+    <div class="ph">FULL ATTENTION · decode</div>
+    <div class="ts" id="ts1"></div>
+    <div id="kvlab">KV cache</div>
+    <div id="kvticks"></div>
+    <div id="pfoot">drags a growing list — <b id="kvcount">0</b> entries</div>
+  </div>
+
+  <div class="panel" id="plin">
+    <div class="ph">LINEAR ATTENTION · decode</div>
+    <div class="ts" id="ts2"></div>
+    <div id="stwrap">
+      <div id="stategrid"></div>
+      <div id="strec"><span class="f" id="recf"></span><br><span id="rect2"></span></div>
+    </div>
+    <div id="lfoot">fixed d×d state — never grows</div>
+  </div>
+
+  <div id="ssm"><span class="mchip">Mamba</span><span class="mtxt" id="ssmtxt"></span></div>
+  <div id="delta"><div class="dh">the delta rule: correct the state, don't accumulate into it</div><div class="dt" id="deltatxt"></div></div>
+  <div id="gate"><span class="gl">Gated DeltaNet adds a forget gate α</span><div id="gtrack"><div id="gknob"></div></div></div>
+  <div id="punch"></div>
+</div>
+
+<script src="../vendor/gsap.min.js"></script>
+<script src="shared/attnevo.js"></script>
+<script src="shared/manifest.js"></script>
+<script src="shared/deck.js"></script>
+<script>
+  EV.mapStrip(document.getElementById("strip"), 4);
+  var strip = document.getElementById("strip");
+  strip.style.left = "644px"; strip.style.top = "96px";
+
+  var rec = EV.linear.recur.split(": ");
+  document.getElementById("recf").textContent = rec[1] || EV.linear.recur;
+  document.getElementById("rect2").textContent = EV.linear.state;
+  document.getElementById("ssmtxt").textContent = EV.linear.ssm;
+  document.getElementById("deltatxt").textContent = EV.linear.delta;
+  document.getElementById("punch").textContent = EV.linear.catch;
+
+  // token streams + growing KV ticks + fixed state grid
+  var NT = 12, NK = 22;
+  ["ts1", "ts2"].forEach(function (id) {
+    var h = document.getElementById(id);
+    for (var i = 0; i < NT; i++) h.appendChild(document.createElement("i"));
+  });
+  var kvticks = document.getElementById("kvticks");
+  for (var i = 0; i < NK; i++) kvticks.appendChild(document.createElement("i"));
+  var sg = document.getElementById("stategrid");
+  for (var i = 0; i < 36; i++) sg.appendChild(document.createElement("i"));
+  var scells = sg.children, kticks = kvticks.children;
+
+  var t = 0, mode = "sum";
+  var loop = gsap.timeline({ repeat: -1, paused: true });
+  loop.call(function () {
+    var ti = t % NK;
+    if (ti === 0) for (var i = 0; i < NK; i++) kticks[i].style.opacity = 0;
+    // both sides receive the same next token
+    ["ts1", "ts2"].forEach(function (id) {
+      var row = document.getElementById(id).children;
+      for (var i = 0; i < NT; i++) row[i].classList.toggle("cur", i === t % NT);
+    });
+    // full attention: append one more KV entry
+    kticks[ti].style.opacity = 1;
+    document.getElementById("kvcount").textContent = ti + 1;
+    // linear: touch the same fixed box
+    if (mode === "sum") {
+      gsap.fromTo(sg, { boxShadow: "0 0 0 rgba(47,214,176,0)" },
+        { boxShadow: "0 0 16px rgba(47,214,176,0.55)", duration: 0.22, yoyo: true, repeat: 1 });
+    } else {
+      // delta rule: one entry gets CORRECTED (red flash -> settles teal)
+      var c = scells[(t * 7 + 3) % 36];
+      gsap.fromTo(c, { backgroundColor: "#e04b38", scale: 1.25 },
+        { backgroundColor: "rgba(47,214,176,0.75)", scale: 1, duration: 0.5, ease: "power2.out" });
+      gsap.to("#gknob", { left: 20 + ((t * 37) % 90), duration: 0.4, ease: "power1.inOut" });
+    }
+    t++;
+  }).to({}, { duration: 0.55 });
+
+  var tl = gsap.timeline({ paused: true });
+
+  // step 1: two decode loops side by side — growing list vs fixed state
+  tl.fromTo("#pfull", { opacity: 0, x: -16 }, { opacity: 1, x: 0, duration: 0.45 })
+    .fromTo("#plin", { opacity: 0, x: 16 }, { opacity: 1, x: 0, duration: 0.45 }, "<0.1")
+    .call(function () { t = 0; mode = "sum"; loop.play(0); })
+    .to({}, { duration: 2.2 });
+  DECK.markStep(tl);
+
+  // step 2: the SSM branch of the same line
+  tl.fromTo("#ssm", { opacity: 0, y: 10 }, { opacity: 1, y: 0, duration: 0.45 });
+  DECK.markStep(tl);
+
+  // step 3: the delta rule — writes become corrections; a forget gate appears
+  tl.fromTo("#delta", { opacity: 0, y: 10 }, { opacity: 1, y: 0, duration: 0.45 })
+    .call(function () { mode = "delta"; })
+    .fromTo("#gate", { opacity: 0 }, { opacity: 1, duration: 0.45 }, "+=0.6")
+    .to({}, { duration: 1.6 });
+  DECK.markStep(tl);
+
+  // step 4: the catch — and why hybrids exist
+  tl.fromTo("#punch", { opacity: 0, y: 10 }, { opacity: 1, y: 0, duration: 0.5 })
+    .to("#strip .ev-sn.on i", { scale: 1.6, duration: 0.25, yoyo: true, repeat: 3, ease: "power1.inOut" });
+
+  DECK.register(tl, {
+    reset: function () {
+      loop.pause(0); t = 0; mode = "sum";
+      gsap.killTweensOf(scells); gsap.killTweensOf(sg); gsap.killTweensOf("#gknob");
+      gsap.set(scells, { clearProps: "backgroundColor,scale" });
+      gsap.set(sg, { clearProps: "boxShadow" });
+      gsap.set("#gknob", { clearProps: "left" });
+      for (var i = 0; i < NK; i++) kticks[i].style.opacity = 0;
+      ["ts1", "ts2"].forEach(function (id) {
+        [].forEach.call(document.getElementById(id).children, function (c) { c.classList.remove("cur"); });
+      });
+      document.getElementById("kvcount").textContent = "0";
+    },
+  });
+</script>
+</body></html>

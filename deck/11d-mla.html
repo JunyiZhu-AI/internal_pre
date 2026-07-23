@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>MLA: Compress KV into a Latent</title>
+<link rel="stylesheet" href="shared/deck.css">
+<link rel="stylesheet" href="shared/evo.css">
+<style>
+  #map { left: 690px; top: 96px; }
+  #zone { position: absolute; left: 60px; top: 168px; width: 600px; height: 280px; opacity: 0; }
+  .bstrip { position: absolute; top: 34px; width: 34px; height: 190px; border-radius: 5px;
+            background: linear-gradient(180deg, rgba(144,133,233,0.5), #9085e9); }
+  .bstrip .sl { position: absolute; top: -24px; width: 100%; text-align: center; font: 800 12px ui-monospace, monospace; color: #9085e9; }
+  #funnel { position: absolute; inset: 0; }
+  #ctcap { position: absolute; left: 305px; top: 100px; width: 16px; height: 74px; border-radius: 8px;
+           background: #b3aaff; box-shadow: 0 0 16px rgba(144,133,233,0.9); opacity: 0; }
+  #ctlab { position: absolute; left: 265px; top: 190px; width: 100px; text-align: center;
+           font: 800 12px ui-monospace, monospace; color: #b3aaff; opacity: 0; }
+  #cbox { position: absolute; left: 420px; top: 34px; width: 160px; height: 210px; border: 2px dashed rgba(144,133,233,0.6);
+          border-radius: 10px; }
+  #cbox .cl { position: absolute; top: 8px; width: 100%; text-align: center; font: 700 11px ui-monospace, monospace; color: #9085e9; }
+  .mcap { position: absolute; left: 74px; width: 12px; height: 26px; border-radius: 6px; background: #b3aaff; opacity: 0; }
+  #latlab { position: absolute; left: 60px; top: 452px; width: 600px; text-align: center;
+            font: 600 12.5px ui-monospace, monospace; color: #9085e9; opacity: 0; }
+  #bars { position: absolute; left: 90px; top: 500px; width: 540px; opacity: 0; }
+  .brow { display: flex; align-items: center; gap: 12px; height: 27px; font: 700 12.5px ui-monospace, monospace; }
+  .brow .bn { width: 46px; color: #9aa1b5; }
+  .brow .bb { height: 16px; border-radius: 4px; }
+  #bline { position: absolute; left: 90px; top: 560px; width: 560px; font: 700 13px ui-monospace, monospace; color: var(--accent); opacity: 0; }
+  #absorb { position: absolute; left: 700px; top: 180px; width: 520px; height: 300px; opacity: 0; }
+  #absorb .ah { font: 600 12px ui-monospace, monospace; color: #6b7284; }
+  .wblk { position: absolute; top: 66px; width: 130px; height: 70px; border-radius: 10px; display: flex;
+          align-items: center; justify-content: center; font: 800 15px ui-monospace, monospace; }
+  #wq { left: 40px; border: 2px solid #3987e5; color: #6fb1ff; }
+  #wq .l2 { position: absolute; opacity: 0; white-space: nowrap; }
+  #wuk { left: 300px; border: 2px dashed #9085e9; color: #9085e9; }
+  #wnote { position: absolute; left: 40px; top: 152px; font: 11px ui-monospace, monospace; color: #6b7284; }
+  #abline { position: absolute; left: 0; top: 196px; width: 520px; font: 700 13.5px ui-monospace, monospace; color: var(--accent); opacity: 0; }
+  #adopt { position: absolute; left: 44px; bottom: 66px; font: 600 14px ui-monospace, monospace; color: #9aa1b5; opacity: 0; }
+  #framing { position: absolute; left: 44px; bottom: 28px; font-size: 17px; font-weight: 800; color: var(--accent); opacity: 0; }
+</style>
+</head>
+<body>
+<div class="stage">
+  <div class="slide-title">MLA: Compress KV into a Latent</div>
+  <div class="slide-sub">squeeze the strips through a bottleneck — cache only the capsule</div>
+
+  <div id="map"></div>
+  <div id="zone">
+    <svg id="funnel" viewBox="0 0 600 280">
+      <path d="M150,34 L300,100 L300,174 L150,224 Z" fill="rgba(144,133,233,0.07)" stroke="rgba(144,133,233,0.45)" stroke-width="1.5"/>
+    </svg>
+    <div class="bstrip" id="stK" style="left:36px"><span class="sl">K</span></div>
+    <div class="bstrip" id="stV" style="left:92px"><span class="sl">V</span></div>
+    <div id="ctcap"></div>
+    <div id="ctlab">c_t</div>
+    <div id="cbox"><span class="cl">the cache</span></div>
+  </div>
+  <div id="latlab"></div>
+  <div id="bars">
+    <div class="brow"><span class="bn">GQA</span><div class="bb" id="bbG" style="width:240px;background:linear-gradient(90deg,rgba(57,135,229,.45),#3987e5)"></div><span style="color:#6fb1ff">330 KB</span></div>
+    <div class="brow"><span class="bn">MLA</span><div class="bb" id="bbM" style="width:50px;background:linear-gradient(90deg,rgba(179,170,255,.5),#b3aaff)"></div><span style="color:#b3aaff" id="mlaBytes"></span></div>
+  </div>
+  <div id="bline"></div>
+  <div id="absorb">
+    <div class="ah">decode-time trick: absorb the up-projection</div>
+    <div class="wblk" id="wq"><span class="l1">W_Q</span><span class="l2">W_Q·W_UK</span></div>
+    <div class="wblk" id="wuk">W_UK ↑</div>
+    <div id="wnote">(same for W_UV into W_O)</div>
+    <div id="abline"></div>
+  </div>
+  <div id="adopt"></div>
+  <div id="framing"></div>
+</div>
+
+<script src="../vendor/gsap.min.js"></script>
+<script src="shared/attnevo.js"></script>
+<script src="shared/manifest.js"></script>
+<script src="shared/deck.js"></script>
+<script>
+  EV.mapStrip(document.getElementById("map"), 2);
+  document.getElementById("latlab").textContent = "only " + EV.mla.latent + " enters the cache";
+  document.getElementById("mlaBytes").textContent = "~70 KB ⚠";
+  document.getElementById("bline").textContent = EV.mla.bytes + " ⚠";
+  document.getElementById("abline").textContent = EV.mla.absorb;
+  document.getElementById("adopt").textContent = EV.mla.adopters;
+  document.getElementById("framing").textContent = EV.mla.framing;
+
+  // three mini capsules that land in the cache box
+  var cbox = document.getElementById("cbox");
+  for (var i = 0; i < 3; i++) {
+    var m = document.createElement("div");
+    m.className = "mcap"; m.id = "mc" + i;
+    m.style.top = (166 - i * 34) + "px";
+    cbox.appendChild(m);
+  }
+
+  var tl = gsap.timeline({ paused: true });
+
+  // step 1: K,V strips squeezed through the bottleneck into c_t
+  tl.fromTo("#zone", { opacity: 0, y: 14 }, { opacity: 1, y: 0, duration: 0.55, ease: "power2.out" })
+    .to({}, { duration: 0.4 })
+    .to("#stK, #stV", { x: 60, scaleX: 0.3, opacity: 0.3, duration: 0.8, ease: "power2.inOut" })
+    .fromTo("#ctcap", { opacity: 0, scale: 0.3 }, { opacity: 1, scale: 1, duration: 0.45, ease: "back.out(2)" })
+    .fromTo("#ctlab", { opacity: 0 }, { opacity: 1, duration: 0.3 }, "<")
+    .fromTo("#mc0, #mc1, #mc2", { opacity: 0, x: -60, y: -20 }, { opacity: 1, x: 0, y: 0, duration: 0.45, stagger: 0.18, ease: "power2.out" })
+    .fromTo("#latlab", { opacity: 0 }, { opacity: 1, duration: 0.4 });
+  DECK.markStep(tl);
+
+  // step 2: the number — an order of magnitude under GQA
+  tl.fromTo("#bars", { opacity: 0, y: 10 }, { opacity: 1, y: 0, duration: 0.45 })
+    .fromTo("#bbG, #bbM", { scaleX: 0, transformOrigin: "left" }, { scaleX: 1, duration: 0.7, stagger: 0.25, ease: "power2.out" })
+    .fromTo("#bline", { opacity: 0 }, { opacity: 1, duration: 0.4 });
+  DECK.markStep(tl);
+
+  // step 3: the absorption trick — W_UK merges into W_Q
+  tl.fromTo("#absorb", { opacity: 0, x: 16 }, { opacity: 1, x: 0, duration: 0.5, ease: "power2.out" })
+    .to({}, { duration: 0.3 })
+    .to("#wuk", { x: -260, duration: 0.8, ease: "power2.inOut" })
+    .to("#wuk", { opacity: 0, duration: 0.3 }, "-=0.2")
+    .to("#wq", { boxShadow: "0 0 22px rgba(57,135,229,0.8)", duration: 0.25, yoyo: true, repeat: 1 }, "<")
+    .to("#wq .l1", { opacity: 0, duration: 0.25 }, "<")
+    .to("#wq .l2", { opacity: 1, duration: 0.25 }, "<")
+    .fromTo("#abline", { opacity: 0, y: 8 }, { opacity: 1, y: 0, duration: 0.45 });
+  DECK.markStep(tl);
+
+  // step 4: who runs it — and how to frame it
+  tl.fromTo("#adopt", { opacity: 0, y: 8 }, { opacity: 1, y: 0, duration: 0.4 })
+    .fromTo("#framing", { opacity: 0, y: 10 }, { opacity: 1, y: 0, duration: 0.5 });
+
+  DECK.register(tl, {});
+</script>
+</body>
+</html>

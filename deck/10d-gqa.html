@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>MQA / GQA: Share the KV Heads</title>
+<link rel="stylesheet" href="shared/deck.css">
+<link rel="stylesheet" href="shared/evo.css">
+<style>
+  #map { left: 690px; top: 96px; }
+  #heads { position: absolute; left: 251px; top: 200px; width: 778px; height: 118px; opacity: 0; }
+  .qd { position: absolute; top: 0; width: 8px; height: 8px; border-radius: 50%; background: #3987e5; }
+  .kvp { position: absolute; top: 26px; width: 6px; height: 76px; border-radius: 3px;
+         background: linear-gradient(180deg, rgba(144,133,233,0.45), #9085e9); }
+  .capline { position: absolute; left: 0; top: 348px; width: 100%; text-align: center;
+             font: 600 13.5px ui-monospace, monospace; color: #c7cce0; opacity: 0; }
+  #cap2 { color: #ff8a7a; }
+  #bill { position: absolute; left: 251px; top: 424px; width: 778px; opacity: 0; }
+  #bbarw { position: relative; width: 640px; height: 26px; border: 1.5px solid var(--line); border-radius: 7px; background: var(--panel); }
+  #bbar { position: absolute; left: 0; top: 0; bottom: 0; width: 636px; border-radius: 5px;
+          background: linear-gradient(90deg, rgba(144,133,233,0.5), #9085e9); }
+  .blab { position: absolute; left: 654px; top: 5px; font: 700 13px ui-monospace, monospace; color: #9085e9; white-space: nowrap; }
+  #bl2 { color: var(--accent); opacity: 0; }
+  #div8 { position: absolute; left: 290px; top: -4px; font: 800 19px ui-monospace, monospace; color: var(--accent); opacity: 0; }
+  #already { position: absolute; left: 0; top: 476px; width: 100%; text-align: center;
+             font: 600 12.5px ui-monospace, monospace; color: #9aa1b5; opacity: 0; }
+  #adopt { position: absolute; left: 44px; bottom: 66px; font: 600 14px ui-monospace, monospace; color: #9aa1b5; opacity: 0; }
+  #pattern { position: absolute; left: 44px; bottom: 28px; font-size: 17px; font-weight: 800; color: var(--accent); opacity: 0; }
+</style>
+</head>
+<body>
+<div class="stage">
+  <div class="slide-title">MQA / GQA: Share the KV Heads</div>
+  <div class="slide-sub">same queries — fewer purple strips to remember</div>
+
+  <div id="map"></div>
+  <div id="heads"></div>
+  <div class="capline" id="cap1">MHA — 64 query heads, each with a private K,V pair · 2.6 MB / token</div>
+  <div class="capline" id="cap2">MQA — all 64 queries share ONE K,V pair · maximal, but quality strains</div>
+  <div class="capline" id="cap3"></div>
+  <div id="bill">
+    <div id="bbarw"><div id="bbar"></div></div>
+    <span class="blab" id="bl1">2.6 MB / token</span>
+    <span class="blab" id="bl2">0.33 MB / token</span>
+    <span id="div8">÷ 8</span>
+  </div>
+  <div id="already"></div>
+  <div id="adopt"></div>
+  <div id="pattern"></div>
+</div>
+
+<script src="../vendor/gsap.min.js"></script>
+<script src="shared/attnevo.js"></script>
+<script src="shared/manifest.js"></script>
+<script src="shared/deck.js"></script>
+<script>
+  EV.mapStrip(document.getElementById("map"), 1);
+  document.getElementById("cap3").textContent = "GQA — " + EV.gqa.note;
+  document.getElementById("already").textContent = EV.gqa.already;
+  document.getElementById("adopt").textContent = EV.gqa.adopters;
+  document.getElementById("pattern").textContent = EV.gqa.pattern;
+
+  // 64 query dots, each with its own thin K/V strip pair below (8 groups of 8)
+  var host = document.getElementById("heads");
+  var GW = 85, GG = 14;           // group width / gap
+  var baseX = [], strips = [], leaders = [];
+  for (var i = 0; i < 64; i++) {
+    var g = (i / 8) | 0, k = i % 8;
+    var x = g * (GW + GG) + k * 11;
+    var d = document.createElement("i");
+    d.className = "qd"; d.style.left = x + "px";
+    host.appendChild(d);
+    var s = document.createElement("b");
+    s.className = "kvp"; s.style.left = (x + 1) + "px";
+    host.appendChild(s);
+    strips.push(s); baseX.push(x + 1);
+    if (k === 4) leaders.push(s);
+  }
+  var CX = (778 - 6) / 2;
+  function GX(g) { return g * (GW + GG) + (GW - 14) / 2; }
+
+  var tl = gsap.timeline({ paused: true });
+
+  // step 1: MHA — every query drags its own K,V strip
+  tl.fromTo("#heads", { opacity: 0, y: 14 }, { opacity: 1, y: 0, duration: 0.55, ease: "power2.out" })
+    .fromTo(strips, { scaleY: 0, transformOrigin: "top" }, { scaleY: 1, duration: 0.4, stagger: { amount: 0.5 } }, "<0.15")
+    .fromTo("#cap1", { opacity: 0 }, { opacity: 1, duration: 0.4 });
+  DECK.markStep(tl);
+
+  // step 2: collapse — MQA extreme flashes, settles on GQA groups of 8
+  tl.to("#cap1", { opacity: 0, duration: 0.25 })
+    .fromTo("#cap2", { opacity: 0 }, { opacity: 1, duration: 0.3 }, "<")
+    .to(strips, { x: function (i) { return CX - baseX[i]; }, duration: 0.7, ease: "power2.inOut" }, "<")
+    .to(strips, { opacity: function (i) { return i === 28 ? 1 : 0; }, duration: 0.35 }, "-=0.3")
+    .to({}, { duration: 0.6 })
+    .to("#cap2", { opacity: 0, duration: 0.25 })
+    .fromTo("#cap3", { opacity: 0 }, { opacity: 1, duration: 0.3 }, "<")
+    .to(strips, {
+      x: function (i) { return GX((i / 8) | 0) - baseX[i]; },
+      opacity: function (i) { return i % 8 === 4 ? 1 : 0; },
+      duration: 0.7, ease: "power2.inOut"
+    }, "<")
+    .to(leaders, { width: 14, boxShadow: "0 0 12px rgba(144,133,233,0.7)", duration: 0.35 });
+  DECK.markStep(tl);
+
+  // step 3: the bill — cache ÷ 8
+  tl.fromTo("#bill", { opacity: 0, y: 10 }, { opacity: 1, y: 0, duration: 0.45 })
+    .to("#bbar", { width: 80, duration: 1.0, ease: "power2.inOut" })
+    .to("#bl1", { opacity: 0, duration: 0.3 }, "<0.5")
+    .to("#bl2", { opacity: 1, duration: 0.3 }, "<")
+    .fromTo("#div8", { opacity: 0, scale: 0.5 }, { opacity: 1, scale: 1, duration: 0.4, ease: "back.out(2)" })
+    .fromTo("#already", { opacity: 0 }, { opacity: 1, duration: 0.45 });
+  DECK.markStep(tl);
+
+  // step 4: who runs it, and what it means
+  tl.fromTo("#adopt", { opacity: 0, y: 8 }, { opacity: 1, y: 0, duration: 0.4 })
+    .fromTo("#pattern", { opacity: 0, y: 10 }, { opacity: 1, y: 0, duration: 0.5 });
+
+  DECK.register(tl, {});
+</script>
+</body>
+</html>

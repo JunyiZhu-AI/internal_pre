@@ -1,0 +1,166 @@
+<!DOCTYPE html><html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>MQA / GQA: Share the KV Heads</title>
+<link rel="stylesheet" href="shared/deck.css">
+<link rel="stylesheet" href="shared/evo.css">
+<style>
+  #map { left: 660px; top: 96px; }
+  #heads { position: absolute; left: 90px; top: 156px; width: 1100px; height: 268px; opacity: 0; }
+  .gbox { position: absolute; top: 0; width: 117px; height: 224px; border: 1.5px dashed rgba(74,80,102,0.6); border-radius: 10px; opacity: 0; }
+  .qd { position: absolute; top: 14px; width: 9px; height: 9px; border-radius: 3px; background: var(--c-q); opacity: 0; }
+  .st { position: absolute; top: 42px; width: 8px; height: 138px; border-radius: 3px; background: linear-gradient(180deg, rgba(144,133,233,0.5), #9085e9); opacity: 0; }
+  .gst { position: absolute; top: 42px; width: 18px; height: 138px; border-radius: 4px; background: linear-gradient(180deg, rgba(144,133,233,0.75), #9085e9); box-shadow: 0 0 12px rgba(144,133,233,0.5); opacity: 0; }
+  #mq { position: absolute; left: 537px; top: 42px; width: 26px; height: 138px; border-radius: 5px; background: linear-gradient(180deg, rgba(144,133,233,0.85), #9085e9); box-shadow: 0 0 22px rgba(144,133,233,0.8); opacity: 0; }
+  #hcap { position: absolute; left: 0; right: 0; top: 238px; text-align: center; font: 700 13.5px ui-monospace, monospace; color: var(--ink-2); }
+  #bill { position: absolute; left: 90px; top: 452px; display: flex; align-items: baseline; gap: 18px; opacity: 0; }
+  #bill b { font: 800 24px ui-monospace, monospace; color: #e0a935; }
+  #bill span { font: 600 13px ui-monospace, monospace; color: var(--ink-2); }
+  #already { position: absolute; left: 90px; top: 496px; font: 700 13.5px ui-monospace, monospace; color: var(--accent); opacity: 0; }
+  #adopt { position: absolute; left: 44px; bottom: 40px; font: 600 13.5px ui-monospace, monospace; color: var(--ink-2); opacity: 0; }
+  #pattern { position: absolute; left: 44px; bottom: 14px; font-size: 15.5px; font-weight: 700; color: var(--accent); opacity: 0; }
+
+  /* —— recurring cache bar —— */
+  #cbar { position: absolute; left: 90px; top: 552px; width: 1100px; }
+  #cbar .cb-lab { font: 700 10.5px ui-monospace, monospace; letter-spacing: 0.14em; color: #e0a935; opacity: 0.75; margin-bottom: 5px; }
+  #cbar .cb-box { position: relative; height: 62px; border: 2px solid rgba(201,133,0,0.55); border-radius: 10px; background: rgba(18,20,26,0.6); display: flex; overflow: hidden; }
+  #cbar .cb-w { flex: none; width: 300px; display: flex; align-items: center; justify-content: center; font: 700 12px ui-monospace, monospace; color: #e0a935; background: repeating-linear-gradient(90deg, rgba(201,133,0,0.26) 0 7px, rgba(201,133,0,0.12) 7px 14px); border-right: 1.5px solid rgba(201,133,0,0.35); }
+  #cbar .cb-kv { flex: none; width: 0; display: flex; align-items: center; justify-content: center; font: 800 11.5px ui-monospace, monospace; color: #0c1116; white-space: nowrap; overflow: hidden; background: linear-gradient(180deg, rgba(144,133,233,0.62), #9085e9); }
+  #cbar .cb-b { flex: 1; position: relative; }
+  #cbar .cb-slots { position: absolute; inset: 0; display: flex; }
+  #cbar .cb-slot { flex: 1; border-left: 1.5px dashed rgba(74,80,102,0.55); }
+  #cbar .cb-blab { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font: 700 11px ui-monospace, monospace; color: #9aa1b5; }
+  #cbar .cb-over { position: absolute; right: 8px; top: 50%; transform: translateY(-50%); font: 800 11.5px ui-monospace, monospace; color: #ff8a7a; background: rgba(11,13,18,0.85); border: 1px solid rgba(224,75,56,0.6); border-radius: 7px; padding: 4px 9px; opacity: 0; }
+</style>
+</head>
+<body>
+<div class="stage">
+  <div class="slide-title">MQA / GQA: Share the KV Heads</div>
+  <div class="slide-sub">first knob: fewer K,V heads than query heads</div>
+  <div id="map"></div>
+
+  <div id="heads"><div id="hcap"></div></div>
+  <div id="bill"><b>cache ÷ 8</b><span id="billnote"></span></div>
+  <div id="already"></div>
+  <div id="cbar"></div>
+  <div id="adopt"></div>
+  <div id="pattern"></div>
+</div>
+
+<script src="../vendor/gsap.min.js"></script>
+<script src="shared/attnevo.js"></script>
+<script src="shared/manifest.js"></script>
+<script src="shared/deck.js"></script>
+<script>
+  EV.mapStrip(document.getElementById("map"), 1);
+  document.getElementById("billnote").textContent = EV.gqa.note;
+  document.getElementById("already").textContent = EV.gqa.already;
+  document.getElementById("adopt").textContent = EV.gqa.adopters;
+  document.getElementById("pattern").textContent = EV.gqa.pattern;
+
+  // ---- 8 groups × 8 heads ----
+  var heads = document.getElementById("heads");
+  var hcap = document.getElementById("hcap");
+  for (var g = 0; g < 8; g++) {
+    var gx = g * 139;
+    var box = document.createElement("div");
+    box.className = "gbox"; box.style.left = gx + "px";
+    heads.appendChild(box);
+    for (var s = 0; s < 8; s++) {
+      var x = gx + 10 + s * 12.5;
+      var q = document.createElement("div");
+      q.className = "qd"; q.style.left = x + "px";
+      heads.appendChild(q);
+      var st = document.createElement("div");
+      st.className = "st"; st.style.left = x + "px";
+      heads.appendChild(st);
+    }
+    var gs = document.createElement("div");
+    gs.className = "gst"; gs.style.left = (gx + 49.5) + "px";
+    heads.appendChild(gs);
+  }
+  heads.insertAdjacentHTML("beforeend", '<div id="mq"></div>');
+
+  // ---- cache bar (recurring) ----
+  var cb = (function () {
+    var host = document.getElementById("cbar");
+    host.innerHTML = '<div class="cb-lab">HBM · FIXED CAPACITY</div>' +
+      '<div class="cb-box"><div class="cb-w">weights</div>' +
+      '<div class="cb-kv"><span class="cb-kvt"></span></div>' +
+      '<div class="cb-b"><div class="cb-slots"></div><div class="cb-blab"></div></div>' +
+      '<div class="cb-over"></div></div>';
+    var api = {
+      kv: host.querySelector(".cb-kv"), kvt: host.querySelector(".cb-kvt"),
+      over: host.querySelector(".cb-over"), blab: host.querySelector(".cb-blab"),
+      slotBox: host.querySelector(".cb-slots"),
+      slots: function (n) {
+        api.slotBox.innerHTML = "";
+        for (var i = 0; i < n; i++) { var d = document.createElement("div"); d.className = "cb-slot"; api.slotBox.appendChild(d); }
+      }
+    };
+    return api;
+  })();
+  function barInit() {   // this slide inherits the MHA-era picture
+    gsap.set(cb.kv, { width: 796 });
+    cb.kvt.textContent = "KV · 2.6 MB / token";
+    cb.over.textContent = "≈ 341 GB @128k — does not fit ✗";
+    gsap.set(cb.over, { opacity: 1 });
+    cb.blab.textContent = "";
+    cb.slots(0);
+  }
+  barInit();
+
+  var tl = gsap.timeline({ paused: true });
+
+  // step 1: MHA — 64 Q heads, each with its own private K,V
+  tl.fromTo("#heads", { opacity: 0 }, { opacity: 1, duration: 0.3 })
+    .fromTo(".gbox", { opacity: 0, y: 8 }, { opacity: 1, y: 0, duration: 0.35, stagger: 0.05, ease: "power2.out" })
+    .fromTo(".qd", { opacity: 0 }, { opacity: 1, duration: 0.2, stagger: 0.006 }, "-=0.2")
+    .fromTo(".st", { opacity: 0, scaleY: 0.3 }, { opacity: 1, scaleY: 1, duration: 0.3, stagger: 0.006, ease: "power2.out" }, "-=0.5")
+    .call(function () { hcap.textContent = "MHA: 64 query heads — 64 private K,V heads"; })
+    .fromTo("#hcap", { opacity: 0 }, { opacity: 1, duration: 0.3 });
+  DECK.markStep(tl);
+
+  // step 2: collapse — MQA extreme flashes, settles on GQA groups of 8
+  tl.call(function () { hcap.textContent = "MQA: all 64 queries share ONE K,V head — the extreme"; })
+    .to(".st", {
+      x: function (i, el) { return 541 - parseFloat(el.style.left); },
+      opacity: 0, duration: 0.5, stagger: 0.004, ease: "power2.in"
+    })
+    .fromTo("#mq", { opacity: 0, scaleX: 0.2 }, { opacity: 1, scaleX: 1, duration: 0.35, ease: "back.out(2)" }, "-=0.15")
+    .to("#mq", { boxShadow: "0 0 34px rgba(255,138,122,0.9)", duration: 0.3, yoyo: true, repeat: 1 })
+    .to({}, { duration: 0.5 })
+    .call(function () { hcap.textContent = "GQA: 8 groups — 8 queries share each K,V head"; })
+    .to("#mq", { opacity: 0, duration: 0.3 })
+    .fromTo(".gst", { opacity: 0, scaleY: 0.3 }, { opacity: 1, scaleY: 1, duration: 0.35, stagger: 0.06, ease: "back.out(1.8)" }, "-=0.1");
+  DECK.markStep(tl);
+
+  // step 3: the bill — the purple region shrinks ÷8, and 128k fits at all
+  tl.fromTo("#bill", { opacity: 0, y: 10 }, { opacity: 1, y: 0, duration: 0.4 })
+    .call(function () { cb.kvt.textContent = "KV · 330 KB / token"; })
+    .to(cb.over, { opacity: 0, duration: 0.3 }, "<")
+    .to(cb.kv, { width: 390, duration: 0.9, ease: "power2.inOut" })
+    .call(function () { cb.blab.textContent = "batch ×1 — it fits"; })
+    .fromTo("#already", { opacity: 0 }, { opacity: 1, duration: 0.4 });
+  DECK.markStep(tl);
+
+  // step 4: who runs it, and what it started
+  tl.fromTo("#adopt", { opacity: 0, y: 8 }, { opacity: 1, y: 0, duration: 0.4 })
+    .fromTo("#pattern", { opacity: 0, y: 8 }, { opacity: 1, y: 0, duration: 0.45 })
+    .fromTo("#map .ev-sn.on i", { scale: 1 }, { scale: 1.6, duration: 0.3, yoyo: true, repeat: 3, ease: "sine.inOut" }, "-=0.2");
+
+  DECK.register(tl, {
+    reset: function () {
+      gsap.set("#heads, .gbox, .qd, .st, .gst, #mq, #hcap, #bill, #already, #adopt, #pattern", { opacity: 0 });
+      gsap.set(".st", { x: 0, scaleY: 1 });
+      gsap.set(".gst", { scaleY: 1 });
+      gsap.set("#mq", { scaleX: 1, boxShadow: "0 0 22px rgba(144,133,233,0.8)" });
+      gsap.set("#map .ev-sn.on i", { scale: 1 });
+      hcap.textContent = "";
+      barInit();
+    }
+  });
+</script>
+</body>
+</html>

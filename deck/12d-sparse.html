@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sparse Attention: Attend to Fewer Tokens</title>
+<link rel="stylesheet" href="shared/deck.css">
+<link rel="stylesheet" href="shared/evo.css">
+<style>
+  #map { left: 690px; top: 96px; }
+  #tri { position: absolute; left: 90px; top: 172px; opacity: 0; }
+  .trow { display: flex; gap: 2px; margin-bottom: 2px; height: 16px; }
+  .trow i { width: 16px; border-radius: 3px; background: rgba(57,135,229,0.32); }
+  #trilab { position: absolute; left: 90px; top: 150px; font: 700 11.5px ui-monospace, monospace; color: #6b7284; opacity: 0; }
+  #kvwrap { position: absolute; left: 620px; top: 172px; width: 120px; opacity: 0; }
+  #kvwrap .kl { text-align: center; font: 800 12px ui-monospace, monospace; color: #9085e9; margin-bottom: 8px; }
+  #kvcol { position: relative; width: 34px; margin: 0 auto; }
+  #kvcol b { position: absolute; left: 0; width: 34px; height: 15px; border-radius: 3px;
+             background: linear-gradient(180deg, rgba(144,133,233,0.5), #9085e9); }
+  #freed { position: absolute; left: 590px; top: 300px; width: 180px; text-align: center;
+           font: 700 12px ui-monospace, monospace; color: var(--accent); opacity: 0; }
+  .capline { position: absolute; left: 90px; top: 470px; width: 640px; font: 600 13.5px ui-monospace, monospace; opacity: 0; }
+  #c1 { color: #c7cce0; }
+  #c2 { color: #e0a935; }
+  #c3 { color: #c7cce0; }
+  #trade { position: absolute; left: 44px; bottom: 66px; font: 700 14px ui-monospace, monospace; color: #e0a935; opacity: 0; }
+  #hand { position: absolute; left: 44px; bottom: 28px; font-size: 17px; font-weight: 800; color: var(--accent); opacity: 0; }
+  .sel { animation: selPulse 1.4s ease-in-out infinite; }
+  @keyframes selPulse { 50% { box-shadow: 0 0 10px rgba(224,169,53,0.85); } }
+</style>
+</head>
+<body>
+<div class="stage">
+  <div class="slide-title">Sparse Attention: Attend to Fewer Tokens</div>
+  <div class="slide-sub">the causal triangle again — most of it was never needed</div>
+
+  <div id="map"></div>
+  <div id="trilab">each row = one decode step</div>
+  <div id="tri"></div>
+  <div id="kvwrap"><div class="kl">KV cache</div><div id="kvcol"></div></div>
+  <div id="freed"></div>
+  <div class="capline" id="c1"></div>
+  <div class="capline" id="c2"></div>
+  <div class="capline" id="c3"></div>
+  <div id="trade"></div>
+  <div id="hand">a fixed budget of tokens — next: drop the token list entirely →</div>
+</div>
+
+<script src="../vendor/gsap.min.js"></script>
+<script src="shared/attnevo.js"></script>
+<script src="shared/manifest.js"></script>
+<script src="shared/deck.js"></script>
+<script>
+  EV.mapStrip(document.getElementById("map"), 3);
+  document.getElementById("c1").textContent = EV.sparse.window;
+  document.getElementById("c2").textContent = EV.sparse.learned;
+  document.getElementById("c3").textContent = EV.sparse.evict;
+  document.getElementById("trade").textContent = EV.sparse.tradeoff;
+
+  // causal triangle, 14 rows
+  var tri = document.getElementById("tri");
+  var ROWS = 14, W = 5;
+  var winCells = [], offCells = [], selCells = [];
+  for (var r = 0; r < ROWS; r++) {
+    var row = document.createElement("div");
+    row.className = "trow";
+    for (var c = 0; c <= r; c++) {
+      var i = document.createElement("i");
+      row.appendChild(i);
+      if (r - c < W) winCells.push(i); else offCells.push(i);
+      // learned blocks the router will pick (off-band history)
+      if ((r >= 8 && r <= 10 && c <= 1) || (r >= 11 && c >= 3 && c <= 4)) selCells.push(i);
+    }
+    tri.appendChild(row);
+  }
+
+  // KV cache column, 14 slots
+  var kvcol = document.getElementById("kvcol");
+  var kvCells = [];
+  for (var s = 0; s < ROWS; s++) {
+    var b = document.createElement("b");
+    b.style.top = (s * 18) + "px";
+    kvcol.appendChild(b);
+    kvCells.push(b);
+  }
+  kvcol.style.height = (ROWS * 18) + "px";
+  var evictCells = kvCells.slice(0, ROWS - W), keptCells = kvCells.slice(ROWS - W);
+
+  var tl = gsap.timeline({ paused: true });
+
+  // step 1: full triangle fades to a sliding-window band
+  tl.fromTo("#tri, #trilab, #kvwrap", { opacity: 0, y: 12 }, { opacity: 1, y: 0, duration: 0.5, ease: "power2.out" })
+    .fromTo(".trow i", { opacity: 0 }, { opacity: 1, duration: 0.25, stagger: { amount: 0.6 } })
+    .to({}, { duration: 0.35 })
+    .to(offCells, { opacity: 0.08, duration: 0.9, stagger: { amount: 0.35 } })
+    .to(winCells, { backgroundColor: "rgba(57,135,229,0.8)", duration: 0.5 }, "<")
+    .fromTo("#c1", { opacity: 0 }, { opacity: 1, duration: 0.4 }, "<0.3");
+  DECK.markStep(tl);
+
+  // step 2: a router lights up learned blocks in the far past
+  tl.to("#c1", { opacity: 0, duration: 0.25 })
+    .fromTo("#c2", { opacity: 0 }, { opacity: 1, duration: 0.3 }, "<")
+    .to(selCells, { opacity: 0.95, backgroundColor: "#e0a935", duration: 0.35, stagger: { amount: 0.7 } })
+    .call(function () { selCells.forEach(function (c) { c.classList.add("sel"); }); });
+  DECK.markStep(tl);
+
+  // step 3: everything outside gets evicted from the cache
+  tl.to("#c2", { opacity: 0, duration: 0.25 })
+    .fromTo("#c3", { opacity: 0 }, { opacity: 1, duration: 0.3 }, "<")
+    .to(evictCells, { y: 54, opacity: 0, duration: 0.5, stagger: 0.05, ease: "power2.in" })
+    .to(keptCells, { y: -(ROWS - W) * 18, duration: 0.6, ease: "power2.inOut" })
+    .fromTo("#freed", { opacity: 0 }, { opacity: 1, duration: 0.4 })
+    .call(function () { document.getElementById("freed").textContent = "cache ≤ w slots"; });
+  DECK.markStep(tl);
+
+  // step 4: the trade-off — hand off to the linear line
+  tl.fromTo("#trade", { opacity: 0, y: 8 }, { opacity: 1, y: 0, duration: 0.45 })
+    .fromTo("#hand", { opacity: 0, y: 10 }, { opacity: 1, y: 0, duration: 0.5 });
+
+  DECK.register(tl, {
+    reset: function () {
+      selCells.forEach(function (c) { c.classList.remove("sel"); });
+      document.getElementById("freed").textContent = "";
+    }
+  });
+</script>
+</body>
+</html>

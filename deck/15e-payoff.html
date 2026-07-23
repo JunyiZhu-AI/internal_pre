@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Attention Line: The Payoff</title>
+<link rel="stylesheet" href="shared/deck.css">
+<link rel="stylesheet" href="shared/evo.css">
+<link rel="stylesheet" href="shared/bottlenecks.css">
+<style>
+  .kicker { position: absolute; top: 12px; left: 45px; font: 700 11px ui-monospace, monospace; letter-spacing: 0.22em; color: #6b7284; }
+  #ladder { position: absolute; left: 44px; top: 170px; width: 560px; }
+  .lrow { display: flex; align-items: center; gap: 12px; height: 54px; margin-bottom: 20px; opacity: 0; }
+  .lrow .ln { font: 800 14px ui-monospace, monospace; width: 118px; text-align: right; }
+  .lrow .lbarw { flex: 1; }
+  .lrow .lbar { height: 26px; border-radius: 6px; transform-origin: left center; }
+  .lrow .lby { font: 800 15px ui-monospace, monospace; color: #e8eaf0; width: 130px; white-space: nowrap; }
+  #laddertag { position: absolute; left: 44px; top: 478px; font: 600 12px ui-monospace, monospace; color: #6b7284; opacity: 0; }
+
+  #simhost { width: 560px; height: 200px; left: 660px; top: 170px; opacity: 0; }
+  #k3chips { position: absolute; left: 660px; top: 396px; width: 560px; display: flex; align-items: center; gap: 18px; }
+  #kvchip { font: 700 13px ui-monospace, monospace; color: #e8eaf0; border: 1.5px solid rgba(47,214,176,0.55); border-radius: 999px; padding: 9px 16px; background: var(--panel); opacity: 0; }
+  #badge { display: flex; align-items: baseline; gap: 10px; opacity: 0; }
+  #badge .big { font: 800 64px ui-monospace, monospace; color: var(--accent); letter-spacing: -0.02em; }
+  #badge .blab { font: 700 12px ui-monospace, monospace; color: #9aa1b5; width: 150px; line-height: 1.5; }
+  #qchip { position: absolute; left: 660px; top: 512px; font: 700 13px ui-monospace, monospace; color: #e8eaf0; border: 1.5px solid rgba(224,169,53,0.55); border-radius: 999px; padding: 9px 16px; background: var(--panel); opacity: 0; }
+  #punch { position: absolute; left: 44px; bottom: 30px; font-size: 17px; font-weight: 700; color: var(--accent); opacity: 0; }
+</style>
+</head>
+<body>
+<div class="stage">
+  <div class="kicker">ATTENTION EVOLUTION · FINISH LINE</div>
+  <div class="slide-title" style="top:34px">Attention Line: The Payoff</div>
+  <div class="slide-sub" style="top:78px">seven contenders in, one architecture out — K3's attention bill</div>
+  <div id="map" style="left:680px;top:98px"></div>
+
+  <div id="ladder"></div>
+  <div id="laddertag">KV bytes / decoded token — the section's one metric, swept down</div>
+
+  <div id="simhost" class="sim"></div>
+  <div id="k3chips">
+    <div id="kvchip"></div>
+    <div id="badge"><span class="big" id="bigx">1.0×</span><span class="blab" id="blab"></span></div>
+  </div>
+  <div id="qchip"></div>
+  <div id="punch"></div>
+</div>
+
+<script src="../vendor/gsap.min.js"></script>
+<script src="shared/attnevo.js"></script>
+<script src="shared/bottlenecks.js"></script>
+<script src="shared/manifest.js"></script>
+<script src="shared/deck.js"></script>
+<script>
+  EV.mapStrip(document.getElementById("map"), 6);
+
+  document.getElementById("kvchip").textContent = EV.payoff.kvcut;
+  document.getElementById("blab").textContent = EV.payoff.speedLabel.replace(/^×\s*/, "");
+  document.getElementById("qchip").textContent = EV.payoff.quality;
+  document.getElementById("punch").textContent = EV.payoff.bridge;
+
+  // ladder rows from EV.payoff.ladder, log-ish widths
+  var colors = ["#6b7284", "#3987e5", "#6fb1ff", "#e04b38"];
+  var widths = [1, 0.62, 0.42, 0.24];
+  var warns = [false, false, true, true];
+  var ladder = document.getElementById("ladder");
+  EV.payoff.ladder.forEach(function (row, i) {
+    var d = document.createElement("div");
+    d.className = "lrow";
+    d.innerHTML =
+      '<span class="ln" style="color:' + colors[i] + '">' + row[0] + "</span>" +
+      '<span class="lbarw"><span class="lbar" style="display:block;width:' + (widths[i] * 100) + "%;background:linear-gradient(90deg," + colors[i] + "55," + colors[i] + ')"></span></span>' +
+      '<span class="lby">' + row[1] + (warns[i] ? ' <span class="ev-warn">⚠</span>' : "") + "</span>";
+    ladder.appendChild(d);
+  });
+
+  var sim = BN.buildSim(document.getElementById("simhost"), {});
+  var spd = { v: 1 };
+
+  var tl = gsap.timeline({ paused: true });
+
+  // step 1: the bytes/token ladder sweeps down
+  tl.fromTo(".lrow", { opacity: 0, x: -24 }, { opacity: 1, x: 0, duration: 0.45, stagger: 0.28, ease: "power2.out" })
+    .fromTo(".lbar", { scaleX: 0 }, { scaleX: 1, duration: 0.55, stagger: 0.28, ease: "power2.inOut" }, "<")
+    .fromTo("#laddertag", { opacity: 0 }, { opacity: 1, duration: 0.4 });
+  DECK.markStep(tl);
+
+  // step 2: K3's numbers — the simulator accelerates to 6.3×
+  tl.fromTo("#simhost", { opacity: 0, y: 16 }, { opacity: 1, y: 0, duration: 0.5, ease: "power2.out" })
+    .call(function () { sim.start(); })
+    .to({}, { duration: 1.4 })
+    .fromTo("#kvchip", { opacity: 0, scale: 0.7 }, { opacity: 1, scale: 1, duration: 0.4, ease: "back.out(2)" })
+    .fromTo("#badge", { opacity: 0 }, { opacity: 1, duration: 0.3 })
+    .call(function () { spd.v = 1; spd.last = 1; })
+    .to(spd, {
+      v: parseFloat(EV.payoff.speed), duration: 2.2, ease: "power2.in",
+      onUpdate: function () {
+        document.getElementById("bigx").textContent = spd.v.toFixed(1) + "×";
+        // throttle: only restride the sim at half-step changes so its interval still fires
+        var q = Math.round(spd.v * 2) / 2;
+        if (q !== spd.last) { spd.last = q; sim.setSpeed(q); }
+      }
+    })
+    .call(function () { sim.setSpeed(parseFloat(EV.payoff.speed)); })
+    .fromTo("#bigx", { scale: 1.25, transformOrigin: "left bottom" }, { scale: 1, duration: 0.45, ease: "back.out(2)", immediateRender: false })
+    .to({}, { duration: 0.8 });
+  DECK.markStep(tl);
+
+  // step 3: and quality holds
+  tl.fromTo("#qchip", { opacity: 0, y: 10 }, { opacity: 1, y: 0, duration: 0.45 });
+  DECK.markStep(tl);
+
+  // step 4: bridge to the next section
+  tl.fromTo("#punch", { opacity: 0, y: 10 }, { opacity: 1, y: 0, duration: 0.55 });
+
+  DECK.register(tl, {
+    reset: function () {
+      sim.stop();
+      sim.setSpeed(1);
+      spd.v = 1;
+      document.getElementById("bigx").textContent = "1.0×";
+    }
+  });
+</script>
+</body>
+</html>

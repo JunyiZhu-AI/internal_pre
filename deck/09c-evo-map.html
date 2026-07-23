@@ -1,0 +1,184 @@
+<!DOCTYPE html><html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The Attention Evolution Map</title>
+<link rel="stylesheet" href="shared/deck.css">
+<link rel="stylesheet" href="shared/evo.css">
+<style>
+  .kicker { position: absolute; top: 12px; left: 45px; font: 700 11px ui-monospace, monospace; letter-spacing: 0.22em; color: #6b7284; }
+  #metric { position: absolute; left: 90px; top: 148px; font: 600 14px ui-monospace, monospace; color: var(--ink-2); border-left: 3px solid var(--accent); padding-left: 12px; opacity: 0; }
+  #chain { position: absolute; left: 90px; top: 204px; width: 1100px; display: flex; align-items: stretch; opacity: 0; }
+  .evn { flex: 1; padding: 12px 5px 10px; border-radius: 12px; background: var(--panel); border: 1.5px solid var(--line); text-align: center; opacity: 0.45; }
+  .evn .nn { font: 800 14px ui-monospace, monospace; }
+  .evn .ns { font: 600 9.5px ui-monospace, monospace; color: #6b7284; margin-top: 3px; }
+  .evn .nb { font: 700 11.5px ui-monospace, monospace; margin-top: 7px; color: #6b7284; }
+  .eva { width: 20px; display: flex; align-items: center; justify-content: center; font: 700 13px ui-monospace, monospace; color: #4a5066; flex: none; }
+  #gauge { position: absolute; left: 50%; transform: translateX(-50%); top: 356px; font-size: 15px; padding: 9px 22px; opacity: 0; white-space: nowrap; }
+  #gauge b { font-size: 20px; }
+  #hint { position: absolute; left: 0; right: 0; top: 476px; text-align: center; font: 600 12px ui-monospace, monospace; color: #6b7284; opacity: 0; }
+  #story { position: absolute; left: 44px; bottom: 14px; font-size: 17px; font-weight: 700; color: var(--accent); opacity: 0; }
+
+  /* —— recurring cache bar —— */
+  #cbar { position: absolute; left: 90px; top: 552px; width: 1100px; opacity: 0; }
+  #cbar .cb-lab { font: 700 10.5px ui-monospace, monospace; letter-spacing: 0.14em; color: #e0a935; opacity: 0.75; margin-bottom: 5px; }
+  #cbar .cb-box { position: relative; height: 62px; border: 2px solid rgba(201,133,0,0.55); border-radius: 10px; background: rgba(18,20,26,0.6); display: flex; overflow: hidden; }
+  #cbar .cb-w { flex: none; width: 300px; display: flex; align-items: center; justify-content: center; font: 700 12px ui-monospace, monospace; color: #e0a935; background: repeating-linear-gradient(90deg, rgba(201,133,0,0.26) 0 7px, rgba(201,133,0,0.12) 7px 14px); border-right: 1.5px solid rgba(201,133,0,0.35); }
+  #cbar .cb-kv { flex: none; width: 0; display: flex; align-items: center; justify-content: center; font: 800 11.5px ui-monospace, monospace; color: #0c1116; white-space: nowrap; overflow: hidden; background: linear-gradient(180deg, rgba(144,133,233,0.62), #9085e9); }
+  #cbar .cb-kv.state { background: linear-gradient(180deg, rgba(47,214,176,0.62), #2fd6b0); }
+  #cbar .cb-b { flex: 1; position: relative; }
+  #cbar .cb-slots { position: absolute; inset: 0; display: flex; }
+  #cbar .cb-slot { flex: 1; border-left: 1.5px dashed rgba(74,80,102,0.55); }
+  #cbar .cb-blab { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font: 700 11px ui-monospace, monospace; color: #9aa1b5; }
+  #cbar .cb-over { position: absolute; right: 8px; top: 50%; transform: translateY(-50%); font: 800 11.5px ui-monospace, monospace; color: #ff8a7a; background: rgba(11,13,18,0.85); border: 1px solid rgba(224,75,56,0.6); border-radius: 7px; padding: 4px 9px; opacity: 0; }
+</style>
+</head>
+<body>
+<div class="stage">
+  <div class="kicker">THE ATTENTION LINE</div>
+  <div class="slide-title" style="top:34px">The Attention Evolution Map</div>
+  <div class="slide-sub" style="top:78px">seven architectures, one shrinking purple region</div>
+
+  <div id="metric"></div>
+  <div id="chain"></div>
+  <div id="gauge" class="ev-gauge">KV bytes / token · <b id="gv">2.6 MB</b></div>
+  <div id="hint">watch the purple region ↓</div>
+  <div id="cbar"></div>
+  <div id="story"></div>
+</div>
+
+<script src="../vendor/gsap.min.js"></script>
+<script src="shared/attnevo.js"></script>
+<script src="shared/manifest.js"></script>
+<script src="shared/deck.js"></script>
+<script>
+  document.getElementById("metric").textContent = EV.metric;
+  document.getElementById("story").textContent = EV.story;
+
+  // ---- lineage chain ----
+  var chain = document.getElementById("chain");
+  EV.nodes.forEach(function (n, i) {
+    if (i) chain.insertAdjacentHTML("beforeend", '<div class="eva">→</div>');
+    chain.insertAdjacentHTML("beforeend",
+      '<div class="evn" id="evn' + i + '"><div class="nn">' + n.name + '</div>' +
+      '<div class="ns">' + n.sub + '</div>' +
+      '<div class="nb">' + (n.bytes ? n.bytes + (n.warn ? " ⚠" : "") : "—") + '</div></div>');
+  });
+  function lite(i) {
+    var n = EV.nodes[i], el = document.getElementById("evn" + i);
+    el.style.opacity = 1;
+    el.style.borderColor = n.color;
+    el.style.boxShadow = "0 0 16px " + n.color + "44";
+    el.querySelector(".nn").style.color = n.color;
+    el.querySelector(".nb").style.color = "#c7cce0";
+    gsap.fromTo(el, { scale: 0.92 }, { scale: 1, duration: 0.4, ease: "back.out(2.5)" });
+  }
+  function unlite(i) {
+    var el = document.getElementById("evn" + i);
+    el.style.opacity = "";
+    el.style.borderColor = "";
+    el.style.boxShadow = "";
+    el.querySelector(".nn").style.color = "";
+    el.querySelector(".nb").style.color = "";
+    gsap.set(el, { scale: 1 });
+  }
+
+  // ---- gauge ----
+  var gv = document.getElementById("gv");
+  function setG(txt) {
+    gv.textContent = txt;
+    gsap.fromTo("#gauge", { scale: 1.12 }, { scale: 1, duration: 0.35, ease: "power2.out" });
+  }
+
+  // ---- cache bar ----
+  var cb = (function () {
+    var host = document.getElementById("cbar");
+    host.innerHTML = '<div class="cb-lab">HBM · FIXED CAPACITY</div>' +
+      '<div class="cb-box"><div class="cb-w">weights</div>' +
+      '<div class="cb-kv"><span class="cb-kvt"></span></div>' +
+      '<div class="cb-b"><div class="cb-slots"></div><div class="cb-blab"></div></div>' +
+      '<div class="cb-over"></div></div>';
+    var api = {
+      kv: host.querySelector(".cb-kv"), kvt: host.querySelector(".cb-kvt"),
+      over: host.querySelector(".cb-over"), blab: host.querySelector(".cb-blab"),
+      slotBox: host.querySelector(".cb-slots"),
+      slots: function (n) {
+        api.slotBox.innerHTML = "";
+        for (var i = 0; i < n; i++) { var d = document.createElement("div"); d.className = "cb-slot"; api.slotBox.appendChild(d); }
+      }
+    };
+    return api;
+  })();
+  function barInit() {
+    gsap.set(cb.kv, { width: 0 });
+    cb.kv.classList.remove("state");
+    cb.kvt.textContent = "KV · 2.6 MB / token";
+    cb.over.textContent = "≈ 341 GB @128k — does not fit ✗";
+    gsap.set(cb.over, { opacity: 0 });
+    cb.blab.textContent = "";
+    cb.slots(0);
+  }
+  barInit();
+
+  var tl = gsap.timeline({ paused: true });
+
+  // step 1: the skeleton — lineage, thread metric, gauge at MHA, the box
+  tl.fromTo("#metric", { opacity: 0, x: -12 }, { opacity: 1, x: 0, duration: 0.45 })
+    .fromTo("#chain", { opacity: 0, y: 14 }, { opacity: 1, y: 0, duration: 0.5, ease: "power2.out" })
+    .call(function () { lite(0); })
+    .fromTo("#gauge", { opacity: 0, scale: 0.8 }, { opacity: 1, scale: 1, duration: 0.4, ease: "back.out(2)" })
+    .fromTo("#cbar, #hint", { opacity: 0 }, { opacity: 1, duration: 0.4 })
+    .to(cb.kv, { width: 796, duration: 1.0, ease: "power2.inOut" })
+    .to(cb.over, { opacity: 1, duration: 0.35 });
+  DECK.markStep(tl);
+
+  // step 2: GQA / MLA / Sparse — the gauge ratchets down
+  tl.call(function () {
+    lite(1); setG("330 KB");
+    cb.kvt.textContent = "KV · 330 KB / token";
+    cb.blab.textContent = "batch ×1 — it fits";
+  })
+    .to(cb.over, { opacity: 0, duration: 0.3 }, "<")
+    .to(cb.kv, { width: 390, duration: 0.7, ease: "power2.inOut" })
+    .to({}, { duration: 0.5 })
+    .call(function () {
+      lite(2); setG("~70 KB ⚠");
+      cb.kvt.textContent = "~70 KB";
+      cb.blab.textContent = "batch ×~5"; cb.slots(5);
+    })
+    .to(cb.kv, { width: 84, duration: 0.7, ease: "power2.inOut" })
+    .to({}, { duration: 0.5 })
+    .call(function () { lite(3); });
+  DECK.markStep(tl);
+
+  // step 3: Linear / Hybrid / KDA — the cache becomes a state
+  tl.call(function () {
+    lite(4);
+    cb.kv.classList.add("state");
+    cb.kvt.textContent = "S";
+    cb.blab.textContent = "batch ×many"; cb.slots(12);
+  })
+    .to(cb.kv, { width: 40, duration: 0.6, ease: "power2.inOut" })
+    .to({}, { duration: 0.4 })
+    .call(function () { lite(5); })
+    .to({}, { duration: 0.4 })
+    .call(function () { lite(6); setG("~tens of KB (state) ⚠"); })
+    .to({}, { duration: 0.3 });
+  DECK.markStep(tl);
+
+  // step 4: the story in one line
+  tl.fromTo(".evn", { y: 0 }, { y: -6, duration: 0.16, stagger: 0.05, yoyo: true, repeat: 1, ease: "sine.inOut" })
+    .fromTo("#story", { opacity: 0, y: 10 }, { opacity: 1, y: 0, duration: 0.55 }, "-=0.3");
+
+  DECK.register(tl, {
+    reset: function () {
+      for (var i = 0; i < 7; i++) unlite(i);
+      gv.textContent = "2.6 MB";
+      gsap.set("#metric, #chain, #gauge, #hint, #cbar, #story", { opacity: 0 });
+      gsap.set("#gauge", { scale: 1 });
+      barInit();
+    }
+  });
+</script>
+</body>
+</html>

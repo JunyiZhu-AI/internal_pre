@@ -1,0 +1,174 @@
+<!DOCTYPE html><html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Kimi Delta Attention: The Frontier of the Linear Line</title>
+<link rel="stylesheet" href="shared/deck.css">
+<link rel="stylesheet" href="shared/evo.css">
+<style>
+  #map { left: 660px; top: 96px; }
+  #zoomsvg { position: absolute; inset: 0; width: 1280px; height: 720px; pointer-events: none; opacity: 0; }
+  #zoomsvg line { stroke: rgba(47,214,176,0.55); stroke-width: 1.5; stroke-dasharray: 5 5; }
+  #lens { position: absolute; left: 290px; top: 138px; width: 700px; height: 360px; background: var(--panel); border: 1.5px solid rgba(47,214,176,0.5); border-radius: 14px; padding: 12px 18px; opacity: 0; }
+  #lens h4 { margin: 0 0 8px; font: 700 13px ui-monospace, monospace; color: var(--accent); }
+  .ch { display: flex; align-items: center; height: 24px; gap: 3px; }
+  .ch .cl { width: 30px; font: 600 10px ui-monospace, monospace; color: #6b7284; }
+  .ch i { width: 15px; height: 13px; border-radius: 3px; background: rgba(47,214,176,0.42); }
+  .ch .sl { position: relative; width: 150px; height: 4px; border-radius: 2px; background: #2a2e3b; margin-left: 40px; opacity: 0; }
+  .ch .hd { position: absolute; left: 0; top: -4px; width: 11px; height: 11px; border-radius: 50%; background: #e04b38; }
+  #master { position: absolute; right: 26px; top: 96px; width: 210px; }
+  #master .ml { font: 700 11px ui-monospace, monospace; color: #e0a935; margin-bottom: 8px; line-height: 1.5; }
+  #master .gt { position: relative; width: 150px; height: 5px; border-radius: 2.5px; background: #2a2e3b; }
+  #master .gh { position: absolute; left: 0; top: -4px; width: 13px; height: 13px; border-radius: 50%; background: #e0a935; }
+  .tokdot { position: absolute; width: 8px; height: 8px; border-radius: 50%; background: #9085e9; z-index: 4; }
+  #kcap { position: absolute; left: 50%; transform: translateX(-50%); top: 506px; white-space: nowrap; font: 700 13px ui-monospace, monospace; color: var(--ink-2); opacity: 0; background: rgba(11,13,18,0.85); padding: 4px 14px; border-radius: 7px; }
+  #plumb { position: absolute; left: 44px; bottom: 58px; display: flex; gap: 10px; align-items: center; opacity: 0; }
+  #plumb .op-chip { font-size: 11.5px; padding: 3px 8px; }
+  #home { position: absolute; left: 44px; bottom: 35px; font: 600 12.5px ui-monospace, monospace; color: var(--ink-2); opacity: 0; }
+  #pos { position: absolute; left: 44px; bottom: 10px; font-size: 15.5px; font-weight: 700; color: var(--accent); opacity: 0; }
+
+  /* —— recurring cache bar (already in its K3-era state) —— */
+  #cbar { position: absolute; left: 90px; top: 552px; width: 1100px; }
+  #cbar .cb-lab { font: 700 10.5px ui-monospace, monospace; letter-spacing: 0.14em; color: #e0a935; opacity: 0.75; margin-bottom: 5px; }
+  #cbar .cb-box { position: relative; height: 62px; border: 2px solid rgba(201,133,0,0.55); border-radius: 10px; background: rgba(18,20,26,0.6); display: flex; overflow: hidden; }
+  #cbar .cb-w { flex: none; width: 300px; display: flex; align-items: center; justify-content: center; font: 700 12px ui-monospace, monospace; color: #e0a935; background: repeating-linear-gradient(90deg, rgba(201,133,0,0.26) 0 7px, rgba(201,133,0,0.12) 7px 14px); border-right: 1.5px solid rgba(201,133,0,0.35); }
+  #cbar .cb-kv { flex: none; width: 40px; display: flex; align-items: center; justify-content: center; font: 800 11.5px ui-monospace, monospace; color: #0c1116; background: linear-gradient(180deg, rgba(47,214,176,0.62), #2fd6b0); animation: chipPulse 1.7s ease-in-out infinite; }
+  @keyframes chipPulse { 50% { box-shadow: 0 0 18px rgba(47,214,176,0.75); } }
+  #cbar .cb-b { flex: 1; position: relative; }
+  #cbar .cb-slots { position: absolute; inset: 0; display: flex; }
+  #cbar .cb-slot { flex: 1; border-left: 1.5px dashed rgba(74,80,102,0.55); }
+  #cbar .cb-blab { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font: 700 11px ui-monospace, monospace; color: #9aa1b5; }
+</style>
+</head>
+<body>
+<div class="stage">
+  <div class="slide-title">Kimi Delta Attention: The Frontier of the Linear Line</div>
+  <div class="slide-sub">zoom into the state chip — who gets to forget, and how fast</div>
+  <div id="map"></div>
+
+  <svg id="zoomsvg">
+    <line x1="392" y1="578" x2="290" y2="498"/>
+    <line x1="432" y1="578" x2="990" y2="498"/>
+  </svg>
+  <div id="lens">
+    <h4>inside S — one memory channel per row</h4>
+    <div id="rows"></div>
+    <div id="master"><div class="ml">Gated DeltaNet:<br>ONE scalar forget gate α<br>for the whole head</div><div class="gt"><div class="gh"></div></div></div>
+  </div>
+  <div id="kcap"></div>
+  <div id="plumb"></div>
+  <div id="home"></div>
+  <div id="pos"></div>
+  <div id="cbar"></div>
+</div>
+
+<script src="../vendor/gsap.min.js"></script>
+<script src="shared/attnevo.js"></script>
+<script src="shared/manifest.js"></script>
+<script src="shared/deck.js"></script>
+<script>
+  EV.mapStrip(document.getElementById("map"), 6);
+  document.getElementById("home").textContent = EV.kda.home;
+  document.getElementById("pos").textContent = EV.kda.position;
+  EV.kda.plumbing.split("·").forEach(function (p) {
+    var c = document.createElement("div");
+    c.className = "op-chip"; c.textContent = p.trim();
+    document.getElementById("plumb").appendChild(c);
+  });
+
+  // ---- 12 channels ----
+  var rows = document.getElementById("rows"), chans = [];
+  for (var r = 0; r < 12; r++) {
+    var d = document.createElement("div");
+    d.className = "ch";
+    var html = '<span class="cl">c' + r + "</span>";
+    for (var i = 0; i < 12; i++) html += "<i></i>";
+    html += '<div class="sl"><div class="hd"></div></div>';
+    d.innerHTML = html;
+    rows.appendChild(d);
+    chans.push({ cells: d.querySelectorAll("i"), sl: d.querySelector(".sl"), hd: d.querySelector(".hd") });
+  }
+
+  // ---- recurring bar, static this slide (inherited K3-era state) ----
+  (function () {
+    var host = document.getElementById("cbar");
+    host.innerHTML = '<div class="cb-lab">HBM · FIXED CAPACITY</div>' +
+      '<div class="cb-box"><div class="cb-w">weights</div>' +
+      '<div class="cb-kv">S</div>' +
+      '<div class="cb-b"><div class="cb-slots"></div><div class="cb-blab">batch ×many</div></div></div>';
+    var sb = host.querySelector(".cb-slots");
+    for (var i = 0; i < 12; i++) { var s = document.createElement("div"); s.className = "cb-slot"; sb.appendChild(s); }
+  })();
+
+  var kcap = document.getElementById("kcap");
+  var stage = document.querySelector(".stage");
+
+  // ambient A: one scalar gate drives every channel together
+  var loopA = gsap.timeline({ repeat: -1, paused: true });
+  loopA.to("#master .gh", { x: 137, duration: 1.3, ease: "sine.inOut" })
+    .to(".ch i", { opacity: 0.3, duration: 1.3, ease: "sine.inOut" }, 0)
+    .to("#master .gh", { x: 0, duration: 1.3, ease: "sine.inOut" })
+    .to(".ch i", { opacity: 1, duration: 1.3, ease: "sine.inOut" }, ">-1.3");
+
+  // ambient B: per-channel gates, each on its own clock + token stream
+  var tweensB = [], dots = [];
+  function startB() {
+    chans.forEach(function (ch) {
+      tweensB.push(gsap.to(ch.hd, { x: "random(6,139)", duration: "random(0.5,1.5)", repeat: -1, repeatRefresh: true, yoyo: true, ease: "sine.inOut" }));
+      tweensB.push(gsap.to(ch.cells, { opacity: "random(0.25,1)", duration: "random(0.5,1.5)", repeat: -1, repeatRefresh: true, yoyo: true, ease: "sine.inOut" }));
+    });
+  }
+  var spawner = gsap.timeline({ repeat: -1, paused: true });
+  spawner.call(function () {
+    var d = document.createElement("div");
+    d.className = "tokdot";
+    d.style.left = "252px"; d.style.top = (172 + Math.random() * 280) + "px";
+    stage.appendChild(d); dots.push(d);
+    gsap.fromTo(d, { opacity: 0, x: 0 }, { opacity: 0.9, x: 320, duration: 0.55, ease: "none" });
+    gsap.to(d, { opacity: 0, x: 380, duration: 0.2, delay: 0.55, onComplete: function () { d.remove(); } });
+  }).to({}, { duration: 0.3 });
+
+  var tl = gsap.timeline({ paused: true });
+
+  // step 1: zoom in — Gated DeltaNet: delta write + one scalar knob
+  tl.fromTo("#zoomsvg", { opacity: 0 }, { opacity: 1, duration: 0.4 })
+    .fromTo("#lens", { opacity: 0, scale: 0.15, transformOrigin: "17% 100%" }, { opacity: 1, scale: 1, duration: 0.7, ease: "power3.out" }, "-=0.2")
+    .call(function () { kcap.textContent = EV.kda.from; loopA.play(0); })
+    .fromTo("#kcap", { opacity: 0 }, { opacity: 1, duration: 0.4 })
+    .to({}, { duration: 2.0 });
+  DECK.markStep(tl);
+
+  // step 2: KDA — the knob splits: every channel forgets at its own rate
+  tl.call(function () { loopA.pause(); kcap.textContent = EV.kda.upgrade + " ⚠"; })
+    .to("#master", { opacity: 0.18, duration: 0.5 })
+    .fromTo(".ch .sl", { opacity: 0, x: 20 }, { opacity: 1, x: 0, duration: 0.35, stagger: 0.05, ease: "power2.out" })
+    .call(function () { startB(); spawner.play(0); })
+    .to({}, { duration: 2.0 });
+  DECK.markStep(tl);
+
+  // step 3: the plumbing, and where it lives
+  tl.fromTo("#plumb", { opacity: 0, y: 8 }, { opacity: 1, y: 0, duration: 0.4 })
+    .fromTo("#home", { opacity: 0, y: 8 }, { opacity: 1, y: 0, duration: 0.4 });
+  DECK.markStep(tl);
+
+  // step 4: position on the map
+  tl.fromTo("#pos", { opacity: 0, y: 8 }, { opacity: 1, y: 0, duration: 0.5 })
+    .fromTo("#map .ev-sn.on i", { scale: 1 }, { scale: 1.6, duration: 0.3, yoyo: true, repeat: 3, ease: "sine.inOut" }, "-=0.2");
+
+  DECK.register(tl, {
+    reset: function () {
+      loopA.pause(0); spawner.pause(0);
+      tweensB.forEach(function (t) { t.kill(); }); tweensB = [];
+      dots.forEach(function (d) { gsap.killTweensOf(d); d.remove(); }); dots = [];
+      chans.forEach(function (ch) { gsap.set(ch.hd, { x: 0 }); gsap.set(ch.cells, { opacity: 1 }); });
+      gsap.set("#master .gh", { x: 0 });
+      gsap.set("#master", { opacity: 1 });
+      gsap.set(".ch .sl", { opacity: 0, x: 0 });
+      gsap.set("#zoomsvg, #lens, #kcap, #plumb, #home, #pos", { opacity: 0 });
+      gsap.set("#map .ev-sn.on i", { scale: 1 });
+      kcap.textContent = "";
+    }
+  });
+</script>
+</body>
+</html>

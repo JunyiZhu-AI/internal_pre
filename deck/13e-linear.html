@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Linear Attention &amp; SSMs: Replace the Cache with a State</title>
+<link rel="stylesheet" href="shared/deck.css">
+<link rel="stylesheet" href="shared/evo.css">
+<style>
+  .kicker { position: absolute; top: 12px; left: 45px; font: 700 11px ui-monospace, monospace; letter-spacing: 0.22em; color: #6b7284; }
+  .lane { position: absolute; left: 44px; width: 1192px; background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 12px 18px; opacity: 0; }
+  .lane-head { display: flex; align-items: center; gap: 12px; height: 24px; }
+  .lane-tag { font: 800 13px ui-monospace, monospace; letter-spacing: 0.05em; }
+  .lane-sub { font: 11.5px ui-monospace, monospace; color: var(--ink-2); }
+  .lane-meter { margin-left: auto; display: flex; align-items: center; gap: 8px; }
+  .lm-lab { font: 700 12px ui-monospace, monospace; color: #c7cce0; }
+  .lane-foot { display: flex; align-items: center; gap: 10px; margin-top: 10px; }
+  .stream { flex: 1; display: flex; gap: 3px; align-items: center; height: 16px; overflow: hidden; justify-content: flex-end; border-left: 2px solid var(--line); padding-left: 8px; }
+  .stream i { flex: none; height: 11px; border-radius: 3px; background: var(--accent); opacity: 0.85; }
+  .tokct { font: 700 11px ui-monospace, monospace; color: var(--ink-2); width: 84px; text-align: right; }
+
+  .cachezone { display: flex; align-items: center; gap: 10px; margin-top: 12px; }
+  .cachelab { font: 700 10.5px ui-monospace, monospace; color: #6b7284; width: 70px; }
+  #cacheA { flex: 1; display: flex; gap: 4px; align-items: center; height: 34px; overflow: hidden; position: relative; }
+  #cacheA .kvp { flex: none; width: 12px; height: 28px; border-radius: 3px; background: linear-gradient(180deg, rgba(144,133,233,0.45), var(--c-o)); }
+  #sweep { position: absolute; left: 0; top: 0; bottom: 0; width: 60px; background: linear-gradient(90deg, transparent, rgba(224,75,56,0.5), transparent); opacity: 0; pointer-events: none; }
+  #readA { font: 700 11px ui-monospace, monospace; color: #ff8a7a; width: 130px; }
+
+  #statewrap { display: flex; align-items: center; gap: 18px; }
+  #sbox { display: grid; grid-template-columns: repeat(8, 16px); gap: 3px; padding: 8px; border: 2px solid var(--accent); border-radius: 8px; background: #10171a; }
+  #sbox i { width: 16px; height: 16px; border-radius: 3px; background: rgba(47,214,176,0.28); }
+  #sboxlab { font: 700 11px ui-monospace, monospace; color: var(--accent); }
+  #statenote { font: 600 11px ui-monospace, monospace; color: var(--ink-2); width: 240px; line-height: 1.6; }
+  #ssmchip { font: 700 12px ui-monospace, monospace; color: #c7cce0; border: 1.5px dashed var(--line); border-radius: 8px; padding: 8px 12px; background: rgba(27,30,39,0.6); opacity: 0; }
+  #deltatag { font: 700 11px ui-monospace, monospace; color: #e0a935; width: 210px; line-height: 1.6; opacity: 0; margin-left: auto; }
+
+  .fline { position: absolute; left: 44px; font: 600 12.5px ui-monospace, monospace; color: #9aa1b5; opacity: 0; }
+  #punch { position: absolute; left: 44px; bottom: 26px; font-size: 15.5px; font-weight: 700; color: #ff8a7a; opacity: 0; }
+</style>
+</head>
+<body>
+<div class="stage">
+  <div class="kicker">ATTENTION EVOLUTION · RACE 4</div>
+  <div class="slide-title" style="top:34px">Linear Attention &amp; SSMs: Replace the Cache with a State</div>
+  <div class="slide-sub" style="top:78px">no cache to shrink — decode stops touching the history at all</div>
+  <div id="map" style="left:680px;top:98px"></div>
+
+  <div class="lane" id="laneA" style="top:140px">
+    <div class="lane-head">
+      <span class="lane-tag" style="color:#6b7284">LANE 1 · FULL ATTENTION</span>
+      <span class="lane-sub">every step reads every cached K,V</span>
+      <span class="lane-meter"><span class="lm-lab">KV grows with n</span></span>
+    </div>
+    <div class="cachezone" style="height:44px"><span class="cachelab">KV CACHE</span><div id="cacheA"><div id="sweep"></div></div><span id="readA"></span></div>
+    <div class="lane-foot"><span class="stream" id="stA"></span><span class="tokct" id="tcA">0 tok</span></div>
+  </div>
+
+  <div class="lane" id="laneB" style="top:322px">
+    <div class="lane-head">
+      <span class="lane-tag" style="color:#2fd6b0">LANE 2 · LINEAR / SSM</span>
+      <span class="lane-sub" id="subB"></span>
+      <span class="lane-meter"><span class="lm-lab" style="color:var(--accent)" id="labB"></span></span>
+    </div>
+    <div class="cachezone">
+      <span class="cachelab">STATE</span>
+      <div id="statewrap">
+        <div>
+          <div id="sbox"></div>
+          <div id="sboxlab" style="margin-top:5px; text-align:center">S · d×d · fixed</div>
+        </div>
+        <div id="statenote"></div>
+        <div id="ssmchip"></div>
+      </div>
+      <div id="deltatag"></div>
+    </div>
+    <div class="lane-foot"><span class="stream" id="stB"></span><span class="tokct" id="tcB">0 tok</span></div>
+  </div>
+
+  <div class="fline" id="f1" style="top:576px; color:#e0a935"></div>
+  <div id="punch"></div>
+</div>
+
+<script src="../vendor/gsap.min.js"></script>
+<script src="shared/attnevo.js"></script>
+<script src="shared/manifest.js"></script>
+<script src="shared/deck.js"></script>
+<script>
+  EV.mapStrip(document.getElementById("map"), 4);
+
+  document.getElementById("subB").textContent = EV.linear.recur;
+  document.getElementById("labB").textContent = EV.nodes[4].bytes;
+  document.getElementById("statenote").textContent = EV.linear.state;
+  document.getElementById("ssmchip").textContent = EV.linear.ssm;
+  document.getElementById("f1").textContent = EV.linear.delta;
+  document.getElementById("punch").textContent = EV.linear.catch;
+  document.getElementById("deltatag").textContent = "write = correct in place, never append";
+
+  // state grid 8x4
+  var sbox = document.getElementById("sbox");
+  var scells = [];
+  for (var i = 0; i < 32; i++) {
+    var c = document.createElement("i");
+    sbox.appendChild(c);
+    scells.push(c);
+  }
+
+  function mkStream(streamId, ctId) {
+    var s = document.getElementById(streamId), c = document.getElementById(ctId), n = 0;
+    return {
+      tick: function () {
+        n++;
+        var el = document.createElement("i");
+        el.style.width = (6 + Math.random() * 16) + "px";
+        s.appendChild(el);
+        while (s.children.length > 44) s.removeChild(s.firstChild);
+        c.textContent = n + " tok";
+      },
+      reset: function () { n = 0; s.innerHTML = ""; c.textContent = "0 tok"; }
+    };
+  }
+  var strA = mkStream("stA", "tcA"), strB = mkStream("stB", "tcB");
+  var cacheA = document.getElementById("cacheA");
+  var fullN = 0;
+
+  // lane A: cache grows; every token, a red read-sweep drags across the whole row
+  var loopA = gsap.timeline({ repeat: -1, paused: true });
+  loopA.call(function () {
+    strA.tick();
+    fullN++;
+    if (cacheA.children.length < 60) {
+      var d = document.createElement("div");
+      d.className = "kvp";
+      cacheA.appendChild(d);
+    }
+    var w = Math.min(cacheA.children.length * 16, 900);
+    gsap.fromTo("#sweep", { x: 0, opacity: 0.9 }, { x: w, opacity: 0.4, duration: 0.62, ease: "none" });
+    document.getElementById("readA").textContent = "read all " + fullN + " K,V";
+  }).to({}, { duration: 0.75 });
+
+  // lane B: fixed state — a few cells flash on each write
+  var loopB = gsap.timeline({ repeat: -1, paused: true });
+  loopB.call(function () {
+    strB.tick();
+    for (var k = 0; k < 3; k++) {
+      var c = scells[(Math.random() * 32) | 0];
+      gsap.fromTo(c, { backgroundColor: "#2fd6b0" }, { backgroundColor: "rgba(47,214,176,0.28)", duration: 0.5 });
+    }
+  }).to({}, { duration: 0.34 });
+
+  var tl = gsap.timeline({ paused: true });
+
+  // step 1: two decode loops — dragging the history vs carrying a state
+  tl.fromTo("#laneA", { opacity: 0, y: 16 }, { opacity: 1, y: 0, duration: 0.5, ease: "power2.out" })
+    .call(function () { loopA.play(0); })
+    .to({}, { duration: 1.2 })
+    .fromTo("#laneB", { opacity: 0, y: 16 }, { opacity: 1, y: 0, duration: 0.5, ease: "power2.out" })
+    .call(function () { loopB.play(0); })
+    .to({}, { duration: 1.4 });
+  DECK.markStep(tl);
+
+  // step 2: the SSM branch — Mamba
+  tl.fromTo("#ssmchip", { opacity: 0, x: 16 }, { opacity: 1, x: 0, duration: 0.45, ease: "power2.out" })
+    .to({}, { duration: 0.4 });
+  DECK.markStep(tl);
+
+  // step 3: the delta rule — one entry corrected in place; gated forgetting
+  tl.call(function () { loopB.timeScale(0.35); })
+    .fromTo(scells[11], { backgroundColor: "#e0a935", boxShadow: "0 0 14px rgba(224,169,53,0.9)", scale: 1.5 },
+      { backgroundColor: "rgba(47,214,176,0.28)", boxShadow: "0 0 0px rgba(224,169,53,0)", scale: 1, duration: 1.4, ease: "power2.out", immediateRender: false })
+    .fromTo("#deltatag", { opacity: 0, y: 8 }, { opacity: 1, y: 0, duration: 0.4 }, "-=1.0")
+    .fromTo(scells[27], { backgroundColor: "#e0a935", boxShadow: "0 0 14px rgba(224,169,53,0.9)", scale: 1.5 },
+      { backgroundColor: "rgba(47,214,176,0.28)", boxShadow: "0 0 0px rgba(224,169,53,0)", scale: 1, duration: 1.4, ease: "power2.out", immediateRender: false })
+    .to("#sbox", { opacity: 0.45, duration: 0.5, yoyo: true, repeat: 1 })
+    .call(function () { loopB.timeScale(1); })
+    .fromTo("#f1", { opacity: 0, y: 8 }, { opacity: 1, y: 0, duration: 0.4 });
+  DECK.markStep(tl);
+
+  // step 4: the catch — a fixed state forgets → hybrids
+  tl.to("#sboxlab", { color: "#ff8a7a", duration: 0.4 })
+    .fromTo("#punch", { opacity: 0, y: 10 }, { opacity: 1, y: 0, duration: 0.5 });
+
+  DECK.register(tl, {
+    reset: function () {
+      loopA.pause(0);
+      loopB.pause(0); loopB.timeScale(1);
+      strA.reset(); strB.reset();
+      fullN = 0;
+      [].slice.call(cacheA.querySelectorAll(".kvp")).forEach(function (d) { d.remove(); });
+      gsap.set("#sweep", { opacity: 0 });
+      document.getElementById("readA").textContent = "";
+      scells.forEach(function (c) { gsap.set(c, { clearProps: "backgroundColor,boxShadow,scale" }); });
+      gsap.set("#sboxlab", { clearProps: "color" });
+    }
+  });
+</script>
+</body>
+</html>

@@ -1,0 +1,201 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The Attention Evolution Map</title>
+<link rel="stylesheet" href="shared/deck.css">
+<link rel="stylesheet" href="shared/evo.css">
+<style>
+  /* the formula — large, centered */
+  #fwrap { position: absolute; left: 0; top: 138px; width: 1280px; display: flex; justify-content: center; align-items: flex-start; gap: 11px; opacity: 0; }
+  #fwrap .feq { font: 600 14px ui-monospace, monospace; color: #9aa1b5; padding-top: 8px; }
+  #fwrap .fop { font: 700 20px ui-monospace, monospace; color: #4a5066; padding-top: 4px; }
+  .ft { text-align: center; position: relative; padding: 0 3px 7px; }
+  .ft .fv { font: 800 26px ui-monospace, monospace; color: #9085e9; white-space: nowrap; }
+  .ft .fl { font: 10.5px ui-monospace, monospace; color: #6b7284; margin-top: 2px; white-space: nowrap; }
+  .ft.dimt .fv { color: #4a5066; }
+  .ft.dimt .fl { color: #3c4152; }
+  .ft.hot .fv { color: var(--hot); }
+  .ft.hot .fl { color: var(--hot); opacity: 0.75; }
+  .ft.hot::after { content: ""; position: absolute; left: 3px; right: 3px; bottom: 0; height: 3px; border-radius: 2px; background: var(--hot); box-shadow: 0 0 12px var(--hot); }
+  #strike { position: absolute; height: 3px; background: var(--accent); border-radius: 2px; transform: scaleX(0); transform-origin: left center; box-shadow: 0 0 10px rgba(47,214,176,0.7); }
+  /* gauge + state chip */
+  #gauge { position: absolute; left: 50%; transform: translateX(-50%); top: 236px; opacity: 0; }
+  #gauge b { font-size: 15px; }
+  #statechip { position: absolute; left: 50%; transform: translateX(-50%); top: 292px; font: 700 12.5px ui-monospace, monospace; color: var(--accent); border: 1.5px solid rgba(47,214,176,0.55); border-radius: 999px; padding: 5px 14px; background: var(--panel); opacity: 0; white-space: nowrap; }
+  /* connector lines */
+  #links { position: absolute; inset: 0; pointer-events: none; }
+  #links path { fill: none; stroke-width: 2; opacity: 0; }
+  /* lineage nodes */
+  .node { position: absolute; top: 424px; width: 150px; height: 96px; background: var(--panel); border: 1.5px solid var(--line); border-radius: 10px; padding: 11px 12px; opacity: 0; }
+  .node .nm { font-size: 13.5px; font-weight: 700; display: flex; gap: 7px; align-items: center; color: #9aa1b5; }
+  .node .nm i { width: 9px; height: 9px; border-radius: 50%; background: #2a2e3b; flex: none; }
+  .node .sb { font-size: 10.5px; color: #6b7284; margin-top: 4px; }
+  .node .by { font: 700 11.5px ui-monospace, monospace; color: #6b7284; margin-top: 7px; }
+  .node.on { border-color: var(--nc); box-shadow: 0 0 16px rgba(0,0,0,0.35); }
+  .node.on .nm { color: #e8eaf0; }
+  .node.on .nm i { background: var(--nc); box-shadow: 0 0 10px var(--nc); }
+  .node.on .by { color: var(--nc); }
+  .seg { position: absolute; top: 470px; width: 20px; height: 2px; background: #2a2e3b; opacity: 0; }
+  #metric { position: absolute; left: 0; top: 552px; width: 1280px; text-align: center; font: 600 13px ui-monospace, monospace; color: var(--ink-2); opacity: 0; }
+  #punch { position: absolute; left: 44px; bottom: 28px; width: 940px; font-size: 17px; font-weight: 700; color: var(--accent); opacity: 0; }
+</style></head>
+<body>
+<div class="stage">
+  <div class="slide-title">The Attention Evolution Map</div>
+  <div class="slide-sub">one formula from slide 08 — five ways to attack it</div>
+
+  <div id="fwrap"></div>
+  <div id="strike"></div>
+  <div id="gauge" class="ev-gauge">bytes / token: <b id="gv">2.6 MB</b></div>
+  <div id="statechip">per-token cache deleted &rarr; fixed d&times;d state</div>
+  <svg id="links" viewBox="0 0 1280 720" width="1280" height="720"></svg>
+  <div id="nodes"></div>
+  <div id="metric"></div>
+  <div id="punch"></div>
+</div>
+
+<script src="../vendor/gsap.min.js"></script>
+<script src="shared/attnevo.js"></script>
+<script src="shared/manifest.js"></script>
+<script src="shared/deck.js"></script>
+<script>
+  // ---- formula ----
+  function T(v, l, id, cls) { return '<div class="ft ' + (cls || "") + '" id="' + id + '"><div class="fv">' + v + '</div><div class="fl">' + l + "</div></div>"; }
+  var fw = document.getElementById("fwrap");
+  fw.innerHTML =
+    '<span class="feq">per token =</span>' +
+    T("2", "K and V", "t-2") + '<span class="fop">&times;</span>' +
+    T("n_L", "layers", "t-nl") + '<span class="fop">&times;</span>' +
+    T("n_kv", "KV heads", "t-kv") + '<span class="fop">&times;</span>' +
+    T("d_h", "head dim", "t-dh") + '<span class="fop">&times;</span>' +
+    T("2 B", "bytes", "t-by") +
+    '<span class="fop" id="op-tail" style="color:#3c4152">&times;</span>' +
+    T("n", "tokens cached", "t-tail", "dimt");
+
+  document.getElementById("metric").textContent = EV.metric;
+  document.getElementById("punch").textContent = EV.story;
+
+  // ---- lineage nodes ----
+  var nodesHost = document.getElementById("nodes");
+  EV.nodes.forEach(function (n, i) {
+    var d = document.createElement("div");
+    d.className = "node"; d.id = "nd" + i;
+    d.style.left = (44 + i * 170) + "px";
+    d.style.setProperty("--nc", n.color);
+    d.innerHTML = '<div class="nm"><i></i>' + n.name + '</div><div class="sb">' + n.sub + "</div>" +
+      '<div class="by">' + (n.bytes ? n.bytes + (n.warn ? " ⚠" : "") : "&nbsp;") + "</div>";
+    nodesHost.appendChild(d);
+    if (i < 6) {
+      var s = document.createElement("div");
+      s.className = "seg";
+      s.style.left = (44 + i * 170 + 150) + "px";
+      nodesHost.appendChild(s);
+    }
+  });
+
+  // ---- geometry helpers (positions relative to the 1280x720 stage) ----
+  var stage = document.querySelector(".stage");
+  function rel(el) {
+    var s = stage.getBoundingClientRect(), r = el.getBoundingClientRect(), k = s.width / 1280;
+    return { x: (r.left - s.left) / k, y: (r.top - s.top) / k, w: r.width / k, h: r.height / k };
+  }
+  var svg = document.getElementById("links"), SVGNS = "http://www.w3.org/2000/svg";
+  function addLink(id, color, nodeIdx, targetEl, targetYPad) {
+    var nd = rel(document.getElementById("nd" + nodeIdx));
+    var tg = rel(targetEl);
+    var x1 = nd.x + nd.w / 2, y1 = 422;
+    var x2 = tg.x + tg.w / 2, y2 = tg.y + tg.h + (targetYPad || 4);
+    var p = document.createElementNS(SVGNS, "path");
+    p.setAttribute("d", "M" + x1 + "," + y1 + " C" + x1 + "," + (y1 - 85) + " " + x2 + "," + (y2 + 85) + " " + x2 + "," + y2);
+    p.setAttribute("stroke", color); p.id = id;
+    svg.appendChild(p);
+  }
+  function mid(idA, idB) { // phantom target between two terms
+    var a = rel(document.getElementById(idA)), b = rel(document.getElementById(idB));
+    var d = document.createElement("div");
+    d.style.cssText = "position:absolute;left:" + ((a.x + b.x + b.w) / 2 - 1) + "px;top:" + a.y + "px;width:2px;height:" + a.h + "px;";
+    stage.appendChild(d);
+    return d;
+  }
+  addLink("ln-gqa", EV.nodes[1].color, 1, document.getElementById("t-kv"));
+  addLink("ln-mla", EV.nodes[2].color, 2, mid("t-kv", "t-dh"));
+  addLink("ln-sparse", EV.nodes[3].color, 3, document.getElementById("t-tail"));
+  addLink("ln-kda", EV.nodes[6].color, 6, document.getElementById("statechip"), 6);
+
+  // strike bar across the per-token terms
+  (function () {
+    var a = rel(document.getElementById("t-2")), b = rel(document.getElementById("t-by"));
+    var st = document.getElementById("strike");
+    st.style.left = (a.x - 4) + "px";
+    st.style.top = (a.y + 17) + "px";
+    st.style.width = (b.x + b.w - a.x + 8) + "px";
+  })();
+
+  // ---- state helpers ----
+  function light(i) { document.getElementById("nd" + i).classList.add("on"); }
+  function hot(id, color) {
+    var el = document.getElementById(id);
+    el.classList.add("hot"); el.style.setProperty("--hot", color);
+  }
+  var gv = document.getElementById("gv");
+  function setGauge(txt, color) {
+    gv.textContent = txt; gv.style.color = color;
+    gsap.fromTo("#gauge", { scale: 1.13 }, { scale: 1, duration: 0.35, ease: "power2.out" });
+  }
+
+  // ---- timeline ----
+  var tl = gsap.timeline({ paused: true });
+
+  // step 1: the formula, the skeleton, the metric
+  tl.to("#fwrap", { opacity: 1, duration: 0.25 })
+    .fromTo("#fwrap .ft, #fwrap .fop, #fwrap .feq", { opacity: 0, y: 14 },
+      { opacity: 1, y: 0, duration: 0.32, stagger: 0.05, ease: "back.out(1.6)" })
+    .fromTo("#gauge", { opacity: 0, y: 8 }, { opacity: 1, y: 0, duration: 0.35 })
+    .call(function () { setGauge("2.6 MB", "#e8eaf0"); })
+    .fromTo(".node, .seg", { opacity: 0, y: 14 }, { opacity: 1, y: 0, duration: 0.35, stagger: 0.045 })
+    .call(function () { light(0); })
+    .fromTo("#metric", { opacity: 0 }, { opacity: 1, duration: 0.4 });
+  DECK.markStep(tl);
+
+  // step 2: GQA, MLA, Sparse — the gauge ratchets down
+  tl.call(function () { light(1); hot("t-kv", EV.nodes[1].color); })
+    .fromTo("#ln-gqa", { opacity: 0 }, { opacity: 0.85, duration: 0.45 })
+    .call(function () { setGauge("330 KB", EV.nodes[1].color); })
+    .to({}, { duration: 0.7 })
+    .call(function () { light(2); hot("t-kv", EV.nodes[2].color); hot("t-dh", EV.nodes[2].color); })
+    .fromTo("#ln-mla", { opacity: 0 }, { opacity: 0.85, duration: 0.45 })
+    .call(function () { setGauge("~70 KB ⚠", EV.nodes[2].color); })
+    .to({}, { duration: 0.7 })
+    .call(function () { light(3); hot("t-tail", EV.nodes[3].color); document.getElementById("op-tail").style.color = "#e0a935"; })
+    .fromTo("#ln-sparse", { opacity: 0 }, { opacity: 0.85, duration: 0.45 })
+    .to({}, { duration: 0.25 });
+  DECK.markStep(tl);
+
+  // step 3: Linear deletes the per-token term; Hybrid mixes; KDA attacks the state
+  tl.call(function () { light(4); })
+    .to("#strike", { scaleX: 1, duration: 0.55, ease: "power2.inOut" })
+    .fromTo("#statechip", { opacity: 0, y: -6 }, { opacity: 1, y: 0, duration: 0.4 })
+    .call(function () { setGauge("O(1) — fixed state", EV.nodes[4].color); })
+    .to({}, { duration: 0.7 })
+    .call(function () { light(5); })
+    .to({}, { duration: 0.5 })
+    .call(function () { light(6); })
+    .fromTo("#ln-kda", { opacity: 0 }, { opacity: 0.85, duration: 0.45 })
+    .call(function () { setGauge("~tens of KB (state) ⚠", EV.nodes[6].color); });
+  DECK.markStep(tl);
+
+  // step 4: the story in one line
+  tl.fromTo("#punch", { opacity: 0, y: 10 }, { opacity: 1, y: 0, duration: 0.5 });
+
+  DECK.register(tl, {
+    reset: function () {
+      for (var i = 0; i < 7; i++) document.getElementById("nd" + i).classList.remove("on");
+      ["t-kv", "t-dh", "t-tail"].forEach(function (id) {
+        document.getElementById(id).classList.remove("hot");
+      });
+      document.getElementById("op-tail").style.color = "#3c4152";
+      gv.textContent = "2.6 MB"; gv.style.color = "#e8eaf0";
+      gsap.set("#gauge", { scale: 1 });
+    }
+  });
+</script>
+</body></html>

@@ -303,6 +303,117 @@ the tiled square (07), the causal triangle + K/V strips (08).*
 
 ---
 
+## Pages 09–15 — The Attention Evolution (one thread, seven slides)
+
+*Five candidate flows (a: subway map, b: formula knobs, c: cache bar,
+d: matrix lineage, e: decode race). All implement the same 4 beats per
+slide; the mini-map strip on each page tracks position in the lineage.
+⚠-marked figures are reported/speculative — say "reported" out loud.*
+
+### 09 — The Attention Evolution Map (divider)
+
+1. "Part three: attention. Seven years of efficient-attention research —
+   MQA, GQA, MLA, sparse, linear, hybrids, KDA — looks like a zoo, but it's
+   one continuous story, and we'll judge every step by a single metric: KV
+   bytes per decoded token, times quality retained."
+2. "The first half of the lineage: share the KV heads — GQA. Compress what's
+   left into a latent — MLA. Attend to fewer tokens — sparse. Watch the
+   gauge: megabytes to hundreds of kilobytes to tens."
+3. "Then the radical half: replace the cache with a fixed-size state —
+   linear attention and SSMs. Mix linear with full attention — hybrids. And
+   the current frontier, inside K3: Kimi Delta Attention."
+4. "Fewer bytes per decoded token, same quality. That's the whole story —
+   let's walk it."
+
+### 10 — MQA / GQA: Share the KV Heads
+
+1. "Baseline multi-head attention: every one of 64 query heads carries its
+   own K and V. Sixty-four private copies into the cache, every token."
+2. "The cheapest fix in the book: stop that. MQA goes to the extreme — one
+   shared K,V for everyone — a bit too brutal for quality. GQA settles in
+   between: groups of eight queries share one KV head."
+3. "Effect on the formula from the cache slide: divide by eight. And here's
+   the confession — the 0.33 megabytes per token I showed you *already had
+   GQA inside*. Without it, Llama-3-70B would pay 2.6 megabytes."
+4. "Cost: slight quality loss, more for MQA than GQA — so GQA became the
+   default: Llama, Mistral, Gemma. And note the pattern: this is the first
+   architecture knob in history turned purely for inference economics."
+
+### 11 — MLA: Compress KV into a Latent
+
+1. "DeepSeek's move goes further: don't share the heads — compress them.
+   Project every token's K and V down to one low-rank latent vector, about
+   512 dimensions plus a small RoPE part. Cache *only the latent*."
+2. "Per-token cache drops to the seventy-kilobyte class — an order of
+   magnitude below GQA, at comparable reported quality."
+3. "The elegant part: at inference the up-projection folds into W_Q and W_O
+   — absorbed, gone. Decoding pays zero extra compute for the compression."
+4. "DeepSeek V2 and V3, Kimi K2 — and K3's full-attention layers still use
+   gated MLA today. Keep that in mind: MLA isn't a detour we pass by; it's
+   part of the endpoint."
+
+### 12 — Sparse Attention: Attend to Fewer Tokens
+
+1. "A different axis entirely: keep attention exact, but aim it at fewer
+   tokens. Sliding window — each token sees the last w — and suddenly cache
+   and compute are bounded by w, not by context."
+2. "The modern versions learn *where* to look: DeepSeek's NSA runs
+   compressed, selected, and local branches; Kimi's MoBA gates blocks like
+   a mixture of experts routes tokens."
+3. "Whatever falls outside the window or the selected blocks can be evicted
+   from the cache — that's a capacity win exactly where long context hurts."
+4. "The trade-off: selection is discrete. Miss a block, lose the memory.
+   Long-range recall needs care — which is precisely what the next idea
+   attacks."
+
+### 13 — Linear Attention & SSMs: Replace the Cache with a State
+
+1. "The radical option: drop softmax. Attention becomes a linear recurrence
+   — a running memory matrix updated as S plus v k-transpose. Decode now
+   reads and writes a fixed d-by-d state. Look at the two loops: one drags a
+   cache that grows forever; the other carries a box that never grows."
+2. "The state-space branch arrived at the same place from control theory —
+   Mamba, selective state spaces, hardware-efficient scans."
+3. "The write rule matters: DeltaNet updates memory by a *delta rule* — an
+   error-correcting write that fixes the stored entry instead of piling on
+   top. Gated DeltaNet adds forgetting."
+4. "The catch is information-theoretic, not an engineering bug: a fixed
+   state cannot hold an unbounded past. Pure-linear models lag on
+   recall-heavy tasks — and that gap is what hybrids exist to close."
+
+### 14 — Kimi Delta Attention: The Frontier of the Linear Line
+
+1. "Zoom into that state box. Gated DeltaNet gave it a delta write and one
+   forget gate — one scalar per head. Everything in the memory decays at
+   the same rate."
+2. "KDA's upgrade: make the gate channel-wise. Every channel of the memory
+   gets its own forget rate — some hold on for thousands of tokens, some
+   flush immediately. Reported: much better long-context retention."
+3. "Around it: a short convolution for local context, and chunked kernels
+   that keep it hardware-efficient. This is the backbone attention of K3 —
+   three linear layers for every one gated-MLA full-attention layer."
+4. "Place it on our map: KDA attacks decode bandwidth with the fixed state
+   AND capacity with the tiny cache — at million-token scale. The lineage
+   converges here."
+
+### 15 — Attention Line: The Payoff
+
+1. "Read the gauge one last time, across the whole line: megabytes per
+   token under MHA, 330 kilobytes under GQA, seventy under MLA, tens under
+   the hybrid-KDA recipe — mostly state, barely cache."
+2. "K3's reported numbers for that recipe: about 75% less KV cache, and up
+   to 6.3× decode throughput at a million tokens of context. Watch the
+   speedometer."
+3. "And quality? Reported parity or better on long-context benchmarks —
+   that's the claim to interrogate, but it's the claim."
+4. "So attention fixed its context scaling. The other machine in the block
+   still carries two-thirds of the parameters — next: shrink the weights
+   themselves. Quantization."
+
+*(final click → next page)*
+
+---
+
 ## Template page — QKᵀ: where attention scores come from
 
 **Load:** title only; empty score grid awaits.

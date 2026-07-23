@@ -1,0 +1,139 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Attention Line: The Payoff</title>
+<link rel="stylesheet" href="shared/deck.css">
+<link rel="stylesheet" href="shared/evo.css">
+<link rel="stylesheet" href="shared/bottlenecks.css">
+<style>
+  #stsign { position: absolute; left: 44px; top: 116px; display: flex; align-items: center; gap: 10px; }
+  #stsign .rnd { width: 26px; height: 26px; border-radius: 50%; border: 3px solid var(--accent); background: #0c1116;
+    display: flex; align-items: center; justify-content: center; font: 800 11px ui-monospace, monospace; color: #e8eaf0; }
+  #stsign .snm { font: 600 12px ui-monospace, monospace; color: #9aa1b5; }
+  #stsign .sfare { font: 700 11px ui-monospace, monospace; color: var(--accent); border: 1px solid var(--line);
+    border-radius: 999px; padding: 3px 10px; background: var(--panel); }
+  #ladder { position: absolute; left: 90px; top: 200px; opacity: 0; }
+  #ladder .lh { font: 600 11px ui-monospace, monospace; color: #6b7284; margin-bottom: 12px; }
+  .lrow { display: flex; align-items: center; gap: 12px; margin-bottom: 18px; height: 26px; }
+  .lrow .ln { width: 100px; font: 700 12.5px ui-monospace, monospace; text-align: right; flex: none; }
+  .lrow .lb { height: 24px; border-radius: 6px; flex: none; width: 0; }
+  .lrow .lv { font: 800 13px ui-monospace, monospace; white-space: nowrap; opacity: 0; }
+  #fchip { position: absolute; left: 508px; top: 218px; background: #0c1116; border: 1.5px solid var(--line);
+    border-radius: 9px; padding: 5px 12px 6px; opacity: 0; white-space: nowrap; text-align: left; }
+  #fchip .fl { font: 600 8.5px ui-monospace, monospace; color: #6b7284; letter-spacing: 0.09em; }
+  #fchip .fv { font: 800 14px ui-monospace, monospace; color: var(--accent); }
+  #kvcut { position: absolute; left: 700px; top: 196px; font: 700 13px ui-monospace, monospace; color: #e8eaf0;
+    border: 1.5px solid rgba(144,133,233,0.7); background: rgba(144,133,233,0.1); border-radius: 999px;
+    padding: 6px 14px; opacity: 0; }
+  #badge { position: absolute; left: 700px; top: 252px; opacity: 0; }
+  #badge .bv { font: 800 58px ui-monospace, monospace; color: var(--accent); line-height: 1; }
+  #badge .bl { font: 600 12px ui-monospace, monospace; color: #9aa1b5; margin-top: 4px; }
+  #simhost { position: absolute; left: 700px; top: 360px; width: 540px; height: 190px; opacity: 0; }
+  #qual { position: absolute; left: 90px; top: 500px; font: 700 13px ui-monospace, monospace; color: var(--accent);
+    border: 1.5px solid var(--accent); border-radius: 999px; padding: 6px 16px; opacity: 0; }
+  #punch { position: absolute; left: 44px; bottom: 26px; font-size: 17px; font-weight: 700; color: var(--accent); opacity: 0; }
+</style></head><body>
+<div class="stage">
+  <div class="slide-title">Attention Line: The Payoff</div>
+  <div class="slide-sub">terminus — the whole line, cashed in by K3 at 1M context</div>
+  <div id="stsign"><b class="rnd">T</b><span class="snm">terminus</span><span class="sfare">2.6 MB → ~tens of KB / token</span></div>
+  <div id="strip"></div>
+
+  <div id="ladder"><div class="lh">KV BYTES / DECODED TOKEN — log scale, seven years</div></div>
+  <div id="fchip"><div class="fl">FARE</div><div class="fv" id="fchipv">2.6 MB</div></div>
+
+  <div id="kvcut"></div>
+  <div id="badge"><div class="bv">×1.0</div><div class="bl"></div></div>
+  <div id="simhost"></div>
+
+  <div id="qual"></div>
+  <div id="punch"></div>
+</div>
+
+<script src="../vendor/gsap.min.js"></script>
+<script src="shared/attnevo.js"></script>
+<script src="shared/bottlenecks.js"></script>
+<script src="shared/manifest.js"></script>
+<script src="shared/deck.js"></script>
+<script>
+  EV.mapStrip(document.getElementById("strip"), 6);
+  var strip = document.getElementById("strip");
+  strip.style.left = "644px"; strip.style.top = "96px";
+
+  document.getElementById("kvcut").textContent = EV.payoff.kvcut;
+  document.getElementById("badge").querySelector(".bl").textContent = EV.payoff.speedLabel.replace("× ", "");
+  document.getElementById("qual").textContent = EV.payoff.quality;
+  document.getElementById("punch").textContent = EV.payoff.bridge;
+
+  // the ladder, widths on a log scale
+  var COLORS = ["#6b7284", "#3987e5", "#6fb1ff", "#e04b38"];
+  var WIDTHS = [430, 270, 150, 84];
+  var ladder = document.getElementById("ladder");
+  EV.payoff.ladder.forEach(function (r, i) {
+    var d = document.createElement("div");
+    d.className = "lrow";
+    d.innerHTML = '<span class="ln" style="color:' + COLORS[i] + '">' + r[0] + '</span>' +
+      '<div class="lb" id="lb' + i + '" style="background:linear-gradient(180deg,' + COLORS[i] + 'aa,' + COLORS[i] + ')"></div>' +
+      '<span class="lv" id="lv' + i + '" style="color:' + COLORS[i] + '">' + r[1] + "</span>";
+    ladder.appendChild(d);
+  });
+
+  var sim = BN.buildSim(document.getElementById("simhost"), {});
+  var fchip = document.getElementById("fchipv");
+  var bv = document.getElementById("badge").querySelector(".bv");
+  var ROW_Y = [218, 262, 306, 350];             // fare chip stops beside each rung
+
+  var tl = gsap.timeline({ paused: true });
+
+  // step 1: the fare sweeps down the ladder — 2.6 MB to ~tens of KB
+  tl.fromTo("#ladder", { opacity: 0 }, { opacity: 1, duration: 0.35 })
+    .call(function () {
+      // the whole line lights up at the terminus
+      gsap.fromTo("#strip .ev-sn i", { scale: 1 }, { scale: 1.55, duration: 0.22, yoyo: true, repeat: 1, stagger: 0.09 });
+    })
+    .fromTo("#fchip", { opacity: 0 }, { opacity: 1, duration: 0.3 });
+  EV.payoff.ladder.forEach(function (r, i) {
+    tl.call(function () { fchip.textContent = r[1]; })
+      .to("#fchip", { top: ROW_Y[i], duration: 0.35, ease: "power2.inOut" }, "<")
+      .to("#lb" + i, { width: WIDTHS[i], duration: 0.55, ease: "power2.inOut" }, "<0.1")
+      .to("#lv" + i, { opacity: 1, duration: 0.3 }, "-=0.2");
+  });
+  DECK.markStep(tl);
+
+  // step 2: K3's numbers — 75% KV cut, and decode visibly accelerating to 6.3x
+  var spd = { m: 1 };
+  tl.fromTo("#kvcut", { opacity: 0, y: 10 }, { opacity: 1, y: 0, duration: 0.45 })
+    .fromTo("#simhost", { opacity: 0, y: 12 }, { opacity: 1, y: 0, duration: 0.45 })
+    .call(function () { spd.m = 1; sim.start(); sim.setSpeed(1); })
+    .fromTo("#badge", { opacity: 0, scale: 0.6 }, { opacity: 1, scale: 1, duration: 0.4, ease: "back.out(2)" }, "+=0.4")
+    .to(spd, {
+      m: +EV.payoff.speed, duration: 2.6, ease: "power2.in",
+      onUpdate: function () { bv.textContent = "×" + spd.m.toFixed(1); },
+    })
+    .call(function () { sim.setSpeed(2); }, null, "-=2.0")
+    .call(function () { sim.setSpeed(3.5); }, null, "-=1.2")
+    .call(function () { sim.setSpeed(5); }, null, "-=0.6")
+    .call(function () { sim.setSpeed(+EV.payoff.speed); bv.textContent = "×" + EV.payoff.speed + " ⚠"; })
+    .to("#badge .bv", { textShadow: "0 0 26px rgba(47,214,176,0.8)", duration: 0.4 });
+  DECK.markStep(tl);
+
+  // step 3: and quality holds
+  tl.fromTo("#qual", { opacity: 0, y: 10 }, { opacity: 1, y: 0, duration: 0.5 });
+  DECK.markStep(tl);
+
+  // step 4: the bridge to the next section
+  tl.fromTo("#punch", { opacity: 0, y: 10 }, { opacity: 1, y: 0, duration: 0.55 });
+
+  DECK.register(tl, {
+    reset: function () {
+      sim.stop();
+      sim.setSpeed(1);
+      spd.m = 1;
+      bv.textContent = "×1.0";
+      fchip.textContent = "2.6 MB";
+      gsap.set("#fchip", { top: 218 });
+      gsap.killTweensOf("#strip .ev-sn i");
+      gsap.set("#strip .ev-sn i", { clearProps: "scale" });
+    },
+  });
+</script>
+</body></html>

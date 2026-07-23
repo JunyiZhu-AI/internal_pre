@@ -1,0 +1,159 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sparse Attention: Attend to Fewer Tokens</title>
+<link rel="stylesheet" href="shared/deck.css">
+<link rel="stylesheet" href="shared/evo.css">
+<style>
+  #stsign { position: absolute; left: 44px; top: 116px; display: flex; align-items: center; gap: 10px; }
+  #stsign .rnd { width: 26px; height: 26px; border-radius: 50%; border: 3px solid #e0a935; background: #0c1116;
+    display: flex; align-items: center; justify-content: center; font: 800 13px ui-monospace, monospace; color: #e8eaf0; }
+  #stsign .snm { font: 600 12px ui-monospace, monospace; color: #9aa1b5; }
+  #stsign .sfare { font: 700 11px ui-monospace, monospace; color: #e0a935; border: 1px solid var(--line);
+    border-radius: 999px; padding: 3px 10px; background: var(--panel); }
+  #mat { position: absolute; left: 120px; top: 200px; display: grid; grid-template-columns: repeat(16, 17px);
+    gap: 2px; opacity: 0; }
+  #mat i { width: 17px; height: 17px; border-radius: 3px; background: rgba(57,135,229,0.55); display: block;
+    transition: background 0.4s, opacity 0.4s; }
+  #mat i.off { visibility: hidden; }
+  #mat i.faded { background: rgba(57,135,229,0.07); }
+  #mat i.sel { background: #e0a935; box-shadow: 0 0 6px rgba(224,169,53,0.6); }
+  #mat i.qrow { outline: 1.5px solid rgba(232,234,240,0.55); outline-offset: -1.5px; }
+  #axq { position: absolute; left: 88px; top: 200px; font: 600 11px ui-monospace, monospace; color: #6b7284;
+    writing-mode: vertical-rl; opacity: 0; }
+  #axk { position: absolute; left: 120px; top: 178px; font: 600 11px ui-monospace, monospace; color: #6b7284; opacity: 0; }
+  #capwin { position: absolute; left: 120px; top: 520px; width: 420px; font: 600 12.5px ui-monospace, monospace; color: #9aa1b5; opacity: 0; }
+  #caplearn { position: absolute; left: 560px; top: 210px; width: 400px; font: 600 12.5px ui-monospace, monospace; color: #e0a935; opacity: 0; line-height: 1.6; }
+  #cache { position: absolute; left: 560px; top: 330px; opacity: 0; }
+  #cache .cl { font: 600 11px ui-monospace, monospace; color: #9085e9; margin-bottom: 8px; }
+  #segs { display: flex; gap: 3px; }
+  #segs i { width: 13px; height: 22px; border-radius: 3px; background: #9085e9; display: block; }
+  #segs i.selkeep { background: #e0a935; }
+  #capevict { position: absolute; left: 560px; top: 402px; width: 440px; font: 600 12.5px ui-monospace, monospace; color: #9aa1b5; opacity: 0; }
+  #capwinchip { position: absolute; left: 560px; top: 448px; font: 800 13px ui-monospace, monospace; color: var(--accent);
+    border: 1.5px solid var(--accent); border-radius: 999px; padding: 4px 14px; opacity: 0; }
+  #punch { position: absolute; left: 44px; bottom: 52px; font-size: 16px; font-weight: 700; color: #e0a935; opacity: 0; }
+  #handoff { position: absolute; left: 44px; bottom: 26px; font: 600 12.5px ui-monospace, monospace; color: #6b7284; opacity: 0; }
+</style></head><body>
+<div class="stage">
+  <div class="slide-title">Sparse Attention: Attend to Fewer Tokens</div>
+  <div class="slide-sub">a branch line — keep full heads, prune where they look</div>
+  <div id="stsign"><b class="rnd">4</b><span class="snm">arriving at</span><span class="sfare">cache ≤ window</span></div>
+  <div id="strip"></div>
+
+  <div id="axq">queries ↓</div>
+  <div id="axk">keys →</div>
+  <div id="mat"></div>
+  <div id="capwin"></div>
+  <div id="caplearn"></div>
+
+  <div id="cache">
+    <div class="cl">KV cache (one entry per past token)</div>
+    <div id="segs"></div>
+  </div>
+  <div id="capevict"></div>
+  <div id="capwinchip">capacity win at long context</div>
+
+  <div id="punch"></div>
+  <div id="handoff">→ next stop asks the bigger question: why keep a cache that grows at all?</div>
+</div>
+
+<script src="../vendor/gsap.min.js"></script>
+<script src="shared/attnevo.js"></script>
+<script src="shared/manifest.js"></script>
+<script src="shared/deck.js"></script>
+<script>
+  EV.mapStrip(document.getElementById("strip"), 3);
+  var strip = document.getElementById("strip");
+  strip.style.left = "644px"; strip.style.top = "96px";
+
+  document.getElementById("capwin").textContent = EV.sparse.window;
+  document.getElementById("caplearn").textContent = EV.sparse.learned;
+  document.getElementById("capevict").textContent = EV.sparse.evict;
+  document.getElementById("punch").textContent = EV.sparse.tradeoff;
+
+  var N = 16, W = 4;
+  var mat = document.getElementById("mat");
+  var cells = [];
+  for (var q = 0; q < N; q++) {
+    cells.push([]);
+    for (var k = 0; k < N; k++) {
+      var c = document.createElement("i");
+      if (k > q) c.className = "off";           // above the causal diagonal
+      mat.appendChild(c);
+      cells[q].push(c);
+    }
+  }
+  function bandOnly() {
+    for (var q = 0; q < N; q++) for (var k = 0; k <= q; k++)
+      cells[q][k].classList.toggle("faded", q - k >= W);
+  }
+  function clearSel() {
+    for (var q = 0; q < N; q++) for (var k = 0; k <= q; k++)
+      cells[q][k].classList.remove("sel", "qrow");
+  }
+
+  // ambient router: current query row scans; it picks 2 far blocks + local band
+  var qi = 0;
+  var loop = gsap.timeline({ repeat: -1, paused: true });
+  loop.call(function () {
+    clearSel();
+    var q = 8 + (qi % 8); qi++;
+    var top = (q % 2 === 0) ? q : q - 1;        // block-align (2x2 blocks)
+    var b1 = ((q * 3) % (q - W - 2)) & ~1;
+    var b2 = ((q * 5 + 2) % (q - W - 2)) & ~1;
+    [b1, b2].forEach(function (b) {
+      for (var r = top; r <= Math.min(top + 1, N - 1); r++)
+        for (var k = b; k <= b + 1; k++) if (k <= r) cells[r][k].classList.add("sel");
+    });
+    for (var k = 0; k <= q; k++) cells[q][k].classList.add("qrow");
+  }).to({}, { duration: 0.75 });
+
+  // cache segments
+  var segs = document.getElementById("segs");
+  var KEEP_SEL = [4, 5, 10, 11];                // router-selected blocks survive
+  for (var i = 0; i < 20; i++) {
+    var s = document.createElement("i");
+    s.id = "seg" + i;
+    if (KEEP_SEL.indexOf(i) >= 0) s.className = "selkeep";
+    segs.appendChild(s);
+  }
+  var evictIds = [];
+  for (var i = 0; i < 16; i++) if (KEEP_SEL.indexOf(i) < 0) evictIds.push("#seg" + i);
+
+  var tl = gsap.timeline({ paused: true });
+
+  // step 1: full causal matrix fades to a sliding-window band
+  tl.fromTo("#mat, #axq, #axk", { opacity: 0 }, { opacity: 1, duration: 0.45 })
+    .fromTo("#mat i:not(.off)", { scale: 0.4, opacity: 0 }, { scale: 1, opacity: 1, duration: 0.25, stagger: { each: 0.002, from: "start" } })
+    .to({}, { duration: 0.5 })
+    .call(bandOnly)
+    .fromTo("#capwin", { opacity: 0, y: 8 }, { opacity: 1, y: 0, duration: 0.45 }, "+=0.3");
+  DECK.markStep(tl);
+
+  // step 2: a learned router lights up far-past blocks per query
+  tl.fromTo("#caplearn", { opacity: 0, y: 8 }, { opacity: 1, y: 0, duration: 0.45 })
+    .call(function () { qi = 0; loop.play(0); })
+    .to({}, { duration: 2.4 });
+  DECK.markStep(tl);
+
+  // step 3: everything un-attended can leave the cache
+  tl.fromTo("#cache", { opacity: 0, y: 10 }, { opacity: 1, y: 0, duration: 0.4 })
+    .to(evictIds.join(", "), { y: 26, opacity: 0.12, duration: 0.7, ease: "power2.in", stagger: 0.03 }, "+=0.3")
+    .fromTo("#capevict", { opacity: 0 }, { opacity: 1, duration: 0.4 })
+    .fromTo("#capwinchip", { opacity: 0, scale: 0.6 }, { opacity: 1, scale: 1, duration: 0.4, ease: "back.out(2)" });
+  DECK.markStep(tl);
+
+  // step 4: the trade-off — and the hand-off to the linear line
+  tl.fromTo("#punch", { opacity: 0, y: 10 }, { opacity: 1, y: 0, duration: 0.5 })
+    .fromTo("#handoff", { opacity: 0 }, { opacity: 1, duration: 0.45 })
+    .to("#strip .ev-sn.on i", { scale: 1.6, duration: 0.25, yoyo: true, repeat: 3, ease: "power1.inOut" });
+
+  DECK.register(tl, {
+    reset: function () {
+      loop.pause(0); qi = 0;
+      clearSel();
+      for (var q = 0; q < N; q++) for (var k = 0; k <= q; k++) cells[q][k].classList.remove("faded");
+    },
+  });
+</script>
+</body></html>
