@@ -73,9 +73,9 @@ advances the slide.)
    weights plus KV cache must fit into. Capacity doesn't make you slow; it
    decides how many GPUs you must buy before you serve a single request."
 
-4. **[communication lights up]** "And fourth: communication — once the model
-   no longer fits one GPU, every token crosses interconnect, and the network
-   between GPUs becomes part of the model."
+4. **[interconnect lights up]** "And fourth: interconnect — once the model no
+   longer fits one GPU, every token crosses NVLink or InfiniBand, and the
+   network between GPUs becomes part of the model."
 
 5. **[framing line]** "So here's the framing for everything that follows:
    every technique you'll see today is a way to pay one of these four bills —

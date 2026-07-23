@@ -21,13 +21,23 @@
 
   #die {
     position: absolute; left: 300px; top: 250px; width: 170px; height: 200px;
-    border: 2.5px solid #3987e5; border-radius: 12px;
-    background:
-      repeating-linear-gradient(0deg, rgba(57,135,229,0.12) 0 8px, transparent 8px 16px),
-      repeating-linear-gradient(90deg, rgba(57,135,229,0.12) 0 8px, transparent 8px 16px);
+    border: 2.5px solid #3987e5; border-radius: 10px;
+    background: #0d1420;
     animation: bnChipPulse 1.8s ease-in-out infinite;
   }
-  #die .dlab { position: absolute; bottom: 8px; width: 100%; text-align: center; font-size: 12px; color: #9ec7f5; font-weight: 600; }
+  #die .dlab { position: absolute; bottom: 6px; width: 100%; text-align: center; font-size: 12px; color: #9ec7f5; font-weight: 600; }
+  .tiles {
+    position: absolute; display: grid; gap: 3px;
+  }
+  #die .tiles { inset: 10px 10px 28px; grid-template-columns: repeat(6, 1fr); grid-template-rows: repeat(7, 1fr); }
+  .tiles i {
+    background: rgba(57, 135, 229, 0.22); border-radius: 2px;
+    animation: smTwinkle 2.6s ease-in-out infinite;
+  }
+  .tiles i:nth-child(3n) { animation-delay: 0.5s; }
+  .tiles i:nth-child(4n) { animation-delay: 1.1s; }
+  .tiles i:nth-child(5n) { animation-delay: 1.7s; background: rgba(57, 135, 229, 0.34); }
+  @keyframes smTwinkle { 50% { background: rgba(111, 177, 255, 0.6); } }
 
   .hbm {
     position: absolute; left: 92px; width: 84px; height: 110px;
@@ -61,8 +71,10 @@
   .peer .pdie {
     position: absolute; left: 50px; top: 18px; width: 50px; height: 50px;
     border: 2px solid #9085e9; border-radius: 7px;
-    background: repeating-linear-gradient(0deg, rgba(144,133,233,0.15) 0 5px, transparent 5px 10px);
+    background: #12101f;
   }
+  .peer .tiles { inset: 5px; grid-template-columns: repeat(3, 1fr); grid-template-rows: repeat(3, 1fr); gap: 2px; }
+  .peer .tiles i { background: rgba(144, 133, 233, 0.3); animation: none; }
   .peer .plab { position: absolute; bottom: 5px; width: 100%; text-align: center; font-size: 10px; color: var(--ink-2); }
   #wires { position: absolute; inset: 0; pointer-events: none; }
   #wires line { stroke: #9085e9; stroke-width: 2.5; stroke-dasharray: 9 7; animation: commDash 0.9s linear infinite; }
@@ -99,7 +111,7 @@
 <body>
 <div class="stage">
   <div class="slide-title">Hardware framework and efficient algorithms</div>
-  <div class="slide-sub">where is the bottleneck — compute, bandwidth, capacity, or communication?</div>
+  <div class="slide-sub">where is the bottleneck — compute, bandwidth, capacity, or interconnect?</div>
   <div id="framing"></div>
 
   <div id="pkg"><span class="pkglab">GPU PACKAGE</span></div>
@@ -124,20 +136,17 @@
     <div class="peer" style="top:436px"><div class="pdie"></div><div class="plab">GPU n</div></div>
   </div>
 
-  <div class="tag" id="tag-compute" style="left:475px; top:188px; border-color:#3987e5">
+  <div class="tag" id="tag-compute" style="left:475px; top:198px; border-color:#3987e5">
     <b style="color:#3987e5">Compute</b><span class="u" style="color:#3987e5">FLOP/s</span>
-    <div class="d">dominated by prefill</div>
   </div>
-  <div class="tag" id="tag-bw" style="left:150px; top:322px; border-color:#2fd6b0">
+  <div class="tag" id="tag-bw" style="left:150px; top:328px; border-color:#2fd6b0">
     <b style="color:#2fd6b0">Memory bandwidth</b><span class="u" style="color:#2fd6b0">bytes/s</span>
-    <div class="d">dominated by decode</div>
   </div>
-  <div class="tag" id="tag-cap" style="left:64px; top:490px; border-color:#c98500">
+  <div class="tag" id="tag-cap" style="left:64px; top:496px; border-color:#c98500">
     <b style="color:#e0a935">Memory capacity</b><span class="u" style="color:#e0a935">GB</span>
-    <div class="d">weights + KV cache</div>
   </div>
   <div class="tag" id="tag-comm" style="left:680px; top:330px; border-color:#9085e9">
-    <b style="color:#9085e9">Communication</b><span class="u" style="color:#9085e9">link GB/s</span>
+    <b style="color:#9085e9">Interconnect</b><span class="u" style="color:#9085e9">link GB/s</span>
     <div class="d">multi-GPU serving</div>
   </div>
 
@@ -154,6 +163,16 @@
 <script>
   document.getElementById("framing").textContent = "“" + BN.framing + "”";
   document.getElementById("teaser").textContent = "“" + BN.teaser + "”";
+
+  // die shots: grid of SM tiles on the main die and the peer GPUs
+  function addTiles(host, n) {
+    var t = document.createElement("div");
+    t.className = "tiles";
+    for (var i = 0; i < n; i++) t.appendChild(document.createElement("i"));
+    host.appendChild(t);
+  }
+  addTiles(document.getElementById("die"), 42);
+  document.querySelectorAll(".peer .pdie").forEach(function (p) { addTiles(p, 9); });
 
   var tray = document.getElementById("tray");
   BN.techniques.forEach(function (t) {

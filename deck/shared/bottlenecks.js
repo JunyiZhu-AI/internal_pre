@@ -5,7 +5,7 @@ var BN = {
     { key: "compute", name: "Compute", unit: "FLOP/s", dom: "dominated by prefill", color: "#3987e5", desc: "raw arithmetic — the matmuls themselves" },
     { key: "bw", name: "Memory bandwidth", unit: "bytes/s", dom: "dominated by decode", color: "#2fd6b0", desc: "streaming weights + KV from HBM to the cores" },
     { key: "cap", name: "Memory capacity", unit: "GB", dom: "weights + KV cache", color: "#c98500", desc: "what has to fit on the GPUs at all" },
-    { key: "comm", name: "Communication", unit: "link GB/s", dom: "multi-GPU serving", color: "#9085e9", desc: "GPU ↔ GPU interconnect traffic" },
+    { key: "comm", name: "Interconnect", unit: "link GB/s", dom: "multi-GPU serving", color: "#9085e9", desc: "GPU ↔ GPU links — NVLink / InfiniBand" },
   ],
 
   techniques: [
