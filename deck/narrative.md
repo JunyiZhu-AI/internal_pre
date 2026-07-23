@@ -245,10 +245,8 @@ back at the two machines it names.*
 
 ## Pages 06–08 — Attention at scale (one flow, three slides)
 
-*Three candidate flows, each spanning all three slides: **a — machine room**
-(the die/pipe/HBM anatomy carries the story), **b — the matrix** (the n×n
-object is the protagonist), **c — the ledger** (cost meters and receipts).
-Beats below work for any flow.*
+*The n×n object is the protagonist throughout: the to-scale square (06),
+the tiled square (07), the causal triangle + K/V strips (08).*
 
 ### 06 — Self-Attention Recap: The O(n²) Problem (5 clicks)
 
