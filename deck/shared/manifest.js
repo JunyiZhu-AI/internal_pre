@@ -17,4 +17,10 @@ window.DECK_PAGES = [
   "13-linear.html",
   "14-kda.html",
   "15-payoff.html",
+  "16a-quant-notation.html",
+  "17a-quant-sota.html",
+  "16b-quant-notation.html",
+  "17b-quant-sota.html",
+  "16c-quant-notation.html",
+  "17c-quant-sota.html",
 ];
