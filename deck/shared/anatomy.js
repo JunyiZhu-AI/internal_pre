@@ -2,7 +2,7 @@
 var TA = {
   tokens: [["K", 42], ["3", 18], ["char", 7742], ["ges", 921], ["$", 400], ["3", 18], ["per", 583], ["mill", 3211], ["ion", 245], ["tok", 1151], ["ens", 729]],
   nextDist: [[".", 0.36], ["—", 0.22], ["only", 0.14], ["!", 0.07]],
-  caption: "Every technique tonight modifies one of these two machines.",
+  caption: "Every technique modifies one of these two machines.",
   attnNote: "compute ∝ n² · KV state ∝ n",
   ffnNote: "per token — sequence-length independent",
   kvTag: "cached at inference →",
