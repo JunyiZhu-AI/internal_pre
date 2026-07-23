@@ -286,8 +286,8 @@
   tl.fromTo("#w4a8", { opacity: 0, scale: 0.7 }, { opacity: 1, scale: 1, duration: 0.5, ease: "back.out(1.8)" })
     .fromTo("#punch", { opacity: 0 }, { opacity: 1, duration: 0.4 })
     .fromTo(".stratum",
-      { rotationX: -90, opacity: 0, transformOrigin: "50% 0%", transformPerspective: 500 },
-      { rotationX: 0, opacity: 1, duration: 0.45, stagger: 0.18, ease: "power2.out" })
+      { y: -16, opacity: 0, scaleY: 0.6, transformOrigin: "50% 0%" },
+      { y: 0, opacity: 1, scaleY: 1, duration: 0.45, stagger: 0.18, ease: "power2.out" })
     .fromTo("#why", { opacity: 0, y: 8 }, { opacity: 1, y: 0, duration: 0.4 })
     .call(function () { setWlab("weights · MXFP4"); })
     .fromTo(".wcell", { width: 13 }, { width: 6, duration: 0.55, ease: "power2.inOut", immediateRender: false }, "<")

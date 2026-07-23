@@ -65,7 +65,7 @@ so on a locked-down host you can tell *what* broke, not just that something did.
 Any static file server works. From the repo root:
 
 ```sh
-python3 -m http.server 8000
+python3 scripts/serve.py     # http.server with caching disabled (Safari!)
 # then open http://localhost:8000/
 ```
 
