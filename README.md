@@ -29,9 +29,9 @@ the hardware — correct drops dock a chip, raise the score, and speed up the
 decode simulator; wrong drops bounce back. Dragging never advances the slide.
 
 The spoken script lives in **`deck/narrative.md`**, one numbered beat per
-click. Slide sources for new pages follow `deck/01-qkt-matmul.html` (the
-engine template); the engine contract is documented at the top of
-`deck/shared/deck.js`.
+click. Slide sources for new pages follow `deck/templates/qkt-matmul.html`
+(the engine template — not part of the talk); the engine contract is
+documented at the top of `deck/shared/deck.js`.
 
 **To deploy the deck**: copy `deck/`, `vendor/`, and `favicon.ico` keeping
 the directory layout (deck pages reference `../vendor/`). All paths are
