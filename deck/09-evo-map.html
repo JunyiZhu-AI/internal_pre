@@ -74,7 +74,7 @@
       '<div class="nd" id="nd-' + n.key + '"><div class="gwrap">' + glyphHTML(n.key) + "</div>" +
       '<div class="nm" style="color:' + n.color + '">' + n.name + "</div>" +
       '<div class="sb">' + n.sub + "</div>" +
-      '<div class="by">' + (n.bytes ? n.bytes + (n.warn ? " ⚠" : "") : "&nbsp;") + "</div></div>");
+      '<div class="by">' + (n.bytes ? n.bytes + (n.warn ? "" : "") : "&nbsp;") + "</div></div>");
   });
 
   function on(key) { document.getElementById("nd-" + key).classList.add("on"); }
@@ -95,14 +95,14 @@
 
   // step 2: the cache shrinks — GQA, MLA, Sparse
   tl.call(function () { on("gqa"); setG("330 KB"); }).to({}, { duration: 0.9 })
-    .call(function () { on("mla"); setG("~70 KB ⚠"); }).to({}, { duration: 0.9 })
+    .call(function () { on("mla"); setG("~70 KB"); }).to({}, { duration: 0.9 })
     .call(function () { on("sparse"); setG("≤ window"); }).to({}, { duration: 0.9 });
   DECK.markStep(tl);
 
   // step 3: the cache disappears — Linear, Hybrid, KDA
   tl.call(function () { on("linear"); setG("O(1) state"); }).to({}, { duration: 0.9 })
     .call(function () { on("hybrid"); }).to({}, { duration: 0.9 })
-    .call(function () { on("kda"); setG("~tens of KB (state) ⚠"); }).to({}, { duration: 0.9 });
+    .call(function () { on("kda"); setG("~tens of KB (state)"); }).to({}, { duration: 0.9 });
   DECK.markStep(tl);
 
   // step 4: the story in one line

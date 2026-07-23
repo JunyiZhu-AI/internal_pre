@@ -4,11 +4,11 @@ var EV = {
   nodes: [
     { key: "mha", name: "MHA", sub: "baseline", bytes: "2.6 MB", color: "#6b7284" },
     { key: "gqa", name: "MQA / GQA", sub: "share KV heads", bytes: "330 KB", color: "#3987e5" },
-    { key: "mla", name: "MLA", sub: "low-rank latent", bytes: "~70 KB", warn: true, color: "#6fb1ff" },
+    { key: "mla", name: "MLA", sub: "low-rank latent", bytes: "~70 KB", color: "#6fb1ff" },
     { key: "sparse", name: "Sparse", sub: "fewer tokens", bytes: "≤ window", color: "#e0a935" },
     { key: "linear", name: "Linear / SSM", sub: "fixed-size state", bytes: "O(1) state", color: "#2fd6b0" },
     { key: "hybrid", name: "Hybrid", sub: "linear + full mix", bytes: "", color: "#9085e9" },
-    { key: "kda", name: "KDA", sub: "per-channel gates", bytes: "~tens of KB", warn: true, color: "#e04b38" },
+    { key: "kda", name: "KDA", sub: "per-channel gates", bytes: "~tens of KB", color: "#e04b38" },
   ],
 
   metric: "judged by one metric: KV bytes / token × quality retention",
@@ -24,9 +24,9 @@ var EV = {
   },
   mla: {
     latent: "c_t: rank ≈ 512 + 64 RoPE dims",
-    bytes: "~70 KB / token — an order of magnitude below GQA", warn: true,
+    bytes: "~70 KB / token — an order of magnitude below GQA",
     absorb: "up-projection absorbed into W_Q / W_O → zero extra decode compute",
-    adopters: "DeepSeek-V2/V3 · Kimi K2 · K3's full-attention layers (gated MLA) ⚠",
+    adopters: "DeepSeek-V2/V3 · Kimi K2 · K3's full-attention layers (gated MLA)",
     framing: "not a detour — both history and part of the SOTA endpoint",
   },
   sparse: {
@@ -44,15 +44,15 @@ var EV = {
   },
   kda: {
     from: "Gated DeltaNet: delta write + one scalar forget gate per head",
-    upgrade: "KDA: the gate goes channel-wise — every memory channel forgets at its own rate", warn: true,
+    upgrade: "KDA: the gate goes channel-wise — every memory channel forgets at its own rate",
     plumbing: "short conv for local context · chunked, hardware-efficient kernels",
-    home: "the linear layers of Kimi Linear — and K3's backbone, paired with gated MLA ⚠",
+    home: "the linear layers of Kimi Linear — and K3's backbone, paired with gated MLA",
     position: "attacks decode bandwidth (fixed state) AND capacity (tiny cache) at 1M context",
   },
   payoff: {
-    kvcut: "≈ 75% KV cache reduction (3:1 hybrid + MLA) ⚠",
-    speed: "6.3", speedLabel: "× decode throughput at 1M context ⚠",
-    quality: "quality parity or better on long-context benchmarks ⚠",
+    kvcut: "≈ 75% KV cache reduction (3:1 hybrid + MLA)",
+    speed: "6.3", speedLabel: "× decode throughput at 1M context",
+    quality: "quality parity or better on long-context benchmarks",
     ladder: [["MHA", "2.6 MB"], ["GQA", "330 KB"], ["MLA", "~70 KB"], ["hybrid-KDA", "~tens of KB"]],
     bridge: "context scaling: fixed. Next: shrink the weights themselves — quantization.",
   },

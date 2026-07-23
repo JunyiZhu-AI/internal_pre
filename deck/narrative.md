@@ -305,10 +305,11 @@ the tiled square (07), the causal triangle + K/V strips (08).*
 
 ## Pages 09–15 — The Attention Evolution (one thread, seven slides)
 
-*Five candidate flows (a: subway map, b: formula knobs, c: cache bar,
-d: matrix lineage, e: decode race). All implement the same 4 beats per
-slide; the mini-map strip on each page tracks position in the lineage.
-⚠-marked figures are reported/speculative — say "reported" out loud.*
+*The matrix lineage: the n×n matrix and purple K/V strips from 06–08 are
+reshaped slide after slide. The mini-map strip on each page tracks position
+in the lineage. Reported/speculative figures (MLA per-token size, all K3
+numbers) carry no on-screen mark — say "reported" out loud where the beats
+do.*
 
 ### 09 — The Attention Evolution Map (divider)
 
