@@ -158,8 +158,19 @@ var DECK = (function () {
   }
 
   // ---- input ----
+  // A drag also ends in a click event; only treat press-and-release-in-place
+  // as "advance" so draggable elements (e.g. the bucket game) don't conflict.
+  var downX = 0, downY = 0, pressed = false, dragged = false;
+  document.addEventListener("pointerdown", function (e) {
+    pressed = true; dragged = false; downX = e.clientX; downY = e.clientY;
+  });
+  document.addEventListener("pointermove", function (e) {
+    if (pressed && Math.abs(e.clientX - downX) + Math.abs(e.clientY - downY) > 8) dragged = true;
+  });
+  document.addEventListener("pointerup", function () { pressed = false; });
   document.addEventListener("click", function (e) {
-    if (e.target.closest("a, button, #deck-controls")) return;
+    if (dragged) return;
+    if (e.target.closest("a, button, #deck-controls, [data-no-advance]")) return;
     advance();
   });
   document.addEventListener("keydown", function (e) {
