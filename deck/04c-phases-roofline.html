@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Prefill vs Decode: Two Different Workloads</title>
+<link rel="stylesheet" href="shared/deck.css">
+<link rel="stylesheet" href="shared/phases.css">
+<style>
+  #plot { position: absolute; left: 40px; top: 128px; opacity: 0; }
+  #plot text { font: 11px ui-monospace, monospace; fill: #6b7284; }
+  #plot .axisline { stroke: var(--line); stroke-width: 1.5; }
+  #plot .roof { fill: none; stroke: #3987e5; stroke-width: 3; stroke-linecap: round; }
+  #gpuwrap { position: absolute; left: 96px; top: 488px; opacity: 0; }
+  #phase {
+    position: absolute; left: 620px; top: 520px; font: 800 19px ui-monospace, monospace;
+    letter-spacing: 0.06em; opacity: 0;
+  }
+  #stat { position: absolute; left: 620px; top: 556px; font: 12.5px ui-monospace, monospace; color: #9aa1b5; opacity: 0; line-height: 1.7; }
+  #stat b { color: #e8eaf0; }
+  #wdot { position: absolute; width: 16px; height: 16px; border-radius: 50%; background: #e04b38; box-shadow: 0 0 16px rgba(224,75,56,0.9); opacity: 0; z-index: 9; }
+  #gdot { position: absolute; width: 14px; height: 14px; border-radius: 50%; border: 2px solid #3987e5; opacity: 0; z-index: 8; }
+  .dlab { position: absolute; font: 700 12px ui-monospace, monospace; opacity: 0; z-index: 9; white-space: nowrap; }
+  #caption {
+    position: absolute; left: 620px; top: 620px; width: 560px;
+    font-size: 18px; font-weight: 700; color: var(--accent); opacity: 0;
+  }
+</style>
+</head>
+<body>
+<div class="stage">
+  <div class="slide-title">Prefill vs Decode: Two Different Workloads</div>
+  <div class="slide-sub">the roofline from last slide — now watch inference actually run on it</div>
+
+  <svg id="plot" width="1200" height="340"></svg>
+  <div id="gpuwrap"></div>
+  <div id="phase"></div>
+  <div id="stat"></div>
+  <div id="wdot"></div>
+  <div id="gdot"></div>
+  <div class="dlab" id="lab-pre" style="color:#3987e5">prefill · AI ≈ seq len · TTFT</div>
+  <div class="dlab" id="lab-dec" style="color:#e04b38">decode · AI ≈ 1 · 140 GB / token</div>
+  <div id="caption"></div>
+</div>
+
+<script src="../vendor/gsap.min.js"></script>
+<script src="shared/phases.js"></script>
+<script src="shared/manifest.js"></script>
+<script src="shared/deck.js"></script>
+<script>
+  document.getElementById("caption").textContent = PH.caption;
+  document.getElementById("gpuwrap").innerHTML = PH.gpuHTML("gpu");
+  var gpu = document.getElementById("gpu");
+  PH.reset(gpu);
+
+  // ---- H100 roofline (same mapping as slide 03) ----
+  var NS = "http://www.w3.org/2000/svg";
+  var plot = document.getElementById("plot");
+  var X0 = 70, W = 1080, Y0 = 300, H = 270;
+  function rx(ai) { return X0 + Math.log2(ai) / 10 * W; }
+  function ry(tf) { return Y0 - Math.log2(tf) / 14 * H; }
+  function el(tag, attrs, txt) {
+    var e = document.createElementNS(NS, tag);
+    for (var k in attrs) e.setAttribute(k, attrs[k]);
+    if (txt !== undefined) e.textContent = txt;
+    plot.appendChild(e);
+    return e;
+  }
+  el("line", { x1: X0, y1: Y0, x2: X0 + W, y2: Y0, "class": "axisline" });
+  el("line", { x1: X0, y1: Y0, x2: X0, y2: Y0 - H, "class": "axisline" });
+  [1, 4, 16, 64, 256, 1024].forEach(function (v) { el("text", { x: rx(v) - 8, y: Y0 + 16 }, String(v)); });
+  el("text", { x: X0 + W - 220, y: Y0 + 32 }, "arithmetic intensity (FLOPs / byte)");
+  el("text", { x: X0 - 30, y: ry(16384) - 4, }, "TF");
+  var BW = 3.35, TF = 989, BAL = TF / BW;
+  el("path", { d: "M " + rx(1) + " " + ry(BW) + " L " + rx(BAL) + " " + ry(TF) + " L " + rx(1024) + " " + ry(TF), "class": "roof" });
+  el("circle", { cx: rx(BAL), cy: ry(TF), r: 6, fill: "#3987e5" });
+  el("text", { x: rx(BAL) - 14, y: ry(TF) - 12, fill: "#3987e5", "font-weight": 700 }, "~295");
+  el("text", { x: rx(2), y: ry(60), fill: "#42506b" }, "memory-bound");
+  el("text", { x: rx(430), y: ry(2600), fill: "#2b4a44" }, "compute-bound");
+  el("text", { x: rx(1.3), y: ry(16384) - 4, fill: "#6b7284" }, "H100");
+
+  function P(ai) {
+    var tf = Math.min(TF, BW * ai);
+    return { x: 40 + rx(ai), y: 128 + ry(tf) };
+  }
+
+  var heat = { die: 0, pipe: 0 };
+  function applyHeat() { PH.setDie(gpu, heat.die); PH.setPipe(gpu, heat.pipe); }
+  var phaseEl = document.getElementById("phase");
+
+  function chip(x, y, cls) {
+    var c = document.createElement("div");
+    c.className = "tokchip " + (cls || "");
+    c.style.left = x + "px"; c.style.top = y + "px";
+    document.querySelector(".stage").appendChild(c);
+    return c;
+  }
+
+  var decodeLoop = gsap.timeline({ repeat: -1, paused: true });
+  decodeLoop.call(function () {
+    PH.addKV(gpu);
+    var w = gpu.querySelector(".ph-w");
+    gsap.fromTo(w, { boxShadow: "0 0 16px rgba(224,75,56,0.9)" }, { boxShadow: "0 0 0px rgba(224,75,56,0)", duration: 0.9 });
+    var c = chip(580, 560, "out");
+    gsap.to(c, { x: -60, opacity: 0, duration: 1.0, ease: "power1.out", onComplete: function () { c.remove(); } });
+  }).to({}, { duration: 1.1 });
+
+  var tl = gsap.timeline({ paused: true });
+
+  // step 1: the familiar roof + the machine below it; the ? dot hovers
+  tl.fromTo("#plot", { opacity: 0 }, { opacity: 1, duration: 0.5 })
+    .fromTo("#gpuwrap", { opacity: 0, y: 16 }, { opacity: 1, y: 0, duration: 0.5, ease: "power2.out" }, "-=0.2")
+    .fromTo("#wdot", { opacity: 0, left: P(24).x - 8, top: P(24).y - 60 }, { opacity: 1, duration: 0.4 })
+    .to("#wdot", { top: P(24).y - 48, duration: 0.9, yoyo: true, repeat: 1, ease: "sine.inOut" });
+  DECK.markStep(tl);
+
+  // step 2: PREFILL — parallel wave; the dot rides RIGHT past the ridge
+  tl.call(function () { phaseEl.textContent = "PREFILL"; phaseEl.style.color = "#3987e5"; })
+    .fromTo("#phase", { opacity: 0 }, { opacity: 1, duration: 0.3 });
+  for (var i = 0; i < 10; i++) {
+    tl.call(function () {
+      var c = chip(40, 520 + ((Math.random() * 120) | 0));
+      gsap.to(c, { x: 90 + Math.random() * 100, opacity: 0, duration: 0.5, ease: "power2.in", onComplete: function () { c.remove(); } });
+    }, null, "<+" + (0.05 * i));
+  }
+  tl.to(heat, { die: 1, pipe: 0.12, duration: 1.2, ease: "power2.inOut", onUpdate: applyHeat }, "-=0.3")
+    .call(function () {
+      PH.setUtil(gpu, "~95%");
+      for (var k = 0; k < 5; k++) PH.addKV(gpu);
+      document.getElementById("stat").innerHTML = "weights read <b>once</b>, amortised over the whole prompt";
+    })
+    .fromTo("#stat", { opacity: 0 }, { opacity: 1, duration: 0.3 })
+    .to("#wdot", { top: P(24).y - 8, duration: 0.4, ease: "bounce.out" })
+    .to("#wdot", { left: P(700).x - 8, top: P(700).y - 8, duration: 1.4, ease: "power2.inOut" })
+    .call(function () {
+      var l = document.getElementById("lab-pre");
+      l.style.left = (P(700).x - 150) + "px"; l.style.top = (P(700).y + 16) + "px";
+    })
+    .fromTo("#lab-pre", { opacity: 0 }, { opacity: 1, duration: 0.35 });
+  DECK.markStep(tl);
+
+  // step 3: THE FLIP — first output token
+  tl.call(function () {
+    var c = chip(580, 560, "out");
+    gsap.fromTo(c, { scale: 0 }, { scale: 1.4, x: -60, duration: 0.8, ease: "back.out(2)", onComplete: function () { gsap.to(c, { opacity: 0, duration: 0.4, onComplete: function () { c.remove(); } }); } });
+  })
+    .to(heat, { die: 0.55, pipe: 0.45, duration: 0.9, ease: "power2.inOut", onUpdate: applyHeat });
+  DECK.markStep(tl);
+
+  // step 4: DECODE — the dot crashes down the slant to AI ~ 1
+  tl.call(function () { phaseEl.textContent = "DECODE"; phaseEl.style.color = "#e04b38"; })
+    .to(heat, { die: 0.07, pipe: 1, duration: 1.3, ease: "power2.inOut", onUpdate: applyHeat })
+    .call(function () {
+      PH.setUtil(gpu, "~3%");
+      document.getElementById("stat").innerHTML = "<b>all</b> weights + <b>all</b> KV re-read for <b>every single token</b>";
+      decodeLoop.play(0);
+    })
+    .fromTo("#gdot", { opacity: 0, left: P(700).x - 7, top: P(700).y - 7 }, { opacity: 0.8, duration: 0.3 })
+    .to("#wdot", { left: P(295).x - 8, top: P(295).y - 8, duration: 0.6, ease: "power1.in" })
+    .to("#wdot", { left: P(1.15).x - 8, top: P(1.15).y - 8, duration: 1.1, ease: "power2.out" })
+    .call(function () {
+      var l = document.getElementById("lab-dec");
+      l.style.left = (P(1.15).x + 18) + "px"; l.style.top = (P(1.15).y - 32) + "px";
+    })
+    .fromTo("#lab-dec", { opacity: 0 }, { opacity: 1, duration: 0.35 })
+    .to("#wdot", { scale: 1.3, duration: 0.5, yoyo: true, repeat: 3, ease: "sine.inOut" });
+  DECK.markStep(tl);
+
+  // step 5: punchline
+  tl.fromTo("#caption", { opacity: 0, y: 10 }, { opacity: 1, y: 0, duration: 0.6 });
+
+  DECK.register(tl, {
+    reset: function () {
+      decodeLoop.pause(0);
+      heat.die = heat.pipe = 0;
+      PH.reset(gpu);
+      phaseEl.textContent = "";
+      document.getElementById("stat").innerHTML = "";
+      document.querySelectorAll(".tokchip").forEach(function (c) { c.remove(); });
+    }
+  });
+</script>
+</body>
+</html>

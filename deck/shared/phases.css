@@ -1,0 +1,79 @@
+/* Slide-04 GPU widget — same visual language as the slide-02 anatomy. */
+.phgpu {
+  position: relative; display: flex; align-items: center; gap: 14px;
+  width: 470px; height: 190px;
+}
+.ph-die {
+  position: relative; width: 150px; height: 170px;
+  border: 2.5px solid #3987e5; border-radius: 10px; background: #0d1420;
+  transition: border-color 0.3s;
+}
+.ph-tiles {
+  position: absolute; inset: 9px 9px 40px; display: grid; gap: 3px;
+  grid-template-columns: repeat(4, 1fr); grid-template-rows: repeat(6, 1fr);
+}
+.ph-tiles i { background: rgba(57,135,229,0.25); border-radius: 2px; transition: background 0.25s; }
+.ph-lab {
+  position: absolute; bottom: 22px; width: 100%; text-align: center;
+  font-size: 11px; color: #9aa1b5; font-weight: 600;
+}
+.ph-util {
+  position: absolute; bottom: 5px; width: 100%; text-align: center;
+  font: 10.5px ui-monospace, monospace; color: #6b7284;
+}
+.ph-util b { color: #e8eaf0; }
+.ph-pipe {
+  position: relative; width: 92px; height: 18px; border-radius: 9px;
+  border: 2px solid rgba(47,214,176,0.55); overflow: visible;
+}
+.ph-pipe i {
+  position: absolute; top: 3px; width: 6px; height: 6px; border-radius: 50%;
+  background: #2fd6b0; animation: bnFlow2 1.3s linear infinite;
+}
+.ph-pipe i:nth-child(2) { animation-delay: 0.26s; }
+.ph-pipe i:nth-child(3) { animation-delay: 0.52s; }
+.ph-pipe i:nth-child(4) { animation-delay: 0.78s; }
+.ph-pipe i:nth-child(5) { animation-delay: 1.04s; }
+@keyframes bnFlow2 { from { left: -8px; } to { left: 92px; } }
+.ph-plab {
+  position: absolute; top: 24px; width: 100%; text-align: center;
+  font-size: 9px; color: #6b7284; white-space: nowrap;
+}
+.ph-hbm {
+  position: relative; width: 150px; height: 170px;
+  border: 2px solid rgba(201,133,0,0.7); border-radius: 10px; padding: 8px;
+}
+.ph-w {
+  height: 62px; border: 1.5px solid rgba(201,133,0,0.55); border-radius: 6px;
+  display: flex; align-items: center; justify-content: center; text-align: center;
+  font: 600 10.5px ui-monospace, monospace; color: #e0a935;
+  background: repeating-linear-gradient(0deg, rgba(201,133,0,0.14) 0 5px, transparent 5px 10px);
+}
+.ph-kv {
+  position: relative; margin-top: 6px; height: 44px;
+  border: 1.5px dashed rgba(144,133,233,0.6); border-radius: 6px; padding: 3px 4px;
+}
+.ph-kvlab { position: absolute; top: 2px; right: 6px; font: 700 9px ui-monospace, monospace; color: #9085e9; }
+.ph-kvrows { display: flex; flex-wrap: wrap; gap: 2px; align-content: flex-start; height: 100%; }
+.ph-kvrows b { width: 21px; height: 7px; border-radius: 2px; background: rgba(144,133,233,0.75); }
+.ph-kv.warn { border-color: #e04b38; animation: kvWarn 0.8s infinite; }
+@keyframes kvWarn { 50% { box-shadow: 0 0 14px rgba(224,75,56,0.7); } }
+.ph-kv.full { border-style: solid; }
+.ph-batch {
+  margin-top: 6px; height: 26px; border: 1.5px solid rgba(107,114,132,0.6); border-radius: 6px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 9.5px; color: #6b7284; transition: height 0.5s, opacity 0.5s;
+}
+.ph-batch.squeezed { height: 10px; opacity: 0.45; font-size: 0; }
+.ph-hbm .ph-lab { bottom: -22px; }
+
+/* token chips */
+.tokchip {
+  position: absolute; width: 22px; height: 14px; border-radius: 4px;
+  background: #2a2e3b; border: 1px solid #4a5066; z-index: 9;
+}
+.tokchip.out { background: rgba(47,214,176,0.25); border-color: #2fd6b0; }
+
+/* counters */
+.phcounter { font: 600 12.5px ui-monospace, monospace; color: #9aa1b5; }
+.phcounter b { color: #e8eaf0; font-size: 15px; }

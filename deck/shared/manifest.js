@@ -5,4 +5,7 @@ window.DECK_PAGES = [
   "01-pricing.html",
   "02-bottlenecks.html",
   "03-roofline.html",
+  "04a-phases-machine.html",
+  "04b-phases-split.html",
+  "04c-phases-roofline.html",
 ];

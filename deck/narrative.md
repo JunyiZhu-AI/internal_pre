@@ -154,6 +154,46 @@ section.)*
 
 ---
 
+## Page 04 — Prefill vs Decode: Two Different Workloads
+
+*Same 5 beats for all three candidate variants (a: one machine, b: split
+screen, c: on the roofline). Deliberately low-text: the thermal picture and
+the moving dot carry the argument; these beats carry the words.*
+
+**Load:** title only.
+
+1. **[the machine, idle]** "Here's the machine you already know how to read —
+   processor, the HBM pipe, the memory itself. Inference runs on it in two
+   completely different modes, and you're about to watch both."
+
+2. **[prefill: die saturates, pipe cool, KV receipt]** "Mode one: prefill.
+   The whole prompt arrives at once, thousands of positions in parallel. The
+   weights are read from HBM *once* and amortised across all of them — so
+   arithmetic intensity scales with sequence length, the processor saturates,
+   utilisation pins near 95%, and we're deep in compute-bound territory.
+   This phase sets your time-to-first-token, and it's why input tokens are
+   cheap. And notice the receipt it leaves behind: a fresh KV cache block."
+
+3. **[the flip: first token]** "Then the first output token appears — and
+   the entire thermal picture inverts."
+
+4. **[decode: pipe red-hot, die idle, KV growing]** "Mode two: decode. One
+   token at a time, and for *every* token the machine drags all 140 GB of
+   weights — plus the growing KV cache — through the pipe, to do just 140
+   gigaFLOPs of work. Arithmetic intensity: one. The pipe glows, the
+   processor idles at three percent, and the KV block quietly eats the
+   memory that batching needs. Decode throughput *is* bandwidth; latency
+   *is* bytes-read. Shrinking bytes per token is the entire game of
+   efficient decode."
+
+5. **[caption]** "Same model. Same GPU. Two different workloads. That's why
+   output tokens cost five times input on every rate card — and almost every
+   technique in tonight's toolkit attacks one of these two pictures."
+
+*(final click → next page)*
+
+---
+
 ## Template page — QKᵀ: where attention scores come from
 
 **Load:** title only; empty score grid awaits.
