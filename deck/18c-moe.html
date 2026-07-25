@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>MoE: Compute Only What You Route</title>
+<link rel="stylesheet" href="shared/deck.css?v=3">
+<style>
+  .kicker { position: absolute; top: 12px; left: 45px; font: 700 11px ui-monospace, monospace; letter-spacing: 0.22em; color: #6b7284; }
+
+  /* ---- the hero token (consistent across the whole MoE section) ---- */
+  .htok {
+    position: absolute; width: 14px; height: 14px; margin: -7px 0 0 -7px; border-radius: 50%;
+    background: radial-gradient(circle at 35% 35%, #c8fff2, #2fd6b0 60%, #14b894);
+    box-shadow: 0 0 12px rgba(47,214,176,0.95), 0 0 30px rgba(47,214,176,0.5);
+    z-index: 30; pointer-events: none; opacity: 0;
+  }
+  .htok::after { content: ""; position: absolute; inset: -5px; border-radius: 50%; border: 1.5px solid rgba(47,214,176,0.35); }
+  .htok.ghostly { opacity: 0; filter: brightness(1.1); }
+
+  /* ---- left: the unzipping FFN ---- */
+  #denseframe {
+    position: absolute; left: 326px; top: 146px; width: 178px; height: 340px;
+    border: 1.5px solid #3a3f4f; border-radius: 10px; background: rgba(27,30,39,0.5);
+  }
+  #denselab { position: absolute; left: 326px; top: 124px; width: 178px; text-align: center; font: 600 11px ui-monospace, monospace; color: var(--ink-2); }
+  .exp {
+    position: absolute; left: 330px; width: 170px; height: 41.5px; border-radius: 0;
+    background: #232836; border: 1px solid #2e3342;
+  }
+  .exp .elab { position: absolute; left: 8px; top: 50%; transform: translateY(-50%); font: 700 10px ui-monospace, monospace; color: #6b7284; opacity: 0; }
+  .exp.hot { border-color: rgba(47,214,176,0.9); box-shadow: 0 0 14px rgba(47,214,176,0.35); background: #1d2f2c; }
+  .exp.hot .elab { color: var(--accent); }
+  .exp.dimmed { opacity: 0.35; }
+
+  #router {
+    position: absolute; left: 252px; top: 340px; width: 26px; height: 26px; margin: -13px 0 0 -13px;
+    transform: rotate(45deg); border: 2px solid #3987e5; border-radius: 5px; background: #0d1420; opacity: 0; z-index: 5;
+  }
+  #routerlab { position: absolute; left: 212px; top: 358px; width: 80px; text-align: center; font: 600 10.5px ui-monospace, monospace; color: #9ec7f5; opacity: 0; }
+  .chip {
+    position: absolute; font: 700 10.5px ui-monospace, monospace; padding: 3px 9px; border-radius: 999px;
+    background: rgba(11,13,18,0.92); border: 1.5px solid #3a3f4f; color: #c7cce0; white-space: nowrap; opacity: 0; z-index: 8;
+  }
+  #kchip { left: 152px; top: 396px; border-color: rgba(47,214,176,0.6); color: var(--accent); }
+  #switchchip { left: 152px; top: 426px; color: #8a91a5; }
+  #outlab { left: 548px; top: 296px; color: #c7cce0; }
+
+  /* ---- right: the decoupling meters ---- */
+  #meters { position: absolute; left: 660px; top: 148px; width: 576px; }
+  .mrow { position: relative; height: 22px; margin-bottom: 4px; opacity: 0; }
+  .mrow .mname { position: absolute; left: 0; top: 3px; width: 148px; font: 700 12px ui-monospace, monospace; }
+  .mrow .mtrack { position: absolute; left: 152px; top: 3px; width: 336px; height: 15px; border: 1px solid var(--line); border-radius: 4px; background: #12141c; }
+  .mrow .mfill { position: absolute; left: 154px; top: 5px; height: 11px; border-radius: 3px; }
+  #fill-total { background: linear-gradient(90deg, rgba(201,133,0,0.5), #e0a935); width: 64px; }
+  #fill-flops { background: linear-gradient(90deg, rgba(57,135,229,0.5), #3987e5); width: 64px; }
+  .mrow .mtag { position: absolute; left: 498px; top: 4px; font: 700 11px ui-monospace, monospace; }
+  .mcap { font-size: 11px; color: #9aa1b5; margin: -2px 0 10px 152px; opacity: 0; }
+  #arb { position: absolute; left: 660px; top: 268px; font: 700 15px ui-monospace, monospace; color: var(--accent); opacity: 0; }
+
+  /* ---- right: the two dual framings ---- */
+  .dcard { position: absolute; top: 322px; width: 278px; background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; opacity: 0; }
+  #card-flop { left: 660px; }
+  #card-qual { left: 958px; height: 200px; border-color: rgba(47,214,176,0.65); box-shadow: 0 0 16px rgba(47,214,176,0.12); }
+  .dcard .dt { font: 700 11.5px ui-monospace, monospace; }
+  #card-flop .dt { color: #6fb1ff; }
+  #card-qual .dt { color: var(--accent); }
+  .dcard .dl { margin-top: 6px; font-size: 10.5px; color: #c7cce0; line-height: 1.4; }
+  .dcard .dx { margin-top: 6px; font: 600 10px ui-monospace, monospace; color: #6b7284; }
+  .qrow { position: relative; height: 34px; margin-top: 8px; }
+  .qrow .qn { font: 600 10px ui-monospace, monospace; color: #9aa1b5; }
+  .qrow .qbar { position: absolute; left: 0; top: 19px; height: 9px; border-radius: 3px; transform-origin: left; }
+  #bar-dense { width: 182px; background: linear-gradient(90deg, rgba(224,75,56,0.45), #e04b38); }
+  #bar-moe { width: 34px; background: linear-gradient(90deg, rgba(47,214,176,0.5), #2fd6b0); }
+  .qrow.ghost .qn { color: #6b7284; }
+  .qrow.ghost .qbar { opacity: 0.75; outline: 1px dashed rgba(224,75,56,0.5); outline-offset: 2px; }
+  #ratio { margin-top: 10px; font: 700 12.5px ui-monospace, monospace; color: var(--accent); }
+  #never { position: absolute; left: 660px; top: 534px; width: 576px; font-size: 10.5px; font-style: italic; color: #6b7284; opacity: 0; }
+
+  /* ---- bottom strip: why everyone + the caution ---- */
+  #why { position: absolute; left: 44px; top: 600px; width: 1192px; font: 600 13.5px ui-monospace, monospace; color: #c7cce0; opacity: 0; }
+  #keep { position: absolute; left: 44px; top: 636px; width: 1192px; font: 700 13.5px ui-monospace, monospace; color: #e0a935; opacity: 0; }
+</style>
+</head>
+<body>
+<div class="stage">
+  <div class="kicker">MIXTURE OF EXPERTS</div>
+  <div class="slide-title">MoE: compute only what you route</div>
+  <div class="slide-sub" id="sub" style="opacity:0"></div>
+
+  <div id="denselab">one dense FFN</div>
+  <div id="denseframe"></div>
+  <div id="experts"></div>
+  <div id="router"></div>
+  <div id="routerlab">router</div>
+  <div class="chip" id="kchip">top-k = 2 of 8</div>
+  <div class="chip" id="switchchip">Switch &rsquo;21: k = 1</div>
+  <div class="chip" id="outlab">out</div>
+
+  <div id="meters">
+    <div class="mrow" id="mr-total">
+      <span class="mname" style="color:#e0a935">TOTAL params</span>
+      <div class="mtrack"></div><div class="mfill" id="fill-total"></div>
+      <span class="mtag" id="tag-total" style="color:#e0a935;opacity:0">×N experts</span>
+    </div>
+    <div class="mcap" id="cap-total"></div>
+    <div class="mrow" id="mr-flops">
+      <span class="mname" style="color:#6fb1ff">FLOPs / token</span>
+      <div class="mtrack"></div><div class="mfill" id="fill-flops"></div>
+      <span class="mtag" id="tag-flops" style="color:#6fb1ff;opacity:0">flat</span>
+    </div>
+    <div class="mcap" id="cap-flops"></div>
+  </div>
+  <div id="arb"></div>
+
+  <div class="dcard" id="card-flop">
+    <div class="dt" id="cf-t"></div>
+    <div class="dl" id="cf-l"></div>
+    <div class="dx" id="cf-x"></div>
+  </div>
+  <div class="dcard" id="card-qual">
+    <div class="dt" id="cq-t"></div>
+    <div class="dl" id="cq-l"></div>
+    <div class="qrow ghost">
+      <span class="qn">Llama-2-70B dense (ghost)</span>
+      <div class="qbar" id="bar-dense"></div>
+    </div>
+    <div class="qrow">
+      <span class="qn">Mixtral 8×7B — 13B active</span>
+      <div class="qbar" id="bar-moe"></div>
+    </div>
+    <div id="ratio"></div>
+  </div>
+  <div id="never"></div>
+
+  <div id="why"></div>
+  <div id="keep"></div>
+
+  <div class="htok" id="tok"></div>
+  <div class="htok ghostly" id="tok2"></div>
+</div>
+
+<script src="../vendor/gsap.min.js"></script>
+<script src="shared/moe.js?v=3"></script>
+<script src="shared/manifest.js?v=3"></script>
+<script src="shared/deck.js?v=3"></script>
+<script>
+  // ---- static content from the data module ----
+  document.getElementById("sub").textContent = MOE.mech;
+  document.getElementById("cap-total").textContent = MOE.decouple.quality;
+  document.getElementById("cap-flops").textContent = MOE.decouple.flops;
+  document.getElementById("arb").textContent = MOE.decouple.arb;
+  document.getElementById("cf-t").textContent = MOE.dual.isoFlop[0];
+  document.getElementById("cf-l").textContent = MOE.dual.isoFlop[1];
+  document.getElementById("cf-x").textContent = MOE.dual.isoFlop[2];
+  document.getElementById("cq-t").textContent = MOE.dual.isoQuality[0];
+  document.getElementById("cq-l").textContent = MOE.dual.isoQuality[1];
+  document.getElementById("ratio").textContent = MOE.mixtral.ratio + " fewer FLOPs / token, same class of quality";
+  document.getElementById("never").textContent = MOE.dual.never;
+  document.getElementById("why").textContent = MOE.whyEveryone;
+  document.getElementById("keep").textContent = MOE.keepBoth;
+
+  // 8 expert bars, initially fused into the dense block
+  var expWrap = document.getElementById("experts");
+  var exps = [];
+  for (var i = 0; i < 8; i++) {
+    var e = document.createElement("div");
+    e.className = "exp";
+    e.style.top = (150 + i * 41.5) + "px";
+    e.innerHTML = '<span class="elab">E' + i + "</span>";
+    expWrap.appendChild(e);
+    exps.push(e);
+  }
+  var HOT = [1, 5];
+
+  var tok = document.getElementById("tok"), tok2 = document.getElementById("tok2");
+  var router = document.getElementById("router");
+  gsap.set(tok, { left: 60, top: 340 });
+  gsap.set(tok2, { left: 252, top: 340 });
+
+  // ---- path helper: gsap motion along a smoothed polyline (Catmull-Rom) ----
+  function pathTween(el, pts, dur, ease) {
+    var p = { t: 0 };
+    function at(t) {
+      var n = pts.length - 1, f = Math.min(t, 0.9999) * n, i = Math.floor(f), u = f - i;
+      var a = pts[Math.max(0, i - 1)], b = pts[i], c = pts[Math.min(n, i + 1)], d = pts[Math.min(n, i + 2)];
+      function cr(A, B, C, D) { return 0.5 * (2 * B + (C - A) * u + (2 * A - 5 * B + 4 * C - D) * u * u + (3 * B - A - 3 * C + D) * u * u * u); }
+      return [cr(a[0], b[0], c[0], d[0]), cr(a[1], b[1], c[1], d[1])];
+    }
+    return gsap.to(p, { t: 1, duration: dur, ease: ease || "power1.inOut", onUpdate: function () {
+      var q = at(p.t); gsap.set(el, { left: q[0], top: q[1] });
+    } });
+  }
+
+  // ---- DOM mutators (restored in reset) ----
+  function setHot() {
+    exps.forEach(function (e, i) {
+      e.classList.toggle("hot", HOT.indexOf(i) >= 0);
+      e.classList.toggle("dimmed", HOT.indexOf(i) < 0);
+    });
+  }
+  function clearHot() { exps.forEach(function (e) { e.classList.remove("hot", "dimmed"); }); }
+
+  // ---- timeline: 4 beats ----
+  var tl = gsap.timeline({ paused: true });
+
+  // beat 1: token arrives — the dense FFN unzips into experts + router; top-k path
+  tl.fromTo("#sub", { opacity: 0 }, { opacity: 1, duration: 0.4 })
+    .fromTo(tok, { opacity: 0 }, { opacity: 1, duration: 0.3 }, "<")
+    .add(pathTween(tok, [[60, 340], [140, 340], [208, 340]], 0.6))
+    .to(".exp", { top: function (i) { return 150 + i * 42; }, height: 30, borderRadius: 6, duration: 0.7, ease: "power2.inOut", stagger: 0.04 })
+    .to("#denseframe", { opacity: 0, duration: 0.45 }, "<")
+    .to("#denselab", { opacity: 0, duration: 0.3 }, "<")
+    .fromTo("#router", { opacity: 0, scale: 0.3 }, { opacity: 1, scale: 1, duration: 0.45, ease: "back.out(2)" }, "<0.25")
+    .fromTo("#routerlab", { opacity: 0 }, { opacity: 1, duration: 0.3 }, "<0.2")
+    .to(".exp .elab", { opacity: 0.9, duration: 0.3, stagger: 0.03 }, "<")
+    .add(pathTween(tok, [[208, 340], [252, 340]], 0.3))
+    .to("#router", { boxShadow: "0 0 22px rgba(57,135,229,0.9)", duration: 0.22, yoyo: true, repeat: 1 })
+    .fromTo("#kchip", { opacity: 0, y: 6 }, { opacity: 1, y: 0, duration: 0.3 })
+    .fromTo("#switchchip", { opacity: 0, y: 6 }, { opacity: 1, y: 0, duration: 0.3 }, "<0.12")
+    .call(setHot)
+    .fromTo(tok2, { opacity: 0 }, { opacity: 1, duration: 0.2 })
+    .add(pathTween(tok, [[252, 340], [300, 240], [415, 207], [530, 240], [585, 340]], 1.05), "<")
+    .add(pathTween(tok2, [[252, 340], [300, 436], [415, 375], [530, 436], [585, 340]], 1.05), "<")
+    .to([exps[1], exps[5]], { boxShadow: "0 0 22px rgba(47,214,176,0.7)", duration: 0.18, yoyo: true, repeat: 3 }, "<0.35")
+    .to(tok2, { opacity: 0, duration: 0.25 })
+    .fromTo("#outlab", { opacity: 0 }, { opacity: 1, duration: 0.3 }, "<");
+  DECK.markStep(tl);
+
+  // beat 2: the decoupling — TOTAL spikes, FLOPs/token stays flat
+  tl.fromTo("#mr-total", { opacity: 0, y: 10 }, { opacity: 1, y: 0, duration: 0.4 })
+    .to("#fill-total", { width: 322, duration: 0.9, ease: "power3.out" })
+    .fromTo("#tag-total", { opacity: 0 }, { opacity: 1, duration: 0.3 }, "-=0.3")
+    .fromTo("#cap-total", { opacity: 0 }, { opacity: 1, duration: 0.35 })
+    .fromTo("#mr-flops", { opacity: 0, y: 10 }, { opacity: 1, y: 0, duration: 0.4 })
+    .fromTo("#fill-flops", { opacity: 0.4 }, { opacity: 1, duration: 0.25, yoyo: true, repeat: 3 })
+    .fromTo("#tag-flops", { opacity: 0 }, { opacity: 1, duration: 0.3 }, "-=0.2")
+    .fromTo("#cap-flops", { opacity: 0 }, { opacity: 1, duration: 0.35 })
+    .fromTo("#arb", { opacity: 0, y: 8 }, { opacity: 1, y: 0, duration: 0.45, ease: "power2.out" });
+  DECK.markStep(tl);
+
+  // beat 3: two dual framings — iso-quality is the hero (ghost dense vs Mixtral)
+  tl.fromTo("#card-flop", { opacity: 0, y: 16 }, { opacity: 0.75, y: 0, duration: 0.4, ease: "power2.out" })
+    .fromTo("#card-qual", { opacity: 0, y: 16 }, { opacity: 1, y: 0, duration: 0.45, ease: "power2.out" }, "<0.15")
+    .fromTo("#bar-dense", { scaleX: 0 }, { scaleX: 1, duration: 0.55, ease: "power2.out" })
+    .to("#bar-dense", { boxShadow: "0 0 14px rgba(224,75,56,0.75)", duration: 0.25, yoyo: true, repeat: 3 })
+    .fromTo("#bar-moe", { scaleX: 0 }, { scaleX: 1, duration: 0.4, ease: "power2.out" }, "<0.2")
+    .fromTo("#ratio", { opacity: 0, scale: 0.8 }, { opacity: 1, scale: 1, duration: 0.4, ease: "back.out(2)" })
+    .fromTo("#never", { opacity: 0 }, { opacity: 1, duration: 0.4 });
+  DECK.markStep(tl);
+
+  // beat 4: why every frontier model is MoE — and the caution that bills come later
+  tl.fromTo("#why", { opacity: 0, y: 10 }, { opacity: 1, y: 0, duration: 0.45, ease: "power2.out" })
+    .fromTo("#keep", { opacity: 0, y: 10 }, { opacity: 1, y: 0, duration: 0.45, ease: "power2.out" }, "+=0.2")
+    .to(tok, { boxShadow: "0 0 20px rgba(47,214,176,1), 0 0 44px rgba(47,214,176,0.6)", duration: 0.4, yoyo: true, repeat: 1 }, "<");
+
+  DECK.register(tl, {
+    reset: function () {
+      clearHot();
+      gsap.set(tok, { left: 60, top: 340, boxShadow: "0 0 12px rgba(47,214,176,0.95), 0 0 30px rgba(47,214,176,0.5)" });
+      gsap.set(tok2, { left: 252, top: 340 });
+    }
+  });
+</script>
+</body>
+</html>

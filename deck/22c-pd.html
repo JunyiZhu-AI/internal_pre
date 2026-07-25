@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Prefill–Decode Disaggregation</title>
+<link rel="stylesheet" href="shared/deck.css?v=3">
+<style>
+  .kicker { position: absolute; top: 12px; left: 45px; font: 700 11px ui-monospace, monospace; letter-spacing: 0.22em; color: #6b7284; }
+
+  .htok {
+    position: absolute; width: 14px; height: 14px; margin: -7px 0 0 -7px; border-radius: 50%;
+    background: radial-gradient(circle at 35% 35%, #c8fff2, #2fd6b0 60%, #14b894);
+    box-shadow: 0 0 12px rgba(47,214,176,0.95), 0 0 30px rgba(47,214,176,0.5);
+    z-index: 30; pointer-events: none; opacity: 0;
+  }
+  .htok::after { content: ""; position: absolute; inset: -5px; border-radius: 50%; border: 1.5px solid rgba(47,214,176,0.35); }
+  .htok.cached::before {
+    content: ""; position: absolute; inset: -9px; border-radius: 50%;
+    border: 2px solid rgba(144,133,233,0.85); box-shadow: 0 0 10px rgba(144,133,233,0.6);
+  }
+  .ptail {
+    position: absolute; width: 7px; height: 7px; margin: -3.5px 0 0 -3.5px; border-radius: 50%;
+    background: #9aa1b5; opacity: 0; z-index: 29; pointer-events: none;
+  }
+  .odot {
+    position: absolute; width: 8px; height: 8px; margin: -4px 0 0 -4px; border-radius: 50%;
+    background: #2fd6b0; box-shadow: 0 0 8px rgba(47,214,176,0.8); opacity: 0; z-index: 28; pointer-events: none;
+  }
+
+  /* ---- honesty + recap ---- */
+  #honesty {
+    position: absolute; left: 44px; top: 108px; width: 1192px; font-size: 12px; color: #9aa1b5;
+    border-left: 3px solid var(--accent); padding: 4px 0 4px 12px; line-height: 1.5; opacity: 0;
+  }
+  .recap {
+    position: absolute; top: 162px; font: 700 11px ui-monospace, monospace; padding: 4px 12px; border-radius: 999px;
+    background: rgba(11,13,18,0.92); border: 1.5px solid; white-space: nowrap; opacity: 0;
+  }
+  #rc-p { left: 44px; border-color: rgba(57,135,229,0.7); color: #6fb1ff; }
+  #rc-d { left: 340px; border-color: rgba(47,214,176,0.7); color: var(--accent); }
+
+  /* ---- pools ---- */
+  #mono {
+    position: absolute; left: 390px; top: 250px; width: 500px; height: 160px;
+    border: 1.5px solid #3a3f4f; border-radius: 12px; background: rgba(27,30,39,0.55); opacity: 0;
+  }
+  #mono .mlab { position: absolute; left: 0; top: 12px; width: 100%; text-align: center; font: 700 11.5px ui-monospace, monospace; color: #9aa1b5; }
+  #mono .mgpus { position: absolute; left: 50%; top: 58px; transform: translateX(-50%); display: flex; gap: 14px; }
+  #mono .mgpus i {
+    width: 58px; height: 62px; border-radius: 8px; border: 1.5px solid #2e3342;
+    background: linear-gradient(135deg, rgba(57,135,229,0.25) 0 50%, rgba(47,214,176,0.22) 50% 100%);
+  }
+
+  .pool { position: absolute; top: 250px; height: 250px; border-radius: 14px; opacity: 0; }
+  #pool-p { left: 80px; width: 380px; border: 2px solid rgba(57,135,229,0.65); background: rgba(20,26,38,0.55); }
+  #pool-d { left: 820px; width: 380px; border: 2px solid rgba(47,214,176,0.6); background: rgba(17,30,28,0.5); }
+  .pool .plab { position: absolute; left: 16px; top: 12px; font: 800 13px ui-monospace, monospace; }
+  #pool-p .plab { color: #6fb1ff; } #pool-d .plab { color: var(--accent); }
+  .pool .psub { position: absolute; right: 16px; top: 14px; font: 600 10px ui-monospace, monospace; color: #6b7284; }
+  .pool .pgpus { position: absolute; left: 50%; top: 62px; transform: translateX(-50%); display: flex; gap: 12px; }
+  #pool-p .pgpus i { width: 62px; height: 66px; border-radius: 8px; border: 1.5px solid rgba(57,135,229,0.5); background: rgba(57,135,229,0.14); }
+  #pool-d .pgpus i { width: 46px; height: 66px; border-radius: 8px; border: 1.5px solid rgba(47,214,176,0.45); background: rgba(47,214,176,0.10); }
+  .pool .epchip {
+    position: absolute; left: 16px; bottom: 12px; font: 700 9.5px ui-monospace, monospace; color: #9aa1b5;
+    border: 1px dashed #3a3f4f; border-radius: 999px; padding: 2px 8px; opacity: 0;
+  }
+
+  #pipe {
+    position: absolute; left: 466px; top: 356px; width: 348px; height: 24px; border-radius: 12px;
+    border: 2px dashed rgba(144,133,233,0.55); opacity: 0;
+  }
+  #pipelab { position: absolute; left: 466px; top: 336px; width: 348px; text-align: center; font: 600 10px ui-monospace, monospace; color: #9085e9; opacity: 0; }
+  #parcel {
+    position: absolute; left: 466px; top: 368px; width: 34px; height: 22px; margin: -11px 0 0 -17px; border-radius: 5px;
+    background: rgba(144,133,233,0.3); border: 1.5px solid #9085e9; color: #b7aff5;
+    font: 800 9.5px ui-monospace, monospace; display: flex; align-items: center; justify-content: center;
+    opacity: 0; z-index: 25;
+  }
+  #cache {
+    position: absolute; left: 590px; top: 288px; width: 100px; height: 34px; border-radius: 8px;
+    border: 1.5px solid rgba(144,133,233,0.7); background: rgba(27,30,39,0.85); color: #b7aff5;
+    font: 700 10px ui-monospace, monospace; display: flex; align-items: center; justify-content: center; opacity: 0; z-index: 24;
+  }
+
+  /* gauges */
+  .gauge { position: absolute; top: 516px; width: 260px; opacity: 0; }
+  #g-ttft { left: 120px; } #g-tpot { left: 880px; }
+  .gauge .gn { font: 700 11px ui-monospace, monospace; }
+  #g-ttft .gn { color: #6fb1ff; } #g-tpot .gn { color: var(--accent); }
+  .gauge .gtrack { position: absolute; left: 56px; top: 3px; width: 170px; height: 10px; border: 1px solid var(--line); border-radius: 4px; }
+  .gauge .gfill { position: absolute; left: 58px; top: 5px; width: 0; height: 6px; border-radius: 3px; }
+  #g-ttft .gfill { background: #3987e5; } #g-tpot .gfill { background: #2fd6b0; }
+  #decoup { position: absolute; left: 540px; top: 514px; width: 200px; text-align: center; font: 700 11px ui-monospace, monospace; color: var(--accent); opacity: 0; }
+
+  /* benefits + cost, between the pools */
+  #bene { position: absolute; left: 470px; top: 402px; width: 340px; opacity: 0; }
+  #bene .bl { font-size: 10.5px; color: #c7cce0; line-height: 1.5; margin-bottom: 3px; }
+  #bene .bl::before { content: "+ "; color: var(--accent); font-weight: 700; }
+  #cost { position: absolute; left: 470px; top: 478px; width: 340px; font-size: 10.5px; font-weight: 600; color: #e04b38; line-height: 1.45; opacity: 0; }
+
+  /* ---- payoff strip ---- */
+  #pay { position: absolute; left: 44px; top: 574px; width: 1192px; border-top: 1px solid var(--line); opacity: 0; }
+  #paynums { position: absolute; left: 0; top: 14px; font: 800 26px ui-monospace, monospace; color: #6b7284; }
+  #paynums .cheap { color: var(--accent); }
+  #paynums .x10 { font-size: 14px; color: #e0a935; margin-left: 10px; }
+  #payline { position: absolute; left: 0; top: 56px; width: 900px; font-size: 11.5px; color: #c7cce0; line-height: 1.5; }
+  #vllm { position: absolute; left: 0; top: 92px; width: 800px; font-size: 10.5px; color: #6b7284; }
+  #q2chip {
+    position: absolute; right: 0; top: 16px; font: 700 11.5px ui-monospace, monospace; color: var(--accent);
+    border: 1.5px solid rgba(47,214,176,0.65); border-radius: 999px; padding: 4px 12px; background: rgba(11,13,18,0.92);
+  }
+</style>
+</head>
+<body>
+<div class="stage">
+  <div class="kicker">SERVING · PREFILL / DECODE</div>
+  <div class="slide-title">Prefill–decode disaggregation</div>
+  <div class="slide-sub">the token's last stop: two pools, one journey — prompt in, KV across, tokens out</div>
+
+  <div id="honesty"></div>
+  <div class="recap" id="rc-p"></div>
+  <div class="recap" id="rc-d"></div>
+
+  <div id="mono">
+    <div class="mlab">one pool — both phases share the same GPUs</div>
+    <div class="mgpus"><i></i><i></i><i></i><i></i></div>
+  </div>
+  <div class="pool" id="pool-p">
+    <div class="plab">P-pool</div><div class="psub">prefill</div>
+    <div class="pgpus"><i></i><i></i><i></i></div>
+    <div class="epchip">own EP degree · own batching</div>
+  </div>
+  <div class="pool" id="pool-d">
+    <div class="plab">D-pool</div><div class="psub">decode</div>
+    <div class="pgpus"><i></i><i></i><i></i><i></i></div>
+    <div class="epchip">own EP degree · own batching</div>
+  </div>
+  <div id="pipelab">KV cache over the interconnect</div>
+  <div id="pipe"></div>
+  <div id="parcel">KV</div>
+  <div id="cache">prefix cache</div>
+
+  <div class="gauge" id="g-ttft"><span class="gn">TTFT</span><div class="gtrack"></div><div class="gfill"></div></div>
+  <div class="gauge" id="g-tpot"><span class="gn">TPOT</span><div class="gtrack"></div><div class="gfill"></div></div>
+  <div id="decoup">decoupled</div>
+
+  <div id="bene"></div>
+  <div id="cost"></div>
+
+  <div id="pay">
+    <div id="paynums"></div>
+    <div id="payline"></div>
+    <div id="vllm"></div>
+    <div id="q2chip">rate-card Q2 · answered (in part)</div>
+  </div>
+
+  <div class="htok" id="tok"></div>
+  <div class="htok cached" id="tok2"></div>
+</div>
+
+<script src="../vendor/gsap.min.js"></script>
+<script src="shared/moe.js?v=3"></script>
+<script src="shared/pricing.js?v=3"></script>
+<script src="shared/manifest.js?v=3"></script>
+<script src="shared/deck.js?v=3"></script>
+<script>
+  document.getElementById("honesty").textContent = MOE.pd.honesty;
+  document.getElementById("rc-p").textContent = MOE.pd.recap[0].join(" · ");
+  document.getElementById("rc-d").textContent = MOE.pd.recap[1].join(" · ");
+  var bene = document.getElementById("bene");
+  MOE.pd.benefits.forEach(function (b) {
+    var d = document.createElement("div");
+    d.className = "bl"; d.textContent = b;
+    bene.appendChild(d);
+  });
+  document.getElementById("cost").textContent = MOE.pd.cost;
+  var K3 = PRICING.models[0];
+  document.getElementById("paynums").innerHTML =
+    PRICING.fmt$(K3.input) + " input &nbsp;→&nbsp; <span class=\"cheap\">" + PRICING.fmt$(K3.cached) + " cached</span>" +
+    '<span class="x10">' + Math.round(K3.input / K3.cached) + "× off</span>";
+  document.getElementById("payline").textContent = MOE.pd.cache;
+  document.getElementById("vllm").textContent = MOE.pd.vllm;
+
+  var stage = document.querySelector(".stage");
+  var tok = document.getElementById("tok"), tok2 = document.getElementById("tok2");
+  gsap.set(tok, { left: 30, top: 380 });
+  gsap.set(tok2, { left: 30, top: 470 });
+
+  // prompt tail dots trailing the hero token
+  var tails = [];
+  for (var i = 0; i < 4; i++) {
+    var t = document.createElement("div");
+    t.className = "ptail";
+    stage.appendChild(t);
+    gsap.set(t, { left: 12 - i * 12, top: 380 });
+    tails.push(t);
+  }
+  // output stream dots (ambient loop once decode starts)
+  var odots = [];
+  for (i = 0; i < 5; i++) {
+    var o = document.createElement("div");
+    o.className = "odot";
+    stage.appendChild(o);
+    odots.push(o);
+  }
+  var streamLoop = gsap.timeline({ paused: true, repeat: -1 });
+  odots.forEach(function (o, i) {
+    gsap.set(o, { left: 1206, top: 380 });
+    streamLoop.fromTo(o, { left: 1206, opacity: 0 },
+      { left: 1266, opacity: 1, duration: 0.28, ease: "none", immediateRender: false }, i * 0.34)
+      .to(o, { left: 1276, opacity: 0, duration: 0.14, ease: "none" }, i * 0.34 + 0.28);
+  });
+  streamLoop.to({}, { duration: 0.1 });
+
+  // ---- path helper: gsap motion along a smoothed polyline ----
+  function pathTween(el, pts, dur, ease) {
+    var p = { t: 0 };
+    function at(t) {
+      var n = pts.length - 1, f = Math.min(t, 0.9999) * n, i = Math.floor(f), u = f - i;
+      var a = pts[Math.max(0, i - 1)], b = pts[i], c = pts[Math.min(n, i + 1)], d = pts[Math.min(n, i + 2)];
+      function cr(A, B, C, D) { return 0.5 * (2 * B + (C - A) * u + (2 * A - 5 * B + 4 * C - D) * u * u + (3 * B - A - 3 * C + D) * u * u * u); }
+      return [cr(a[0], b[0], c[0], d[0]), cr(a[1], b[1], c[1], d[1])];
+    }
+    return gsap.to(p, { t: 1, duration: dur, ease: ease || "power1.inOut", onUpdate: function () {
+      var q = at(p.t); gsap.set(el, { left: q[0], top: q[1] });
+    } });
+  }
+  function trail(el, dx, pts, dur, ease) {
+    var shifted = pts.map(function (q) { return [q[0] + dx, q[1]]; });
+    return pathTween(el, shifted, dur, ease);
+  }
+
+  var pGpus = document.querySelectorAll("#pool-p .pgpus i");
+  var dGpus = document.querySelectorAll("#pool-d .pgpus i");
+
+  // ---- timeline: 4 beats ----
+  var tl = gsap.timeline({ paused: true });
+
+  // beat 1: honesty first + the recap chips; the co-located pool and its problem
+  tl.fromTo("#honesty", { opacity: 0, y: 8 }, { opacity: 1, y: 0, duration: 0.45, ease: "power2.out" })
+    .fromTo("#rc-p", { opacity: 0, y: 6 }, { opacity: 1, y: 0, duration: 0.35 })
+    .fromTo("#rc-d", { opacity: 0, y: 6 }, { opacity: 1, y: 0, duration: 0.35 }, "<0.12")
+    .fromTo("#mono", { opacity: 0, y: 14 }, { opacity: 1, y: 0, duration: 0.5, ease: "power2.out" });
+  DECK.markStep(tl);
+
+  // beat 2: the split — prompt into P, KV parcel across, tokens stream out of D
+  tl.to("#mono", { opacity: 0, scale: 0.92, duration: 0.45, ease: "power2.in" })
+    .fromTo("#pool-p", { opacity: 0, x: 60 }, { opacity: 1, x: 0, duration: 0.55, ease: "power2.out" })
+    .fromTo("#pool-d", { opacity: 0, x: -60 }, { opacity: 1, x: 0, duration: 0.55, ease: "power2.out" }, "<")
+    .fromTo("#pipe", { opacity: 0 }, { opacity: 1, duration: 0.4 })
+    .fromTo("#pipelab", { opacity: 0 }, { opacity: 1, duration: 0.4 }, "<")
+    // the prompt arrives in P
+    .fromTo(tok, { opacity: 0 }, { opacity: 1, duration: 0.25 })
+    .fromTo(tails, { opacity: 0 }, { opacity: 0.8, duration: 0.25, stagger: 0.04 }, "<");
+  var inP = [[30, 380], [120, 372], [200, 380], [268, 380]];
+  tl.add(pathTween(tok, inP, 0.7));
+  tails.forEach(function (t, i) { tl.add(trail(t, -14 * (i + 1), inP, 0.7), "<0.045"); });
+  // prefill burst
+  tl.to(pGpus, { boxShadow: "0 0 18px rgba(57,135,229,0.9)", borderColor: "#6fb1ff", duration: 0.16, yoyo: true, repeat: 3, stagger: 0.05 })
+    .to(tails, { opacity: 0, duration: 0.3 }, "<")
+    // KV parcel ships across
+    .fromTo("#parcel", { opacity: 0, left: 470, top: 368 }, { opacity: 1, duration: 0.25 })
+    .to("#parcel", { left: 810, duration: 0.9, ease: "power1.inOut" })
+    .add(pathTween(tok, [[268, 380], [380, 350], [470, 368], [640, 360], [810, 368]], 1.15), "<-0.2")
+    .to("#parcel", { opacity: 0, duration: 0.25 })
+    // decode streams
+    .to(dGpus, { boxShadow: "0 0 14px rgba(47,214,176,0.7)", borderColor: "#2fd6b0", duration: 0.2, yoyo: true, repeat: 3, stagger: 0.06 })
+    .add(pathTween(tok, [[810, 368], [960, 376], [1100, 380], [1195, 380]], 0.8))
+    .call(function () { streamLoop.play(0); })
+    .fromTo("#g-ttft", { opacity: 0, y: 8 }, { opacity: 1, y: 0, duration: 0.35 })
+    .fromTo("#g-tpot", { opacity: 0, y: 8 }, { opacity: 1, y: 0, duration: 0.35 }, "<0.1")
+    .to("#g-ttft .gfill", { width: 166, duration: 0.55, ease: "power2.out" })
+    .to("#g-tpot .gfill", { width: 166, duration: 0.55, ease: "power2.out" }, "<0.15")
+    .fromTo("#decoup", { opacity: 0 }, { opacity: 1, duration: 0.35 });
+  DECK.markStep(tl);
+
+  // beat 3: what it buys, what it costs — pools run different EP/batching
+  tl.fromTo("#bene", { opacity: 0, y: 10 }, { opacity: 1, y: 0, duration: 0.45, ease: "power2.out" })
+    .fromTo(".epchip", { opacity: 0 }, { opacity: 1, duration: 0.4, stagger: 0.12 })
+    .fromTo("#cost", { opacity: 0, y: 8 }, { opacity: 1, y: 0, duration: 0.4 })
+    .to("#pipe", { borderColor: "rgba(224,75,56,0.75)", duration: 0.25, yoyo: true, repeat: 3 }, "<");
+  DECK.markStep(tl);
+
+  // beat 4: the payoff — a cached prompt skips prefill; the $0.30 line explained
+  tl.fromTo("#cache", { opacity: 0, y: -8 }, { opacity: 1, y: 0, duration: 0.4, ease: "power2.out" })
+    .fromTo(tok2, { opacity: 0 }, { opacity: 1, duration: 0.25 })
+    .add(pathTween(tok2, [[30, 470], [240, 452], [420, 400], [560, 330], [640, 310]], 0.9))
+    .to("#cache", { boxShadow: "0 0 20px rgba(144,133,233,0.8)", duration: 0.22, yoyo: true, repeat: 3 })
+    .add(pathTween(tok2, [[640, 310], [700, 330], [760, 362], [810, 368]], 0.5))
+    .add(pathTween(tok2, [[810, 368], [980, 392], [1140, 414], [1195, 424]], 0.7))
+    .to(dGpus, { boxShadow: "0 0 14px rgba(47,214,176,0.7)", duration: 0.18, yoyo: true, repeat: 1 }, "<")
+    .fromTo("#pay", { opacity: 0, y: 12 }, { opacity: 1, y: 0, duration: 0.5, ease: "power2.out" })
+    .to(tok, { boxShadow: "0 0 20px rgba(47,214,176,1), 0 0 44px rgba(47,214,176,0.6)", duration: 0.4, yoyo: true, repeat: 1 }, "<");
+
+  DECK.register(tl, {
+    reset: function () {
+      streamLoop.pause(0);
+      odots.forEach(function (o) { gsap.set(o, { opacity: 0 }); });
+      gsap.set(tok, { left: 30, top: 380, boxShadow: "0 0 12px rgba(47,214,176,0.95), 0 0 30px rgba(47,214,176,0.5)" });
+      gsap.set(tok2, { left: 30, top: 470 });
+      tails.forEach(function (t, i) { gsap.set(t, { left: 12 - i * 12, top: 380, opacity: 0 }); });
+      gsap.set("#parcel", { left: 470, top: 368 });
+    }
+  });
+</script>
+</body>
+</html>

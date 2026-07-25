@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Prefill–Decode Disaggregation</title>
+<link rel="stylesheet" href="shared/deck.css?v=3">
+<link rel="stylesheet" href="shared/bottlenecks.css?v=3">
+<style>
+  #honesty { position: absolute; left: 44px; top: 100px; width: 1160px; font-size: 11.5px; font-style: italic; color: var(--ink-2); opacity: 0; }
+
+  .rchip {
+    position: absolute; top: 130px; font: 700 11px ui-monospace, monospace;
+    border: 1.5px solid; border-radius: 999px; padding: 4px 12px;
+    background: rgba(11,13,18,0.9); opacity: 0; white-space: nowrap;
+  }
+  #rc-p { left: 44px; color: #6fb1ff; border-color: rgba(111,177,255,0.7); }
+  #rc-d { left: 300px; color: var(--accent); border-color: rgba(47,214,176,0.7); }
+
+  /* ---- one serving pool (before) ---- */
+  #mono {
+    position: absolute; left: 390px; top: 178px; width: 500px; height: 270px;
+    border: 1.5px solid var(--line); border-radius: 16px; background: rgba(27,30,39,0.45); opacity: 0;
+  }
+  #mono .ml { position: absolute; left: 16px; top: 10px; font-size: 10.5px; color: var(--ink-2); letter-spacing: 0.08em; }
+  #mono .mgrid { position: absolute; left: 24px; top: 40px; right: 24px; bottom: 20px; display: grid; gap: 12px; grid-template-columns: repeat(4, 1fr); }
+  .mg {
+    border: 1.5px solid var(--line); border-radius: 10px; background: #0d1420;
+    display: flex; align-items: center; justify-content: center;
+    font: 800 17px ui-monospace, monospace;
+  }
+  .mg.p { color: #6fb1ff; } .mg.d { color: #2fd6b0; }
+  #problab { position: absolute; left: 390px; top: 456px; width: 500px; text-align: center; font-size: 10.5px; color: #9aa1b5; line-height: 1.4; opacity: 0; }
+
+  /* ---- the two pools (after) ---- */
+  .pool { position: absolute; top: 178px; width: 440px; height: 280px; border-radius: 16px; background: rgba(27,30,39,0.45); opacity: 0; }
+  #ppool { left: 84px; border: 2px solid rgba(111,177,255,0.6); }
+  #dpool { left: 756px; border: 2px solid rgba(47,214,176,0.6); }
+  .pool .pl { position: absolute; left: 14px; top: 9px; font: 700 10.5px ui-monospace, monospace; letter-spacing: 0.05em; }
+  #ppool .pl { color: #6fb1ff; } #dpool .pl { color: var(--accent); }
+  .pool .pgrid { position: absolute; left: 20px; top: 34px; right: 20px; height: 158px; display: grid; gap: 10px; grid-template-columns: 1fr 1fr; }
+  .pg { position: relative; border: 1.5px solid var(--line); border-radius: 10px; background: #0d1420; }
+  .pg .bar { position: absolute; left: 10px; top: 10px; right: 10px; height: 8px; border-radius: 3px; }
+  #ppool .pg .bar { background: linear-gradient(90deg, rgba(57,135,229,0.4), #3987e5); }
+  #dpool .pg .bar { background: linear-gradient(90deg, rgba(47,214,176,0.4), #2fd6b0); }
+  .pg .gl { position: absolute; left: 10px; bottom: 7px; font: 600 8.5px ui-monospace, monospace; color: #6b7284; }
+  #ppool.work .pg { border-color: rgba(111,177,255,0.7); box-shadow: 0 0 12px rgba(111,177,255,0.3); }
+  #ppool.work .pg .bar { animation: pWork 0.9s ease-in-out infinite; }
+  #dpool.work .pg { border-color: rgba(47,214,176,0.7); box-shadow: 0 0 12px rgba(47,214,176,0.3); }
+  #dpool.work .pg .bar { animation: pWork 0.7s ease-in-out infinite; }
+  @keyframes pWork { 50% { opacity: 0.4; } }
+
+  /* gauges inside pools */
+  .gauge { position: absolute; left: 20px; bottom: 14px; right: 20px; display: flex; align-items: center; gap: 8px; opacity: 0; }
+  .gauge .gn { font: 700 10px ui-monospace, monospace; width: 36px; }
+  #ppool .gauge .gn { color: #6fb1ff; } #dpool .gauge .gn { color: var(--accent); }
+  .gauge .gt { flex: 1; height: 10px; border: 1px solid var(--line); border-radius: 5px; overflow: hidden; background: rgba(11,13,18,0.6); }
+  .gauge .gf { height: 100%; transform-origin: left; }
+  #ppool .gf { background: linear-gradient(90deg, rgba(57,135,229,0.4), #3987e5); animation: g1 2.4s ease-in-out infinite; }
+  #dpool .gf { background: linear-gradient(90deg, rgba(47,214,176,0.4), #2fd6b0); animation: g2 1.5s ease-in-out infinite; }
+  @keyframes g1 { 0%, 100% { transform: scaleX(0.55); } 50% { transform: scaleX(0.72); } }
+  @keyframes g2 { 0%, 100% { transform: scaleX(0.62); } 50% { transform: scaleX(0.8); } }
+  .gauge .gd { font: 600 8.5px ui-monospace, monospace; color: #6b7284; }
+
+  /* interconnect between pools */
+  #xpipe {
+    position: absolute; left: 540px; top: 302px; width: 200px; height: 20px;
+    border: 2px solid rgba(144,133,233,0.65); border-radius: 10px; overflow: hidden; opacity: 0;
+  }
+  #xpipe i {
+    position: absolute; top: 4px; width: 7px; height: 7px; border-radius: 50%;
+    background: #9085e9; animation: xFlow 1.4s linear infinite;
+  }
+  #xpipe i:nth-child(2) { animation-delay: 0.47s; }
+  #xpipe i:nth-child(3) { animation-delay: 0.94s; }
+  @keyframes xFlow { from { left: -9px; } to { left: 208px; } }
+  #xlab { position: absolute; left: 540px; top: 328px; width: 200px; text-align: center; font: 700 9.5px ui-monospace, monospace; color: #9085e9; opacity: 0; }
+  #declab { position: absolute; left: 540px; top: 262px; width: 200px; text-align: center; font: 600 9.5px ui-monospace, monospace; color: var(--ink-2); opacity: 0; }
+
+  /* travellers */
+  #prompt {
+    position: absolute; left: 6px; top: 300px; font: 700 10px ui-monospace, monospace;
+    color: #0b0d12; background: #6fb1ff; border-radius: 5px; padding: 3px 8px; opacity: 0; z-index: 12;
+  }
+  #parcel {
+    position: absolute; left: 490px; top: 296px; font: 800 11px ui-monospace, monospace;
+    color: #0b0d12; background: #9085e9; border-radius: 6px; padding: 4px 9px; opacity: 0; z-index: 12;
+  }
+  #outstream { position: absolute; left: 1198px; top: 296px; width: 78px; height: 20px; opacity: 0; }
+  #outstream i { position: absolute; top: 6px; width: 8px; height: 8px; border-radius: 50%; background: #2fd6b0; box-shadow: 0 0 8px rgba(47,214,176,0.7); }
+  #outstream.on i { animation: oFly 1.1s linear infinite; }
+  #outstream i:nth-child(2) { animation-delay: 0.37s; }
+  #outstream i:nth-child(3) { animation-delay: 0.74s; }
+  @keyframes oFly { from { left: -6px; opacity: 1; } to { left: 80px; opacity: 0.2; } }
+
+  /* benefits + cost */
+  .ben {
+    position: absolute; top: 508px; background: var(--panel); border: 1px solid var(--line);
+    border-radius: 999px; padding: 5px 13px; font: 600 10.5px ui-monospace, monospace; color: #c7cce0; opacity: 0; white-space: nowrap;
+  }
+  #ben0 { left: 44px; } #ben1 { left: 290px; } #ben2 { left: 706px; }
+  #cost { position: absolute; left: 44px; top: 552px; width: 880px; font-size: 11.5px; font-weight: 600; color: #e04b38; opacity: 0; }
+
+  /* the payoff card */
+  #pay {
+    position: absolute; left: 980px; top: 494px; width: 256px; height: 132px;
+    background: var(--panel); border: 1.5px solid var(--accent); border-radius: 12px;
+    padding: 9px 12px; box-shadow: 0 0 18px rgba(47,214,176,0.2); opacity: 0;
+  }
+  #pay .q2 { font: 700 9.5px ui-monospace, monospace; color: var(--accent); letter-spacing: 0.05em; }
+  #pay .qt { margin-top: 3px; font-size: 9.5px; font-style: italic; color: #9aa1b5; line-height: 1.3; }
+  #pay .stamps { margin-top: 8px; display: flex; align-items: baseline; gap: 9px; }
+  #pay .miss { font: 600 13px ui-monospace, monospace; color: #8a91a5; }
+  #pay .arr { color: #6b7284; font-size: 11px; }
+  #pay .hit { font: 800 23px ui-monospace, monospace; color: var(--accent); }
+  #pay .x10 {
+    font: 700 10px ui-monospace, monospace; color: #0b0d12; background: var(--accent);
+    border-radius: 999px; padding: 1px 7px;
+  }
+
+  /* cached-prefix bypass */
+  #bypass { position: absolute; inset: 0; pointer-events: none; }
+  #bypath { fill: none; stroke: rgba(47,214,176,0.7); stroke-width: 2; stroke-dasharray: 1; stroke-dashoffset: 1; }
+  #bydot { position: absolute; left: 20px; top: 476px; width: 10px; height: 10px; border-radius: 50%; background: #2fd6b0; box-shadow: 0 0 10px rgba(47,214,176,0.8); opacity: 0; z-index: 12; }
+  #bylab { position: absolute; left: 200px; top: 486px; font: 700 10.5px ui-monospace, monospace; color: var(--accent); opacity: 0; }
+
+  #cachetxt { position: absolute; left: 44px; top: 636px; width: 1000px; font-size: 12px; font-weight: 600; color: var(--accent); line-height: 1.45; opacity: 0; }
+  #vllm { position: absolute; left: 44px; top: 676px; width: 1000px; font-size: 10px; font-style: italic; color: var(--ink-2); opacity: 0; }
+</style>
+</head>
+<body>
+<div class="stage">
+  <div class="slide-title">Prefill–Decode Disaggregation</div>
+  <div class="slide-sub">the rack splits into two pools — and the rate card's cache discount falls out</div>
+
+  <div id="honesty"></div>
+  <div class="rchip" id="rc-p"></div>
+  <div class="rchip" id="rc-d"></div>
+
+  <div id="mono">
+    <span class="ml">ONE SERVING POOL — BOTH PHASES</span>
+    <div class="mgrid">
+      <div class="mg p">P</div><div class="mg d">D</div><div class="mg d">D</div><div class="mg p">P</div>
+      <div class="mg d">D</div><div class="mg p">P</div><div class="mg d">D</div><div class="mg d">D</div>
+    </div>
+  </div>
+  <div id="problab"></div>
+
+  <div class="pool" id="ppool">
+    <span class="pl">P POOL — PREFILL</span>
+    <div class="pgrid">
+      <div class="pg"><div class="bar"></div><span class="gl">prefill worker</span></div>
+      <div class="pg"><div class="bar"></div><span class="gl">prefill worker</span></div>
+      <div class="pg"><div class="bar"></div><span class="gl">prefill worker</span></div>
+      <div class="pg"><div class="bar"></div><span class="gl">prefill worker</span></div>
+    </div>
+    <div class="gauge"><span class="gn">TTFT</span><div class="gt"><div class="gf"></div></div><span class="gd">tuned alone</span></div>
+  </div>
+  <div class="pool" id="dpool">
+    <span class="pl">D POOL — DECODE</span>
+    <div class="pgrid">
+      <div class="pg"><div class="bar"></div><span class="gl">decode worker</span></div>
+      <div class="pg"><div class="bar"></div><span class="gl">decode worker</span></div>
+      <div class="pg"><div class="bar"></div><span class="gl">decode worker</span></div>
+      <div class="pg"><div class="bar"></div><span class="gl">decode worker</span></div>
+    </div>
+    <div class="gauge"><span class="gn">TPOT</span><div class="gt"><div class="gf"></div></div><span class="gd">tuned alone</span></div>
+  </div>
+
+  <div id="declab">latency targets decouple</div>
+  <div id="xpipe"><i></i><i></i><i></i></div>
+  <div id="xlab">KV cache parcel &rarr;</div>
+
+  <div id="prompt">prompt</div>
+  <div id="parcel">KV</div>
+  <div id="outstream"><i></i><i></i><i></i></div>
+
+  <div class="ben" id="ben0"></div>
+  <div class="ben" id="ben1"></div>
+  <div class="ben" id="ben2"></div>
+  <div id="cost"></div>
+
+  <div id="pay">
+    <div class="q2">RATE CARD · QUESTION 2</div>
+    <div class="qt"></div>
+    <div class="stamps">
+      <span class="miss"></span><span class="arr">&rarr;</span><span class="hit"></span><span class="x10"></span>
+    </div>
+  </div>
+
+  <svg id="bypass" width="1280" height="720">
+    <path id="bypath" pathLength="1" d="M 24 481 C 300 496, 560 486, 750 440 C 790 430, 810 410, 830 390"/>
+  </svg>
+  <div id="bydot"></div>
+  <div id="bylab">cached prefix — skips prefill entirely</div>
+
+  <div id="cachetxt"></div>
+  <div id="vllm"></div>
+</div>
+
+<script src="../vendor/gsap.min.js"></script>
+<script src="shared/moe.js?v=3"></script>
+<script src="shared/pricing.js?v=3"></script>
+<script src="shared/manifest.js?v=3"></script>
+<script src="shared/deck.js?v=3"></script>
+<script>
+  // ---- static content ----
+  document.getElementById("honesty").textContent = MOE.pd.honesty;
+  document.getElementById("rc-p").textContent = MOE.pd.recap[0].join(" · ");
+  document.getElementById("rc-d").textContent = MOE.pd.recap[1].join(" · ");
+  document.getElementById("problab").textContent = MOE.pd.problem;
+  MOE.pd.benefits.forEach(function (b, i) { document.getElementById("ben" + i).textContent = b; });
+  document.getElementById("cost").textContent = MOE.pd.cost;
+  document.getElementById("cachetxt").textContent = MOE.pd.cache;
+  document.getElementById("vllm").textContent = MOE.pd.vllm;
+
+  var k3p = PRICING.models[0];
+  document.querySelector("#pay .qt").textContent = PRICING.questions[1];
+  document.querySelector("#pay .miss").textContent = PRICING.fmt$(k3p.input) + " miss";
+  document.querySelector("#pay .hit").textContent = PRICING.fmt$(k3p.cached);
+  document.querySelector("#pay .x10").textContent = Math.round(k3p.input / k3p.cached) + "×";
+
+  // ---- DOM mutators ----
+  var pp = document.getElementById("ppool"), dp = document.getElementById("dpool");
+  var outs = document.getElementById("outstream");
+  function work(el, on) { el.classList.toggle("work", on); }
+  function streamOn(on) { outs.classList.toggle("on", on); }
+
+  // ---- timeline: 4 beats ----
+  var tl = gsap.timeline({ paused: true });
+
+  // beat 1: honesty first — the two phases, still sharing one pool
+  tl.fromTo("#honesty", { opacity: 0, y: -6 }, { opacity: 1, y: 0, duration: 0.4 })
+    .fromTo("#rc-p", { opacity: 0, scale: 0.7 }, { opacity: 1, scale: 1, duration: 0.35, ease: "back.out(1.8)" })
+    .fromTo("#rc-d", { opacity: 0, scale: 0.7 }, { opacity: 1, scale: 1, duration: 0.35, ease: "back.out(1.8)" }, "<0.12")
+    .fromTo("#mono", { opacity: 0, scale: 0.92 }, { opacity: 1, scale: 1, duration: 0.5, ease: "power2.out" })
+    .fromTo(".mg", { opacity: 0 }, { opacity: 1, duration: 0.25, stagger: 0.05 }, "-=0.2")
+    .fromTo("#problab", { opacity: 0, y: 6 }, { opacity: 1, y: 0, duration: 0.4 });
+  DECK.markStep(tl);
+
+  // beat 2: the split — P pool, D pool, and a KV parcel over the wire
+  tl.to("#mono", { opacity: 0, scale: 0.9, duration: 0.4, ease: "power2.in" })
+    .to("#problab", { opacity: 0, duration: 0.3 }, "<")
+    .fromTo("#ppool", { opacity: 0, x: 60 }, { opacity: 1, x: 0, duration: 0.5, ease: "power2.out" })
+    .fromTo("#dpool", { opacity: 0, x: -60 }, { opacity: 1, x: 0, duration: 0.5, ease: "power2.out" }, "<")
+    .fromTo("#xpipe", { opacity: 0 }, { opacity: 1, duration: 0.35 })
+    .fromTo("#xlab", { opacity: 0 }, { opacity: 1, duration: 0.3 }, "<0.1")
+    .fromTo("#prompt", { opacity: 0 }, { opacity: 1, duration: 0.2 })
+    .to("#prompt", { left: 150, top: 254, duration: 0.6, ease: "power1.inOut" })
+    .call(function () { work(pp, true); })
+    .to("#prompt", { opacity: 0, duration: 0.25 })
+    .fromTo("#parcel", { opacity: 0 }, { opacity: 1, duration: 0.2 })
+    .to("#parcel", { left: 764, duration: 0.9, ease: "power1.inOut" })
+    .call(function () { work(dp, true); streamOn(true); })
+    .to("#parcel", { opacity: 0, duration: 0.25 })
+    .fromTo("#outstream", { opacity: 0 }, { opacity: 1, duration: 0.3 }, "<")
+    .fromTo("#ppool .gauge", { opacity: 0, y: 6 }, { opacity: 1, y: 0, duration: 0.35 })
+    .fromTo("#dpool .gauge", { opacity: 0, y: 6 }, { opacity: 1, y: 0, duration: 0.35 }, "<0.1")
+    .fromTo("#declab", { opacity: 0 }, { opacity: 1, duration: 0.35 });
+  DECK.markStep(tl);
+
+  // beat 3: what it buys — and what it costs
+  tl.fromTo("#ben0", { opacity: 0, y: 10 }, { opacity: 1, y: 0, duration: 0.35, ease: "power2.out" })
+    .fromTo("#ben1", { opacity: 0, y: 10 }, { opacity: 1, y: 0, duration: 0.35, ease: "power2.out" }, "<0.12")
+    .fromTo("#ben2", { opacity: 0, y: 10 }, { opacity: 1, y: 0, duration: 0.35, ease: "power2.out" }, "<0.12")
+    .fromTo("#cost", { opacity: 0, y: 8 }, { opacity: 1, y: 0, duration: 0.45 });
+  DECK.markStep(tl);
+
+  // beat 4: the payoff — the $0.30 / $3.00 gap is this architecture showing through
+  tl.fromTo("#pay", { opacity: 0, y: 14 }, { opacity: 1, y: 0, duration: 0.45, ease: "power2.out" })
+    .fromTo("#bypath", { strokeDashoffset: 1 }, { strokeDashoffset: 0, duration: 0.8, ease: "power2.inOut" })
+    .fromTo("#bydot", { opacity: 0 }, { opacity: 1, duration: 0.15 }, "-=0.8")
+    .to("#bydot", { left: 560, top: 478, duration: 0.45, ease: "power1.in" }, "<")
+    .to("#bydot", { left: 820, top: 392, duration: 0.45, ease: "power1.out" })
+    .to("#bydot", { opacity: 0, duration: 0.2 })
+    .fromTo("#bylab", { opacity: 0 }, { opacity: 1, duration: 0.35 }, "-=0.5")
+    .fromTo("#pay .hit", { scale: 1.35 }, { scale: 1, duration: 0.4, ease: "back.out(2)" })
+    .fromTo("#cachetxt", { opacity: 0, y: 8 }, { opacity: 1, y: 0, duration: 0.45 })
+    .fromTo("#vllm", { opacity: 0 }, { opacity: 1, duration: 0.4 });
+
+  DECK.register(tl, {
+    reset: function () {
+      work(pp, false); work(dp, false); streamOn(false);
+    }
+  });
+</script>
+</body>
+</html>

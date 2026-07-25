@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The MoE Evolution: Finer, Sparser, Shared</title>
+<link rel="stylesheet" href="shared/deck.css?v=3">
+<link rel="stylesheet" href="shared/bottlenecks.css?v=3">
+<style>
+  /* ---- the package again — HBM is the hero now ---- */
+  #machine { position: absolute; inset: 0; opacity: 0.13; filter: grayscale(0.9); }
+  #pkg {
+    position: absolute; left: 44px; top: 112px; width: 530px; height: 496px;
+    border: 1.5px solid var(--line); border-radius: 18px; background: rgba(27,30,39,0.45);
+  }
+  #pkg .pkglab { position: absolute; left: 14px; top: 8px; font-size: 10.5px; color: var(--ink-2); letter-spacing: 0.08em; }
+
+  #hbm {
+    position: absolute; left: 70px; top: 146px; width: 478px; height: 434px;
+    border: 2px solid rgba(201,133,0,0.7); border-radius: 8px;
+  }
+  #hbm .hlab { position: absolute; top: 10px; right: 12px; font-size: 10px; color: #e0a935; font-weight: 700; }
+
+  #shared {
+    position: absolute; left: 14px; top: 12px; width: 380px; height: 24px;
+    border: 1.5px solid rgba(47,214,176,0.35); border-radius: 6px;
+    display: flex; align-items: center; justify-content: center;
+    font: 700 10px ui-monospace, monospace; color: rgba(47,214,176,0.5); opacity: 0;
+  }
+  #shared.live {
+    border-color: var(--accent); color: var(--accent);
+    background: rgba(47,214,176,0.1);
+    box-shadow: 0 0 14px rgba(47,214,176,0.35);
+    animation: shGlow 1.8s ease-in-out infinite;
+  }
+  @keyframes shGlow { 50% { box-shadow: 0 0 4px rgba(47,214,176,0.15); } }
+
+  #grid {
+    position: absolute; left: 14px; top: 46px; width: 450px; height: 352px;
+    display: grid;
+  }
+  .gc {
+    background: linear-gradient(rgba(201,133,0,0.35), rgba(201,133,0,0.6));
+    border-radius: 2px;
+  }
+  #grid.sparse .gc { opacity: 0.18; }
+  #grid.sparse .gc.lit {
+    opacity: 1; background: linear-gradient(rgba(224,169,53,0.8), #e0a935);
+    box-shadow: 0 0 7px rgba(224,169,53,0.6);
+    animation: litGlow 1.6s ease-in-out infinite;
+  }
+  @keyframes litGlow { 50% { box-shadow: 0 0 2px rgba(224,169,53,0.2); } }
+  #gridlab { position: absolute; left: 0; top: 404px; width: 100%; text-align: center; font: 600 10.5px ui-monospace, monospace; color: #e0a935; }
+
+  /* ---- the sparsity race (right column) ---- */
+  .erow { position: absolute; left: 610px; width: 626px; opacity: 0; }
+  #er-v3 { top: 118px; } #er-k2 { top: 240px; } #er-k3 { top: 362px; }
+  .ehead { display: flex; align-items: baseline; gap: 10px; }
+  .ehead b { font-size: 14.5px; }
+  .ehead .eyr { font: 600 10.5px ui-monospace, monospace; color: #6b7284; }
+  .ehead .ecfg { font: 600 10.5px ui-monospace, monospace; color: #9aa1b5; }
+  .ehead .eact { margin-left: auto; font: 700 10.5px ui-monospace, monospace; color: #c7cce0; }
+  .ebar { display: flex; align-items: center; gap: 8px; margin-top: 6px; height: 15px; }
+  .ebar .ebl { width: 74px; flex: none; font: 600 9.5px ui-monospace, monospace; color: #6b7284; text-align: right; }
+  .ebar .et { width: 452px; flex: none; height: 13px; border: 1px solid var(--line); border-radius: 4px; background: rgba(11,13,18,0.5); }
+  .ebar .ef { height: 100%; border-radius: 3px; transform-origin: left; }
+  .ebar .ef.amber { background: linear-gradient(90deg, rgba(201,133,0,0.4), #e0a935); }
+  .ebar .ef.blue { background: linear-gradient(90deg, rgba(57,135,229,0.4), #3987e5); }
+  .ebar .ev { font: 700 11px ui-monospace, monospace; color: #c7cce0; white-space: nowrap; }
+
+  #k3tag {
+    position: absolute; left: 610px; top: 466px; font: 700 11.5px ui-monospace, monospace;
+    color: var(--accent); border: 1.5px solid var(--accent); border-radius: 999px;
+    padding: 3px 10px; background: rgba(11,13,18,0.9);
+    box-shadow: 0 0 14px rgba(47,214,176,0.3); opacity: 0;
+  }
+  #actrate { position: absolute; left: 810px; top: 464px; width: 426px; font: 800 17px ui-monospace, monospace; color: var(--accent); opacity: 0; }
+
+  /* ---- three axes + interpretation ---- */
+  .axchip {
+    position: absolute; top: 622px; width: 380px; height: 42px;
+    background: var(--panel); border: 1px solid var(--line); border-radius: 10px;
+    padding: 6px 12px; opacity: 0;
+  }
+  .axchip .an { font: 700 11.5px ui-monospace, monospace; color: #e0a935; }
+  .axchip .ah { font-size: 9.5px; color: #9aa1b5; margin-top: 1px; }
+  #ax0 { left: 44px; } #ax1 { left: 438px; } #ax1 .an { color: var(--accent); } #ax2 { left: 832px; width: 404px; }
+  #interp { position: absolute; left: 44px; top: 678px; width: 1192px; font-size: 13.5px; font-weight: 700; color: var(--accent); opacity: 0; }
+</style>
+</head>
+<body>
+<div class="stage">
+  <div class="slide-title">The MoE Evolution: Finer, Sparser, Shared</div>
+  <div class="slide-sub">the expert grid lives in HBM — capacity soars while the per-token bill stands still</div>
+
+  <div id="machine">
+    <div id="pkg"><span class="pkglab">GPU PACKAGE</span></div>
+    <div id="hbm">
+      <span class="hlab">HBM</span>
+      <div id="shared">shared expert — always on</div>
+      <div id="grid"></div>
+      <div id="gridlab">one MoE layer — expert weights in HBM</div>
+    </div>
+  </div>
+
+  <div class="erow" id="er-v3"></div>
+  <div class="erow" id="er-k2"></div>
+  <div class="erow" id="er-k3"></div>
+  <div id="k3tag"></div>
+  <div id="actrate"></div>
+
+  <div class="axchip" id="ax0"><div class="an"></div><div class="ah">split each expert into many small ones — more combinations</div></div>
+  <div class="axchip" id="ax1"><div class="an"></div><div class="ah">one always-on expert carries common knowledge</div></div>
+  <div class="axchip" id="ax2"><div class="an"></div><div class="ah">more routed experts, near-constant active</div></div>
+  <div id="interp"></div>
+</div>
+
+<script src="../vendor/gsap.min.js"></script>
+<script src="shared/moe.js?v=3"></script>
+<script src="shared/manifest.js?v=3"></script>
+<script src="shared/deck.js?v=3"></script>
+<script>
+  // ---- static content ----
+  for (var a = 0; a < 3; a++)
+    document.querySelector("#ax" + a + " .an").textContent = MOE.axes[a][0];
+  document.getElementById("interp").textContent = MOE.interp;
+  document.getElementById("k3tag").textContent = MOE.evo[2].label;
+  document.getElementById("actrate").textContent = MOE.k3rate;
+
+  // ---- the race rows, from MOE.evo ----
+  function fmtT(b) { return b >= 1000 ? (b / 1000).toString().replace(/^1$/, "1") + "T" : b + "B"; }
+  var TOTW = 452, MAXT = MOE.evo[2].total;
+  MOE.evo.forEach(function (m) {
+    var act = (m.topk / m.routed * 100).toFixed(1);
+    var row = document.getElementById("er-" + m.key);
+    row.innerHTML =
+      '<div class="ehead"><b style="color:' + m.color + '">' + m.name + "</b>" +
+      '<span class="eyr">' + m.year + "</span>" +
+      '<span class="ecfg">' + m.routed + " routed · top-" + m.topk + " · +" + m.shared + " shared</span>" +
+      '<span class="eact">' + m.topk + " / " + m.routed + " &asymp; " + act + "%</span></div>" +
+      '<div class="ebar"><span class="ebl">total</span><div class="et"><div class="ef amber" style="width:' +
+        Math.round(m.total / MAXT * TOTW) + 'px"></div></div><span class="ev">' + fmtT(m.total) + "</span></div>" +
+      '<div class="ebar"><span class="ebl">active ×10</span><div class="et"><div class="ef blue" style="width:' +
+        Math.round(m.active * 10 / MAXT * TOTW) + 'px"></div></div><span class="ev">' + m.active + "B</span></div>";
+  });
+
+  // ---- the expert grid in HBM ----
+  var grid = document.getElementById("grid");
+  var gridlab = document.getElementById("gridlab");
+  function scatter(n, count) {
+    var out = [], seen = {}, i = 1;
+    while (out.length < count) {
+      var v = Math.floor(((i * 0.6180339887) % 1) * n);
+      if (!seen[v]) { seen[v] = 1; out.push(v); }
+      i++;
+    }
+    return out;
+  }
+  function buildGrid(n, cols, litCount, gap) {
+    grid.innerHTML = "";
+    grid.style.gridTemplateColumns = "repeat(" + cols + ", 1fr)";
+    grid.style.gap = gap + "px";
+    var lit = litCount ? scatter(n, litCount) : [];
+    for (var i = 0; i < n; i++) {
+      var d = document.createElement("div");
+      d.className = "gc" + (lit.indexOf(i) >= 0 ? " lit" : "");
+      grid.appendChild(d);
+    }
+    grid.classList.toggle("sparse", litCount > 0);
+  }
+  function setLab(t) { gridlab.textContent = t; }
+  function initGrid() { buildGrid(8, 4, 0, 10); setLab("one MoE layer — expert weights in HBM"); }
+  initGrid();
+  var sharedBar = document.getElementById("shared");
+  function sharedOn(on) { sharedBar.classList.toggle("live", on); }
+
+  // ---- timeline: 4 beats ----
+  var tl = gsap.timeline({ paused: true });
+
+  // beat 1: three axes — the grid subdivides, one expert locks on, sparsity bites
+  tl.to("#machine", { opacity: 1, filter: "grayscale(0)", duration: 0.6, ease: "power2.out" })
+    .fromTo("#ax0", { opacity: 0, y: 12 }, { opacity: 1, y: 0, duration: 0.4, ease: "power2.out" })
+    .call(function () { buildGrid(64, 8, 0, 6); setLab("finer: 8 coarse experts → 64 small ones"); })
+    .fromTo("#grid", { opacity: 0.25 }, { opacity: 1, duration: 0.5 })
+    .fromTo("#ax1", { opacity: 0, y: 12 }, { opacity: 1, y: 0, duration: 0.4, ease: "power2.out" })
+    .fromTo("#shared", { opacity: 0 }, { opacity: 1, duration: 0.3 })
+    .call(function () { sharedOn(true); })
+    .to({}, { duration: 0.3 })
+    .fromTo("#ax2", { opacity: 0, y: 12 }, { opacity: 1, y: 0, duration: 0.4, ease: "power2.out" })
+    .call(function () { buildGrid(64, 8, 8, 6); setLab("sparser: 8 of 64 wake per token"); })
+    .fromTo("#grid", { opacity: 0.4 }, { opacity: 1, duration: 0.5, immediateRender: false });
+  DECK.markStep(tl);
+
+  // beat 2: the race begins — DeepSeek-V3, then Kimi K2
+  tl.fromTo("#er-v3", { opacity: 0, x: 20 }, { opacity: 1, x: 0, duration: 0.45, ease: "power2.out" })
+    .call(function () { buildGrid(MOE.evo[0].routed, 16, MOE.evo[0].topk, 4); setLab(MOE.evo[0].name + " — " + MOE.evo[0].routed + " routed experts"); })
+    .fromTo("#grid", { opacity: 0.3 }, { opacity: 1, duration: 0.45, immediateRender: false })
+    .fromTo("#er-v3 .ef", { scaleX: 0 }, { scaleX: 1, duration: 0.55, stagger: 0.1, ease: "power2.out" }, "-=0.3")
+    .to({}, { duration: 0.5 })
+    .fromTo("#er-k2", { opacity: 0, x: 20 }, { opacity: 1, x: 0, duration: 0.45, ease: "power2.out" })
+    .call(function () { buildGrid(MOE.evo[1].routed, 24, MOE.evo[1].topk, 3); setLab(MOE.evo[1].name + " — " + MOE.evo[1].routed + " routed experts"); })
+    .fromTo("#grid", { opacity: 0.3 }, { opacity: 1, duration: 0.45, immediateRender: false })
+    .fromTo("#er-k2 .ef", { scaleX: 0 }, { scaleX: 1, duration: 0.55, stagger: 0.1, ease: "power2.out" }, "-=0.3");
+  DECK.markStep(tl);
+
+  // beat 3: K3 — 896 experts, activation collapses to 1.8%
+  tl.fromTo("#er-k3", { opacity: 0, x: 20 }, { opacity: 1, x: 0, duration: 0.45, ease: "power2.out" })
+    .call(function () { buildGrid(MOE.evo[2].routed, 32, MOE.evo[2].topk, 2); setLab(MOE.evo[2].name + " — " + MOE.evo[2].routed + " routed experts"); })
+    .fromTo("#grid", { opacity: 0.3 }, { opacity: 1, duration: 0.5, immediateRender: false })
+    .fromTo("#er-k3 .ef", { scaleX: 0 }, { scaleX: 1, duration: 0.65, stagger: 0.1, ease: "power2.out" }, "-=0.3")
+    .fromTo("#k3tag", { opacity: 0, scale: 0.6 }, { opacity: 1, scale: 1, duration: 0.4, ease: "back.out(2)" })
+    .fromTo("#actrate", { opacity: 0, y: 8 }, { opacity: 1, y: 0, duration: 0.45, ease: "power2.out" });
+  DECK.markStep(tl);
+
+  // beat 4: what it means
+  tl.fromTo("#interp", { opacity: 0, y: 10 }, { opacity: 1, y: 0, duration: 0.5, ease: "power2.out" });
+
+  DECK.register(tl, {
+    reset: function () {
+      initGrid();
+      sharedOn(false);
+    }
+  });
+</script>
+</body>
+</html>

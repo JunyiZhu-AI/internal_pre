@@ -1,0 +1,370 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>MoE: Conditional Computation</title>
+<link rel="stylesheet" href="shared/deck.css?v=3">
+<link rel="stylesheet" href="shared/bottlenecks.css?v=3">
+<style>
+  /* ---- the GPU-package machine, compact (slides 16-17 language) ---- */
+  #machine { position: absolute; inset: 0; opacity: 0.13; filter: grayscale(0.9); }
+  #pkg {
+    position: absolute; left: 44px; top: 118px; width: 380px; height: 246px;
+    border: 1.5px solid var(--line); border-radius: 18px; background: rgba(27,30,39,0.45);
+  }
+  #pkg .pkglab { position: absolute; left: 14px; top: 8px; font-size: 10.5px; color: var(--ink-2); letter-spacing: 0.08em; }
+
+  #hbm {
+    position: absolute; left: 66px; top: 152px; width: 92px; height: 180px;
+    border: 2px solid rgba(201,133,0,0.7); border-radius: 8px;
+  }
+  #hbm .hlab { position: absolute; bottom: 4px; width: 100%; text-align: center; font-size: 10px; color: #e0a935; font-weight: 700; }
+  #wblock { position: absolute; left: 8px; top: 10px; right: 8px; display: flex; flex-wrap: wrap; gap: 2px; align-content: flex-start; }
+  .wcell {
+    flex: none; width: 32px; height: 11px; border-radius: 2px;
+    background: linear-gradient(rgba(201,133,0,0.45), rgba(201,133,0,0.85));
+    animation: wGlow 2.6s ease-in-out infinite;
+  }
+  .wcell:nth-child(3n) { animation-delay: 0.6s; }
+  .wcell:nth-child(4n) { animation-delay: 1.3s; }
+  @keyframes wGlow { 50% { opacity: 0.55; } }
+  #hbm.all .wcell {
+    animation: none; opacity: 1;
+    background: linear-gradient(rgba(224,169,53,0.75), #e0a935);
+    box-shadow: 0 0 8px rgba(224,169,53,0.45);
+  }
+
+  .pipe {
+    position: absolute; left: 162px; top: 230px; width: 76px; height: 14px;
+    border: 2px solid rgba(47,214,176,0.55); border-radius: 7px; overflow: hidden;
+  }
+  .pipe i {
+    position: absolute; top: 2px; width: 6px; height: 6px; border-radius: 50%;
+    background: #2fd6b0; animation: qFlow 1.1s linear infinite;
+  }
+  .pipe i:nth-child(2) { animation-delay: 0.37s; }
+  .pipe i:nth-child(3) { animation-delay: 0.74s; }
+  @keyframes qFlow { from { left: -8px; } to { left: 84px; } }
+
+  #die {
+    position: absolute; left: 246px; top: 166px; width: 150px; height: 152px;
+    border: 2.5px solid #3987e5; border-radius: 10px; background: #0d1420;
+    animation: bnChipPulse 1.8s ease-in-out infinite;
+  }
+  #die .dlab { position: absolute; bottom: 5px; width: 100%; text-align: center; font-size: 11px; color: #9ec7f5; font-weight: 600; }
+  .tiles {
+    position: absolute; inset: 9px 9px 24px; display: grid; gap: 3px;
+    grid-template-columns: repeat(4, 1fr); grid-template-rows: repeat(5, 1fr);
+  }
+  .tiles i { background: rgba(57,135,229,0.22); border-radius: 2px; animation: smTwinkle 2.6s ease-in-out infinite; }
+  .tiles i:nth-child(3n) { animation-delay: 0.5s; }
+  .tiles i:nth-child(4n) { animation-delay: 1.1s; }
+  @keyframes smTwinkle { 50% { background: rgba(111,177,255,0.6); } }
+
+  .zflash { position: absolute; opacity: 0; pointer-events: none; z-index: 20; border-radius: 12px; }
+  #fl-cap { left: 58px; top: 144px; width: 108px; height: 196px; border: 3px solid #c98500; box-shadow: 0 0 26px rgba(201,133,0,0.8); }
+  #fl-bw { left: 154px; top: 222px; width: 92px; height: 30px; border: 3px solid #2fd6b0; box-shadow: 0 0 26px rgba(47,214,176,0.8); }
+  #fl-comp { left: 240px; top: 160px; width: 162px; height: 164px; border: 3px solid #3987e5; box-shadow: 0 0 26px rgba(57,135,229,0.8); }
+
+  /* projection cone: die -> magnified interior */
+  #proj { position: absolute; inset: 0; pointer-events: none; opacity: 0; }
+  #proj line { stroke: rgba(57,135,229,0.45); stroke-width: 1.5; stroke-dasharray: 5 5; }
+
+  /* ---- the magnified die interior ---- */
+  #dv {
+    position: absolute; left: 470px; top: 116px; width: 766px; height: 322px;
+    border: 2.5px solid rgba(57,135,229,0.8); border-radius: 12px; background: #0d1420; opacity: 0;
+  }
+  #dv .dvlab { position: absolute; left: 12px; top: 8px; font-size: 10.5px; color: var(--ink-2); letter-spacing: 0.08em; }
+
+  #dense {
+    position: absolute; left: 258px; top: 72px; width: 250px; height: 186px;
+    border: 2px solid #3987e5; border-radius: 10px; background: rgba(57,135,229,0.12);
+    display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px;
+  }
+  #dense .dn { font-size: 16px; font-weight: 700; color: #9ec7f5; }
+  #dense .dm { font: 600 11px ui-monospace, monospace; color: #6fb1ff; }
+  #dense .dd { font-size: 10px; color: #9aa1b5; }
+
+  #router {
+    position: absolute; left: 283px; top: 30px; width: 200px; height: 28px;
+    border: 1.5px solid rgba(144,133,233,0.85); border-radius: 999px; background: rgba(11,13,18,0.9);
+    display: flex; align-items: center; justify-content: center;
+    font: 700 11px ui-monospace, monospace; color: #9085e9; opacity: 0;
+  }
+  .rchip {
+    position: absolute; top: 33px; font: 700 10px ui-monospace, monospace;
+    border: 1.5px solid; border-radius: 999px; padding: 2px 8px;
+    background: rgba(11,13,18,0.9); opacity: 0; white-space: nowrap;
+  }
+  #kchip { left: 156px; color: #2fd6b0; border-color: rgba(47,214,176,0.7); }
+  #swchip { left: 494px; color: #8a91a5; border-color: #3a3f4f; }
+
+  #rl { position: absolute; inset: 0; pointer-events: none; opacity: 0; }
+  #rl line { stroke: rgba(144,133,233,0.3); stroke-width: 1.4; transition: stroke 0.3s, stroke-width 0.3s; }
+  #rl line.hot { stroke: #9085e9; stroke-width: 2.5; }
+
+  .ex {
+    position: absolute; top: 120px; width: 80px; height: 150px;
+    border: 1.5px solid rgba(57,135,229,0.5); border-radius: 8px; background: rgba(57,135,229,0.06);
+    opacity: 0;
+  }
+  .ex .xl { position: absolute; top: 7px; width: 100%; text-align: center; font: 700 10px ui-monospace, monospace; color: #9ec7f5; }
+  .ex i { position: absolute; left: 12px; right: 12px; height: 32px; border-radius: 4px; background: rgba(57,135,229,0.22); }
+  .ex .b1 { top: 32px; } .ex .b2 { top: 84px; }
+  .ex.on {
+    border-color: #6fb1ff; background: rgba(111,177,255,0.1);
+    box-shadow: 0 0 18px rgba(111,177,255,0.45);
+  }
+  .ex.on i { background: rgba(111,177,255,0.6); animation: exWork 0.9s ease-in-out infinite; }
+  @keyframes exWork { 50% { opacity: 0.5; } }
+  .ex.off { opacity: 0.3 !important; }
+
+  #mech { position: absolute; left: 0; top: 288px; width: 100%; text-align: center; font: 600 11px ui-monospace, monospace; color: #9aa1b5; opacity: 0; }
+
+  .rdot { position: absolute; width: 10px; height: 10px; border-radius: 50%; background: #2fd6b0; box-shadow: 0 0 10px rgba(47,214,176,0.8); z-index: 12; opacity: 0; }
+
+  /* ---- decouple meters (left column) ---- */
+  #meters { position: absolute; left: 44px; top: 376px; width: 400px; }
+  .mrow { position: absolute; left: 0; width: 100%; opacity: 0; }
+  #mrow-t { top: 0; } #mrow-f { top: 62px; }
+  .mrow .mtop { display: flex; justify-content: space-between; font: 700 11.5px ui-monospace, monospace; margin-bottom: 4px; }
+  .mtrack { height: 13px; border: 1px solid var(--line); border-radius: 6px; background: rgba(11,13,18,0.6); overflow: hidden; }
+  .mfill { height: 100%; border-radius: 5px; transform-origin: left; }
+  #mf-t { background: linear-gradient(90deg, rgba(201,133,0,0.4), #e0a935); transform: scaleX(0.22); }
+  #mf-f { background: linear-gradient(90deg, rgba(57,135,229,0.4), #3987e5); transform: scaleX(0.26); animation: fHold 2.2s ease-in-out infinite; }
+  @keyframes fHold { 50% { opacity: 0.7; } }
+  .mrow .mcap { margin-top: 3px; font-size: 10px; color: #9aa1b5; }
+  #arb { position: absolute; left: 44px; top: 504px; width: 560px; font: 700 12.5px ui-monospace, monospace; color: var(--accent); opacity: 0; }
+
+  /* ---- the two dual framings ---- */
+  #isoflop {
+    position: absolute; left: 640px; top: 452px; width: 170px; height: 140px;
+    background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 9px 11px; opacity: 0;
+  }
+  #isoflop .t { font: 700 10.5px ui-monospace, monospace; color: #9aa1b5; line-height: 1.3; }
+  #isoflop .b { margin-top: 6px; font-size: 10.5px; color: #c7cce0; line-height: 1.35; }
+  #isoflop .e { margin-top: 5px; font-size: 9px; color: #6b7284; line-height: 1.3; }
+  #isoq {
+    position: absolute; left: 822px; top: 452px; width: 414px; height: 140px;
+    background: var(--panel); border: 1.5px solid var(--accent); border-radius: 10px; padding: 9px 12px;
+    box-shadow: 0 0 16px rgba(47,214,176,0.18); opacity: 0;
+  }
+  #isoq .t { font: 700 11px ui-monospace, monospace; color: var(--accent); }
+  .drow { display: flex; align-items: center; gap: 8px; margin-top: 9px; height: 16px; }
+  .drow .dl { width: 158px; flex: none; font: 600 10px ui-monospace, monospace; color: #6fb1ff; text-align: right; }
+  .drow .dl.ghost { color: #8a91a5; }
+  .drow .dbar { height: 11px; border-radius: 3px; transform-origin: left; background: linear-gradient(90deg, rgba(57,135,229,0.4), #3987e5); }
+  .drow .dbar.ghost { background: repeating-linear-gradient(45deg, rgba(138,145,165,0.55) 0 5px, rgba(138,145,165,0.2) 5px 10px); }
+  #dxtag { font: 700 10px ui-monospace, monospace; color: #e04b38; white-space: nowrap; }
+  #isoq .b { margin-top: 9px; font-size: 10px; color: #c7cce0; }
+  #never { position: absolute; left: 640px; top: 600px; width: 596px; font: 600 10.5px ui-monospace, monospace; color: #e04b38; opacity: 0; }
+
+  /* ---- closing lines ---- */
+  #why { position: absolute; left: 44px; top: 630px; width: 1192px; font-size: 15px; font-weight: 700; color: #e0a935; opacity: 0; }
+  #keep { position: absolute; left: 44px; top: 666px; width: 1192px; font-size: 12.5px; font-weight: 600; color: var(--accent); opacity: 0; }
+</style>
+</head>
+<body>
+<div class="stage">
+  <div class="slide-title">MoE: Conditional Computation</div>
+  <div class="slide-sub">inside the die, the FFN unzips — each token pays only for the experts it wakes</div>
+
+  <div id="machine">
+    <div id="pkg"><span class="pkglab">GPU PACKAGE</span></div>
+    <div id="hbm">
+      <div id="wblock"></div>
+      <div class="hlab">HBM</div>
+    </div>
+    <div class="pipe"><i></i><i></i><i></i></div>
+    <div id="die"><div class="dlab">Processor</div></div>
+  </div>
+
+  <svg id="proj" width="1280" height="720">
+    <line x1="396" y1="168" x2="470" y2="122"/>
+    <line x1="396" y1="316" x2="470" y2="432"/>
+  </svg>
+
+  <div id="dv">
+    <span class="dvlab">INSIDE THE DIE — ONE FFN LAYER</span>
+    <svg id="rl" width="761" height="317"></svg>
+    <div id="dense">
+      <div class="dn">dense FFN</div>
+      <div class="dm">d &rarr; 4d &rarr; d</div>
+      <div class="dd">every weight, every token</div>
+    </div>
+    <div id="router">router</div>
+    <div class="rchip" id="kchip">top-2 of 8</div>
+    <div class="rchip" id="swchip">Switch: k = 1</div>
+    <div id="mech"></div>
+  </div>
+
+  <div class="rdot" id="tok" style="left:196px;top:228px"></div>
+  <div class="rdot" id="ta" style="left:848px;top:152px"></div>
+  <div class="rdot" id="tb" style="left:848px;top:152px"></div>
+
+  <div class="zflash" id="fl-cap"></div>
+  <div class="zflash" id="fl-bw"></div>
+  <div class="zflash" id="fl-comp"></div>
+
+  <div id="meters">
+    <div class="mrow" id="mrow-t">
+      <div class="mtop"><span style="color:#e0a935">TOTAL params</span><span style="color:#e0a935">soars &uarr;</span></div>
+      <div class="mtrack"><div class="mfill" id="mf-t"></div></div>
+      <div class="mcap" id="cap-t"></div>
+    </div>
+    <div class="mrow" id="mrow-f">
+      <div class="mtop"><span style="color:#6fb1ff">FLOPs / token</span><span style="color:#6fb1ff">flat &rarr;</span></div>
+      <div class="mtrack"><div class="mfill" id="mf-f"></div></div>
+      <div class="mcap" id="cap-f"></div>
+    </div>
+  </div>
+  <div id="arb"></div>
+
+  <div id="isoflop">
+    <div class="t"></div>
+    <div class="b"></div>
+    <div class="e"></div>
+  </div>
+  <div id="isoq">
+    <div class="t"></div>
+    <div class="drow"><span class="dl" id="dl-moe"></span><div class="dbar" id="db-moe" style="width:37px"></div></div>
+    <div class="drow"><span class="dl ghost" id="dl-dense"></span><div class="dbar ghost" id="db-dense" style="width:200px"></div><span id="dxtag"></span></div>
+    <div class="b"></div>
+  </div>
+  <div id="never"></div>
+
+  <div id="why"></div>
+  <div id="keep"></div>
+</div>
+
+<script src="../vendor/gsap.min.js"></script>
+<script src="shared/moe.js?v=3"></script>
+<script src="shared/manifest.js?v=3"></script>
+<script src="shared/deck.js?v=3"></script>
+<script>
+  // ---- static content from shared data ----
+  document.getElementById("mech").textContent = MOE.mech;
+  document.getElementById("cap-t").textContent = MOE.decouple.quality;
+  document.getElementById("cap-f").textContent = MOE.decouple.flops;
+  document.getElementById("arb").textContent = MOE.decouple.arb;
+  document.querySelector("#isoflop .t").textContent = MOE.dual.isoFlop[0];
+  document.querySelector("#isoflop .b").textContent = MOE.dual.isoFlop[1];
+  document.querySelector("#isoflop .e").textContent = MOE.dual.isoFlop[2];
+  document.querySelector("#isoq .t").textContent = MOE.dual.isoQuality[0];
+  document.querySelector("#isoq .b").textContent = MOE.dual.isoQuality[2];
+  document.getElementById("dl-moe").textContent = "Mixtral 8×7B · " + MOE.mixtral.active + "B active";
+  document.getElementById("dl-dense").textContent = "Llama-2-" + MOE.mixtral.dense + "B dense · ghost";
+  document.getElementById("dxtag").textContent = MOE.mixtral.ratio + " FLOPs/token";
+  document.getElementById("never").textContent = MOE.dual.never;
+  document.getElementById("why").textContent = MOE.whyEveryone;
+  document.getElementById("keep").textContent = MOE.keepBoth;
+
+  // machine furniture
+  var wblock = document.getElementById("wblock");
+  for (var i = 0; i < 12; i++) { var c = document.createElement("i"); c.className = "wcell"; wblock.appendChild(c); }
+  var die = document.getElementById("die");
+  var tiles = document.createElement("div"); tiles.className = "tiles";
+  for (i = 0; i < 20; i++) tiles.appendChild(document.createElement("i"));
+  die.appendChild(tiles);
+
+  // experts + routing lines inside the die view
+  var dv = document.getElementById("dv");
+  var rl = document.getElementById("rl");
+  var ACTIVE = [2, 5];
+  for (i = 0; i < 8; i++) {
+    var ex = document.createElement("div");
+    ex.className = "ex"; ex.id = "ex" + i;
+    ex.style.left = (28 + i * 90) + "px";
+    ex.innerHTML = '<span class="xl">E' + (i + 1) + '</span><i class="b1"></i><i class="b2"></i>';
+    dv.appendChild(ex);
+    var ln = document.createElementNS("http://www.w3.org/2000/svg", "line");
+    ln.setAttribute("x1", 383); ln.setAttribute("y1", 58);
+    ln.setAttribute("x2", 68 + i * 90); ln.setAttribute("y2", 120);
+    ln.id = "rln" + i;
+    rl.appendChild(ln);
+  }
+
+  // ---- DOM mutators (via .call, restored in reset) ----
+  function routeOn() {
+    for (var j = 0; j < 8; j++) {
+      var e = document.getElementById("ex" + j), l = document.getElementById("rln" + j);
+      if (ACTIVE.indexOf(j) >= 0) { e.classList.add("on"); l.classList.add("hot"); }
+      else { e.classList.add("off"); }
+    }
+  }
+  function routeOff() {
+    for (var j = 0; j < 8; j++) {
+      document.getElementById("ex" + j).classList.remove("on", "off");
+      document.getElementById("rln" + j).classList.remove("hot");
+    }
+  }
+  var hbm = document.getElementById("hbm");
+  function hbmAll(on) { hbm.classList.toggle("all", on); }
+
+  // ---- timeline: 5 beats ----
+  var tl = gsap.timeline({ paused: true });
+
+  // beat 1: the machine wakes; we zoom into the die — the dense FFN we know
+  tl.to("#machine", { opacity: 1, filter: "grayscale(0)", duration: 0.6, ease: "power2.out" })
+    .fromTo("#proj", { opacity: 0 }, { opacity: 1, duration: 0.4 }, "-=0.2")
+    .fromTo("#dv", { opacity: 0, scale: 0.92, transformOrigin: "0% 50%" }, { opacity: 1, scale: 1, duration: 0.55, ease: "power2.out" }, "-=0.15")
+    .fromTo("#dense", { opacity: 0, scale: 0.85 }, { opacity: 1, scale: 1, duration: 0.5, ease: "back.out(1.6)" });
+  DECK.markStep(tl);
+
+  // beat 2: the unzip — experts + router; one token runs top-2 of 8
+  tl.to("#dense", { scaleY: 0.05, opacity: 0, duration: 0.55, ease: "power2.in" })
+    .fromTo("#router", { opacity: 0, y: -14 }, { opacity: 1, y: 0, duration: 0.4, ease: "power2.out" }, "-=0.1")
+    .fromTo(".ex", { opacity: 0, y: 16 }, { opacity: 1, y: 0, duration: 0.4, stagger: 0.06, ease: "power2.out" }, "-=0.15")
+    .fromTo("#rl", { opacity: 0 }, { opacity: 1, duration: 0.35 })
+    .fromTo("#mech", { opacity: 0 }, { opacity: 1, duration: 0.35 }, "<")
+    .fromTo("#tok", { opacity: 0 }, { opacity: 1, duration: 0.2 })
+    .to("#tok", { left: 848, top: 152, duration: 0.8, ease: "power1.inOut" })
+    .fromTo("#router", { scale: 1.15 }, { scale: 1, duration: 0.3, ease: "power2.out" })
+    .to("#tok", { opacity: 0, duration: 0.15 }, "<")
+    .fromTo("#ta", { opacity: 0 }, { opacity: 1, duration: 0.1 }, "<")
+    .fromTo("#tb", { opacity: 0 }, { opacity: 1, duration: 0.1 }, "<")
+    .to("#ta", { left: 713, top: 231, duration: 0.5, ease: "power1.in" }, "<")
+    .to("#tb", { left: 983, top: 231, duration: 0.5, ease: "power1.in" }, "<")
+    .call(routeOn)
+    .to("#ta", { opacity: 0, duration: 0.3 })
+    .to("#tb", { opacity: 0, duration: 0.3 }, "<")
+    .fromTo("#kchip", { opacity: 0, scale: 0.6 }, { opacity: 1, scale: 1, duration: 0.35, ease: "back.out(2)" }, "-=0.1")
+    .fromTo("#swchip", { opacity: 0 }, { opacity: 1, duration: 0.3 }, "<0.15");
+  DECK.markStep(tl);
+
+  // beat 3: the decoupling — TOTAL spikes, FLOPs/token stays flat
+  tl.fromTo("#mrow-t", { opacity: 0, y: 10 }, { opacity: 1, y: 0, duration: 0.4, ease: "power2.out" })
+    .fromTo("#mf-t", { scaleX: 0.22 }, { scaleX: 0.96, duration: 0.9, ease: "power2.inOut" })
+    .fromTo("#fl-cap", { opacity: 0 }, { opacity: 1, duration: 0.09, yoyo: true, repeat: 3 }, "-=0.3")
+    .fromTo("#mrow-f", { opacity: 0, y: 10 }, { opacity: 1, y: 0, duration: 0.4, ease: "power2.out" })
+    .fromTo("#fl-comp", { opacity: 0 }, { opacity: 1, duration: 0.09, yoyo: true, repeat: 3 })
+    .fromTo("#arb", { opacity: 0, y: 8 }, { opacity: 1, y: 0, duration: 0.45 });
+  DECK.markStep(tl);
+
+  // beat 4: the two framings — iso-quality is the hero, with the dense ghost
+  tl.fromTo("#isoflop", { opacity: 0, y: 14 }, { opacity: 0.75, y: 0, duration: 0.4, ease: "power2.out" })
+    .fromTo("#isoq", { opacity: 0, y: 14 }, { opacity: 1, y: 0, duration: 0.45, ease: "power2.out" }, "<0.15")
+    .fromTo("#db-moe", { scaleX: 0 }, { scaleX: 1, duration: 0.4, ease: "power2.out" })
+    .fromTo("#db-dense", { scaleX: 0 }, { scaleX: 1, duration: 0.8, ease: "power2.inOut" })
+    .fromTo("#dxtag", { opacity: 0, scale: 0.6 }, { opacity: 1, scale: 1, duration: 0.35, ease: "back.out(2)" })
+    .fromTo("#never", { opacity: 0 }, { opacity: 1, duration: 0.4 });
+  DECK.markStep(tl);
+
+  // beat 5: why everyone went MoE — and the caution that sets up the bill
+  tl.fromTo("#why", { opacity: 0, y: 10 }, { opacity: 1, y: 0, duration: 0.5, ease: "power2.out" })
+    .call(function () { hbmAll(true); })
+    .fromTo("#fl-cap", { opacity: 0 }, { opacity: 1, duration: 0.09, yoyo: true, repeat: 3 })
+    .fromTo("#fl-bw", { opacity: 0 }, { opacity: 1, duration: 0.09, yoyo: true, repeat: 3 }, "<")
+    .fromTo("#keep", { opacity: 0, y: 8 }, { opacity: 1, y: 0, duration: 0.45 });
+
+  DECK.register(tl, {
+    reset: function () {
+      routeOff();
+      hbmAll(false);
+    }
+  });
+</script>
+</body>
+</html>

@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Expert Parallelism: Place, Dispatch, Combine</title>
+<link rel="stylesheet" href="shared/deck.css?v=3">
+<style>
+  .kicker { position: absolute; top: 12px; left: 45px; font: 700 11px ui-monospace, monospace; letter-spacing: 0.22em; color: #6b7284; }
+
+  .htok {
+    position: absolute; width: 14px; height: 14px; margin: -7px 0 0 -7px; border-radius: 50%;
+    background: radial-gradient(circle at 35% 35%, #c8fff2, #2fd6b0 60%, #14b894);
+    box-shadow: 0 0 12px rgba(47,214,176,0.95), 0 0 30px rgba(47,214,176,0.5);
+    z-index: 30; pointer-events: none; opacity: 0;
+  }
+  .htok::after { content: ""; position: absolute; inset: -5px; border-radius: 50%; border: 1.5px solid rgba(47,214,176,0.35); }
+  .gtok {
+    position: absolute; width: 10px; height: 10px; margin: -5px 0 0 -5px; border-radius: 50%;
+    background: radial-gradient(circle at 35% 35%, #dfe3f0, #9aa1b5 65%, #6b7284);
+    box-shadow: 0 0 8px rgba(154,161,181,0.55); z-index: 29; pointer-events: none; opacity: 0;
+  }
+
+  /* ---- the GPU boxes ---- */
+  .gpu {
+    position: absolute; top: 172px; width: 132px; height: 182px;
+    border: 1.5px solid #2e3342; border-radius: 10px; background: #12141c;
+  }
+  .gpu .chips { position: absolute; left: 9px; top: 10px; width: 114px; display: flex; flex-wrap: wrap; gap: 3px; }
+  .gpu .chips i {
+    width: 24px; height: 18px; border-radius: 3px;
+    background: rgba(201,133,0,0.16); border: 1px solid rgba(201,133,0,0.28); opacity: 0;
+  }
+  .gpu .glab { position: absolute; bottom: 5px; width: 100%; text-align: center; font: 600 9.5px ui-monospace, monospace; color: #6b7284; }
+  #drape {
+    position: absolute; left: 44px; top: 118px; width: 1112px; height: 26px; border-radius: 8px;
+    background: linear-gradient(90deg, rgba(201,133,0,0.14), rgba(224,169,53,0.4), rgba(201,133,0,0.14));
+    border: 1.5px solid rgba(224,169,53,0.5); opacity: 0;
+    display: flex; align-items: center; justify-content: center;
+    font: 700 11.5px ui-monospace, monospace; color: #e0a935;
+  }
+  #placecap { position: absolute; left: 44px; top: 370px; width: 1112px; text-align: center; font: 600 11.5px ui-monospace, monospace; color: #9aa1b5; opacity: 0; }
+
+  .phchip {
+    position: absolute; font: 700 10.5px ui-monospace, monospace; padding: 3px 10px; border-radius: 999px;
+    background: rgba(11,13,18,0.92); border: 1.5px solid; white-space: nowrap; opacity: 0; z-index: 8;
+  }
+  #ph-disp { top: 398px; left: 372px; border-color: rgba(144,133,233,0.7); color: #9085e9; }
+  #ph-comp { top: 398px; left: 566px; border-color: rgba(57,135,229,0.7); color: #6fb1ff; }
+  #ph-comb { top: 398px; left: 772px; border-color: rgba(144,133,233,0.7); color: #9085e9; }
+
+  /* ---- vs TP ---- */
+  #vstp { position: absolute; left: 44px; top: 448px; width: 570px; }
+  .vrow { position: relative; margin-bottom: 16px; opacity: 0; }
+  .vrow .vn { font: 800 12.5px ui-monospace, monospace; }
+  .vrow .vd { margin-top: 3px; font-size: 11px; color: #9aa1b5; line-height: 1.45; }
+  #vrow-tp { opacity: 0; } #vrow-tp .vn { color: #8a91a5; }
+  #vrow-ep .vn { color: var(--accent); }
+  #vrow-ep .vd { color: #c7cce0; }
+  #nvl { position: absolute; left: 44px; top: 584px; font: 600 10.5px ui-monospace, monospace; color: #6b7284;
+    border: 1px dashed #2a2e3b; border-radius: 8px; padding: 5px 10px; opacity: 0; }
+
+  /* ---- overlap gantt ---- */
+  #gantt { position: absolute; left: 660px; top: 436px; width: 576px; opacity: 0; }
+  #gantt .gh { font: 700 11.5px ui-monospace, monospace; color: #c7cce0; margin-bottom: 10px; }
+  .lane { position: relative; height: 30px; margin-bottom: 8px; }
+  .lane .lname { position: absolute; left: 0; top: 7px; width: 78px; font: 700 10px ui-monospace, monospace; }
+  .lane .ltrack { position: absolute; left: 82px; right: 0; top: 0; height: 30px; border: 1px solid var(--line); border-radius: 5px; background: #12141c; }
+  .blk {
+    position: absolute; top: 4px; height: 22px; border-radius: 4px; opacity: 0;
+    font: 700 9px ui-monospace, monospace; display: flex; align-items: center; justify-content: center;
+  }
+  .blk.c { background: rgba(57,135,229,0.3); border: 1px solid rgba(57,135,229,0.75); color: #9ec7f5; }
+  .blk.a { background: rgba(144,133,233,0.26); border: 1px solid rgba(144,133,233,0.7); color: #b7aff5; }
+  #ovlab { position: absolute; left: 748px; top: 546px; font: 700 10px ui-monospace, monospace; color: var(--accent); opacity: 0; }
+  #codesign { position: absolute; left: 660px; top: 584px; width: 576px; font: 600 11.5px ui-monospace, monospace; color: var(--accent); line-height: 1.55; opacity: 0; }
+</style>
+</head>
+<body>
+<div class="stage">
+  <div class="kicker">MIXTURE OF EXPERTS · SYSTEMS</div>
+  <div class="slide-title">Expert parallelism: place, dispatch, combine</div>
+  <div class="slide-sub" id="sub" style="opacity:0"></div>
+
+  <div id="drape">2.8 T of experts</div>
+  <div id="gpus"></div>
+  <div id="placecap"></div>
+
+  <div class="phchip" id="ph-disp">1 · dispatch — all-to-all</div>
+  <div class="phchip" id="ph-comp">2 · compute at the experts</div>
+  <div class="phchip" id="ph-comb">3 · combine — all-to-all</div>
+
+  <div id="vstp">
+    <div class="vrow" id="vrow-tp"><div class="vn"></div><div class="vd"></div></div>
+    <div class="vrow" id="vrow-ep"><div class="vn"></div><div class="vd"></div></div>
+  </div>
+  <div id="nvl"></div>
+
+  <div id="gantt">
+    <div class="gh"></div>
+    <div class="lane" id="lane-c">
+      <span class="lname" style="color:#6fb1ff">compute</span>
+      <div class="ltrack"></div>
+    </div>
+    <div class="lane" id="lane-a">
+      <span class="lname" style="color:#9085e9">all-to-all</span>
+      <div class="ltrack"></div>
+    </div>
+  </div>
+  <div id="ovlab">overlapped ↑</div>
+  <div id="codesign"></div>
+
+  <div class="htok" id="tok"></div>
+</div>
+
+<script src="../vendor/gsap.min.js"></script>
+<script src="shared/moe.js?v=3"></script>
+<script src="shared/gpus.js?v=3"></script>
+<script src="shared/manifest.js?v=3"></script>
+<script src="shared/deck.js?v=3"></script>
+<script>
+  document.getElementById("sub").textContent = MOE.ep.what;
+  document.querySelector("#vrow-tp .vn").textContent = MOE.ep.vsTP[0][0];
+  document.querySelector("#vrow-tp .vd").textContent = MOE.ep.vsTP[0][1];
+  document.querySelector("#vrow-ep .vn").textContent = MOE.ep.vsTP[1][0];
+  document.querySelector("#vrow-ep .vd").textContent = MOE.ep.vsTP[1][1];
+  document.querySelector("#gantt .gh").textContent = MOE.ep.reality.split(":")[0];
+  document.getElementById("codesign").textContent = MOE.ep.codesign;
+  document.getElementById("nvl").textContent = GPUS.nvl72.name + " · " + GPUS.nvl72.nvlink;
+
+  var perGpu = MOE.evo[2].routed / 8;   // 896 / 8
+  document.getElementById("placecap").textContent =
+    MOE.evo[2].routed + " routed experts · " + perGpu + " per GPU · ≈175 GB of weights each";
+
+  // ---- 8 GPU boxes with resident expert chips ----
+  var gwrap = document.getElementById("gpus");
+  var gpus = [], allChips = [];
+  for (var g = 0; g < 8; g++) {
+    var d = document.createElement("div");
+    d.className = "gpu";
+    d.style.left = (44 + g * 140) + "px";
+    var ch = "";
+    for (var c = 0; c < 20; c++) ch += "<i></i>";
+    d.innerHTML = '<div class="chips">' + ch + '</div><div class="glab">GPU ' + g + "</div>";
+    gwrap.appendChild(d);
+    gpus.push(d);
+    allChips.push.apply(allChips, d.querySelectorAll(".chips i"));
+  }
+  // target chip (row 2, col 2 → index 9) per GPU, for compute flashes
+  function chipEl(g) { return gpus[g].querySelectorAll(".chips i")[9]; }
+  function chipPos(g) { return [44 + g * 140 + 9 + 40, 172 + 10 + 30]; }
+
+  // ---- token batch: hero + 5 companions ----
+  var stage = document.querySelector(".stage");
+  var tok = document.getElementById("tok");
+  var HOMEX = [510, 550, 590, 630, 670, 710], HOMEY = 157;
+  var toks = [tok], TARGETS = [5, 0, 6, 2, 7, 3];
+  for (var i = 1; i < 6; i++) {
+    var t = document.createElement("div");
+    t.className = "gtok";
+    stage.appendChild(t);
+    toks.push(t);
+  }
+  toks.forEach(function (t, i) { gsap.set(t, { left: HOMEX[i], top: HOMEY }); });
+  gsap.set(tok, { left: HOMEX[0], top: HOMEY });
+
+  // ---- path helper: gsap motion along a smoothed polyline ----
+  function pathTween(el, pts, dur, ease) {
+    var p = { t: 0 };
+    function at(t) {
+      var n = pts.length - 1, f = Math.min(t, 0.9999) * n, i = Math.floor(f), u = f - i;
+      var a = pts[Math.max(0, i - 1)], b = pts[i], c = pts[Math.min(n, i + 1)], d = pts[Math.min(n, i + 2)];
+      function cr(A, B, C, D) { return 0.5 * (2 * B + (C - A) * u + (2 * A - 5 * B + 4 * C - D) * u * u + (3 * B - A - 3 * C + D) * u * u * u); }
+      return [cr(a[0], b[0], c[0], d[0]), cr(a[1], b[1], c[1], d[1])];
+    }
+    return gsap.to(p, { t: 1, duration: dur, ease: ease || "power1.inOut", onUpdate: function () {
+      var q = at(p.t); gsap.set(el, { left: q[0], top: q[1] });
+    } });
+  }
+
+  // ---- timeline: 4 beats ----
+  var tl = gsap.timeline({ paused: true });
+
+  // beat 1: the 2.8T model drapes across the GPU boxes — capacity becomes placement
+  tl.fromTo("#sub", { opacity: 0 }, { opacity: 1, duration: 0.4 })
+    .fromTo(".gpu", { opacity: 0, y: 18 }, { opacity: 1, y: 0, duration: 0.45, stagger: 0.06, ease: "power2.out" })
+    .fromTo("#drape", { opacity: 0, y: -12 }, { opacity: 1, y: 0, duration: 0.5, ease: "power2.out" })
+    .to(".gpu .chips i", { opacity: 1, duration: 0.25, stagger: { each: 0.006, from: "start" } })
+    .to("#drape", { opacity: 0.35, duration: 0.5 }, "-=0.3")
+    .fromTo("#placecap", { opacity: 0 }, { opacity: 1, duration: 0.4 });
+  DECK.markStep(tl);
+
+  // beat 2: a batch dispatches — packets fly GPU↔GPU, compute, combine back
+  tl.fromTo(toks, { opacity: 0 }, { opacity: 1, duration: 0.3, stagger: 0.05 })
+    .fromTo("#ph-disp", { opacity: 0, y: 6 }, { opacity: 1, y: 0, duration: 0.3 });
+  toks.forEach(function (t, i) {
+    var tp = chipPos(TARGETS[i]);
+    tl.add(pathTween(t, [[HOMEX[i], HOMEY], [(HOMEX[i] + tp[0]) / 2, 148 - i * 3], [tp[0], 166], [tp[0], tp[1]]], 0.85), i === 0 ? "+=0.05" : "<0.07");
+  });
+  tl.fromTo("#ph-comp", { opacity: 0, y: 6 }, { opacity: 1, y: 0, duration: 0.3 });
+  tl.to(TARGETS.map(chipEl), {
+      backgroundColor: "rgba(57,135,229,0.85)", borderColor: "#6fb1ff",
+      boxShadow: "0 0 14px rgba(57,135,229,0.9)", duration: 0.2, yoyo: true, repeat: 3
+    })
+    .fromTo("#ph-comb", { opacity: 0, y: 6 }, { opacity: 1, y: 0, duration: 0.3 });
+  toks.forEach(function (t, i) {
+    var tp = chipPos(TARGETS[i]);
+    tl.add(pathTween(t, [[tp[0], tp[1]], [tp[0], 164], [(HOMEX[i] + tp[0]) / 2, 148 - i * 3], [HOMEX[i], HOMEY]], 0.8), i === 0 ? "+=0.05" : "<0.07");
+  });
+  DECK.markStep(tl);
+
+  // beat 3: contrast with tensor parallelism — brief
+  tl.fromTo("#vrow-tp", { opacity: 0, x: -14 }, { opacity: 0.8, x: 0, duration: 0.4, ease: "power2.out" })
+    .fromTo("#vrow-ep", { opacity: 0, x: -14 }, { opacity: 1, x: 0, duration: 0.4, ease: "power2.out" }, "+=0.15");
+  DECK.markStep(tl);
+
+  // beat 4: the overlap trick — comm hides under compute across micro-batches
+  tl.fromTo("#gantt", { opacity: 0, y: 14 }, { opacity: 1, y: 0, duration: 0.45, ease: "power2.out" });
+  var CW = 96, GAP = 4;
+  for (var b = 0; b < 4; b++) {
+    var cx = 8 + b * (CW + GAP);
+    var cb = document.createElement("div");
+    cb.className = "blk c"; cb.textContent = "µb" + b + " compute";
+    cb.style.left = cx + "px"; cb.style.width = CW + "px";
+    document.querySelector("#lane-c .ltrack").appendChild(cb);
+    if (b < 3) {
+      var ab = document.createElement("div");
+      ab.className = "blk a"; ab.textContent = "µb" + (b + 1) + " in flight";
+      ab.style.left = (cx + CW * 0.45) + "px"; ab.style.width = (CW * 0.92) + "px";
+      document.querySelector("#lane-a .ltrack").appendChild(ab);
+    }
+  }
+  tl.to("#lane-c .blk", { opacity: 1, duration: 0.3, stagger: 0.22 })
+    .to("#lane-a .blk", { opacity: 1, duration: 0.3, stagger: 0.22 }, "<0.11")
+    .fromTo("#ovlab", { opacity: 0 }, { opacity: 1, duration: 0.35 })
+    .fromTo("#nvl", { opacity: 0 }, { opacity: 1, duration: 0.35 }, "<")
+    .fromTo("#codesign", { opacity: 0, y: 8 }, { opacity: 1, y: 0, duration: 0.45, ease: "power2.out" }, "+=0.1")
+    .to(tok, { boxShadow: "0 0 20px rgba(47,214,176,1), 0 0 44px rgba(47,214,176,0.6)", duration: 0.4, yoyo: true, repeat: 1 }, "<");
+
+  DECK.register(tl, {
+    reset: function () {
+      toks.forEach(function (t, i) { gsap.set(t, { left: HOMEX[i], top: HOMEY }); });
+      gsap.set(tok, { boxShadow: "0 0 12px rgba(47,214,176,0.95), 0 0 30px rgba(47,214,176,0.5)" });
+      gsap.set(TARGETS.map(chipEl), { clearProps: "backgroundColor,borderColor,boxShadow" });
+    }
+  });
+</script>
+</body>
+</html>

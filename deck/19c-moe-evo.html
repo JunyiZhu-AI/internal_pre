@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>MoE Evolution: Finer, Sparser, Shared</title>
+<link rel="stylesheet" href="shared/deck.css?v=3">
+<style>
+  .kicker { position: absolute; top: 12px; left: 45px; font: 700 11px ui-monospace, monospace; letter-spacing: 0.22em; color: #6b7284; }
+
+  .htok {
+    position: absolute; width: 14px; height: 14px; margin: -7px 0 0 -7px; border-radius: 50%;
+    background: radial-gradient(circle at 35% 35%, #c8fff2, #2fd6b0 60%, #14b894);
+    box-shadow: 0 0 12px rgba(47,214,176,0.95), 0 0 30px rgba(47,214,176,0.5);
+    z-index: 30; pointer-events: none; opacity: 0;
+  }
+  .htok::after { content: ""; position: absolute; inset: -5px; border-radius: 50%; border: 1.5px solid rgba(47,214,176,0.35); }
+
+  /* ---- beat 1: the three design axes ---- */
+  .axp {
+    position: absolute; top: 116px; width: 380px; height: 150px;
+    background: var(--panel); border: 1px solid var(--line); border-radius: 10px; opacity: 0;
+  }
+  #ax0 { left: 44px; } #ax1 { left: 450px; } #ax2 { left: 856px; }
+  .axp .axname { position: absolute; left: 108px; top: 30px; font: 700 13px ui-monospace, monospace; color: #e8eaf0; }
+  .axp .axfrag { position: absolute; left: 108px; top: 54px; width: 254px; font-size: 10.5px; color: #9aa1b5; line-height: 1.45; }
+  .demo { position: absolute; left: 18px; top: 34px; width: 76px; height: 76px; }
+  .dgrid { position: absolute; inset: 0; border: 1px solid #2e3342; }
+  .dgrid.coarse { background: repeating-linear-gradient(90deg, #2e3342 0 1px, transparent 1px 38px), repeating-linear-gradient(0deg, #2e3342 0 1px, transparent 1px 38px), #14161d; }
+  .dgrid.fine { background: repeating-linear-gradient(90deg, #2e3342 0 1px, transparent 1px 12.66px), repeating-linear-gradient(0deg, #2e3342 0 1px, transparent 1px 12.66px), #14161d; opacity: 0; }
+  .ddot { position: absolute; width: 9px; height: 9px; border-radius: 2px; background: #2fd6b0; box-shadow: 0 0 8px rgba(47,214,176,0.8); }
+  .ddot.amber { background: #e0a935; box-shadow: 0 0 8px rgba(224,169,53,0.85); animation: shPulse 1.6s ease-in-out infinite; }
+  @keyframes shPulse { 50% { box-shadow: 0 0 16px rgba(224,169,53,1); } }
+
+  /* ---- the three walls ---- */
+  .wallwrap { position: absolute; top: 300px; width: 192px; opacity: 0; }
+  #ww0 { left: 140px; } #ww1 { left: 520px; } #ww2 { left: 900px; }
+  .wall { position: relative; width: 192px; height: 192px; border: 1.5px solid #2e3342; border-radius: 4px; overflow: hidden; }
+  .wall .cells { position: absolute; inset: 0; }
+  .lit { position: absolute; border-radius: 1px; background: #2fd6b0; box-shadow: 0 0 7px rgba(47,214,176,0.9); opacity: 0; }
+  .lit.shared { background: #e0a935; box-shadow: 0 0 7px rgba(224,169,53,0.95); }
+  .wname { margin-top: 10px; font: 700 12.5px ui-monospace, monospace; color: #c7cce0; }
+  .wname .yr { font-weight: 400; color: #6b7284; }
+  .wtag {
+    position: absolute; left: 50%; top: -26px; transform: translateX(-50%);
+    font: 700 11px ui-monospace, monospace; color: var(--accent); white-space: nowrap;
+    border: 1.5px solid rgba(47,214,176,0.6); border-radius: 999px; padding: 2px 10px; background: rgba(11,13,18,0.92); opacity: 0;
+  }
+  .wstat { margin-top: 6px; opacity: 0; }
+  .wstat .trow { display: flex; align-items: center; gap: 6px; height: 20px; }
+  .wstat .tnum { font: 800 17px ui-monospace, monospace; color: #e0a935; min-width: 74px; }
+  .wstat .tbar { height: 8px; border-radius: 2px; background: linear-gradient(90deg, rgba(201,133,0,0.5), #e0a935); width: 0; }
+  .wstat .arow { display: flex; align-items: center; gap: 6px; height: 16px; }
+  .wstat .anum { font: 600 11px ui-monospace, monospace; color: #6fb1ff; min-width: 74px; }
+  .wstat .abar { height: 4px; border-radius: 2px; background: #3987e5; width: 0; min-width: 0; }
+  .wstat .erow { margin-top: 3px; font: 600 10.5px ui-monospace, monospace; color: #9aa1b5; }
+  .wstat .erow.rate { color: var(--accent); font-size: 12.5px; font-weight: 800; }
+
+  #interp { position: absolute; left: 44px; top: 668px; width: 1000px; font: 700 14.5px ui-monospace, monospace; color: var(--accent); opacity: 0; }
+</style>
+</head>
+<body>
+<div class="stage">
+  <div class="kicker">MIXTURE OF EXPERTS · EVOLUTION</div>
+  <div class="slide-title">Finer, sparser, shared</div>
+  <div class="slide-sub">the walls of experts keep subdividing — the token lights fewer and fewer of them</div>
+
+  <div class="axp" id="ax0">
+    <div class="demo">
+      <div class="dgrid coarse"></div>
+      <div class="dgrid fine" id="fine0"></div>
+    </div>
+    <div class="axname"></div><div class="axfrag"></div>
+  </div>
+  <div class="axp" id="ax1">
+    <div class="demo"><div class="dgrid fine" style="opacity:1"></div><div class="ddot amber" id="shdot" style="left:15px;top:53px;opacity:0"></div></div>
+    <div class="axname"></div><div class="axfrag"></div>
+  </div>
+  <div class="axp" id="ax2">
+    <div class="demo"><div class="dgrid fine" style="opacity:1"></div></div>
+    <div class="axname"></div><div class="axfrag"></div>
+  </div>
+
+  <div class="wallwrap" id="ww0">
+    <div class="wall"><div class="cells"></div></div>
+    <div class="wname"></div>
+    <div class="wstat">
+      <div class="trow"><span class="tnum">0 B</span><div class="tbar"></div></div>
+      <div class="arow"><span class="anum"></span><div class="abar"></div></div>
+      <div class="erow"></div>
+    </div>
+  </div>
+  <div class="wallwrap" id="ww1">
+    <div class="wall"><div class="cells"></div></div>
+    <div class="wname"></div>
+    <div class="wstat">
+      <div class="trow"><span class="tnum">0 B</span><div class="tbar"></div></div>
+      <div class="arow"><span class="anum"></span><div class="abar"></div></div>
+      <div class="erow"></div>
+    </div>
+  </div>
+  <div class="wallwrap" id="ww2">
+    <div class="wtag"></div>
+    <div class="wall"><div class="cells"></div></div>
+    <div class="wname"></div>
+    <div class="wstat">
+      <div class="trow"><span class="tnum">0 B</span><div class="tbar"></div></div>
+      <div class="arow"><span class="anum"></span><div class="abar"></div></div>
+      <div class="erow"></div>
+      <div class="erow rate"></div>
+    </div>
+  </div>
+
+  <div id="interp"></div>
+  <div class="htok" id="tok"></div>
+</div>
+
+<script src="../vendor/gsap.min.js"></script>
+<script src="shared/moe.js?v=3"></script>
+<script src="shared/manifest.js?v=3"></script>
+<script src="shared/deck.js?v=3"></script>
+<script>
+  // ---- axes panels from MOE.axes (name + first clause; the rest is spoken) ----
+  MOE.axes.forEach(function (ax, i) {
+    var p = document.getElementById("ax" + i);
+    p.querySelector(".axname").textContent = ax[0];
+    p.querySelector(".axfrag").textContent = ax[1].split(" — ")[0];
+  });
+  document.getElementById("interp").textContent = MOE.interp;
+
+  // sparsity demo (ax2): 8 lit cells, most will fade out in beat 1
+  var spDemo = document.querySelector("#ax2 .demo");
+  var SPOS = [[15, 2], [40, 15], [2, 28], [53, 40], [28, 53], [65, 15], [15, 65], [53, 2]];
+  var spDots = SPOS.map(function (q) {
+    var d = document.createElement("div");
+    d.className = "ddot";
+    d.style.left = q[0] + "px"; d.style.top = q[1] + "px"; d.style.opacity = 0;
+    spDemo.appendChild(d);
+    return d;
+  });
+
+  // ---- the three walls, from MOE.evo ----
+  // wall grids: [cols, rows]; cell pitch = 192/cols × 192/rows
+  var GRID = { v3: [16, 16], k2: [24, 16], k3: [32, 28] };
+  var LITPOS = {
+    v3: [[2, 3], [13, 5], [7, 9], [4, 12], [10, 2], [14, 11], [6, 6], [11, 13]],
+    k2: [[3, 4], [20, 3], [11, 8], [6, 13], [16, 11], [22, 14], [9, 2], [14, 6]],
+    k3: [[3, 4], [12, 2], [21, 6], [28, 3], [6, 10], [17, 12], [25, 15], [9, 18],
+         [14, 22], [29, 20], [4, 24], [20, 25], [26, 10], [11, 15], [23, 22], [7, 6]],
+  };
+  var wallDots = [], statEls = [];
+  MOE.evo.forEach(function (m, i) {
+    var w = document.getElementById("ww" + i);
+    var g = GRID[m.key], cw = 192 / g[0], ch = 192 / g[1];
+    var wall = w.querySelector(".wall");
+    wall.style.background =
+      "repeating-linear-gradient(90deg, #232836 0 1px, transparent 1px " + cw + "px)," +
+      "repeating-linear-gradient(0deg, #232836 0 1px, transparent 1px " + ch + "px), #14161d";
+    var cells = w.querySelector(".cells");
+    var dots = LITPOS[m.key].map(function (q) {
+      var d = document.createElement("div");
+      d.className = "lit";
+      d.style.left = (q[0] * cw + 1) + "px"; d.style.top = (q[1] * ch + 1) + "px";
+      d.style.width = (cw - 2) + "px"; d.style.height = (ch - 2) + "px";
+      cells.appendChild(d);
+      return d;
+    });
+    var sh = document.createElement("div");
+    sh.className = "lit shared";
+    sh.style.left = "1px"; sh.style.top = (192 - ch + 1) + "px";
+    sh.style.width = (cw - 2) + "px"; sh.style.height = (ch - 2) + "px";
+    cells.appendChild(sh);
+    dots.push(sh);
+    wallDots.push(dots);
+
+    w.querySelector(".wname").innerHTML = m.name + ' <span class="yr">· ' + m.year + "</span>";
+    var st = w.querySelector(".wstat");
+    st.querySelector(".anum").textContent = "active " + m.active + " B";
+    st.querySelector(".erow").textContent = m.topk + " / " + m.routed + " routed + " + m.shared + " shared";
+    statEls.push(st);
+  });
+  document.querySelector("#ww2 .wtag").textContent = MOE.evo[2].label;
+  document.querySelector("#ww2 .rate").textContent = MOE.k3rate;
+
+  var tok = document.getElementById("tok");
+  gsap.set(tok, { left: 50, top: 430 });
+
+  // ---- path helper: gsap motion along a smoothed polyline ----
+  function pathTween(el, pts, dur, ease) {
+    var p = { t: 0 };
+    function at(t) {
+      var n = pts.length - 1, f = Math.min(t, 0.9999) * n, i = Math.floor(f), u = f - i;
+      var a = pts[Math.max(0, i - 1)], b = pts[i], c = pts[Math.min(n, i + 1)], d = pts[Math.min(n, i + 2)];
+      function cr(A, B, C, D) { return 0.5 * (2 * B + (C - A) * u + (2 * A - 5 * B + 4 * C - D) * u * u + (3 * B - A - 3 * C + D) * u * u * u); }
+      return [cr(a[0], b[0], c[0], d[0]), cr(a[1], b[1], c[1], d[1])];
+    }
+    return gsap.to(p, { t: 1, duration: dur, ease: ease || "power1.inOut", onUpdate: function () {
+      var q = at(p.t); gsap.set(el, { left: q[0], top: q[1] });
+    } });
+  }
+
+  // total-params counter: 671 B → "671 B", 1000 → "1 T", 2800 → "2.8 T"
+  function fmtT(v) { return v < 1000 ? Math.round(v) + " B" : (Math.round(v / 100) / 10) + " T"; }
+  function counterTween(el, target, dur) {
+    var o = { v: 0 };
+    return gsap.to(o, { v: target, duration: dur, ease: "power2.out", onUpdate: function () {
+      el.textContent = fmtT(o.v);
+    } });
+  }
+
+  // per-wall reveal: lit cells flash on, counter runs, bars grow (added at a label)
+  var TBAR_SCALE = 186 / 2800;
+  function wallHit(tl, i, label) {
+    var m = MOE.evo[i], st = statEls[i];
+    tl.fromTo(wallDots[i], { opacity: 0 }, { opacity: 1, duration: 0.22, stagger: 0.045, ease: "power1.in" }, label)
+      .fromTo(st, { opacity: 0, y: 8 }, { opacity: 1, y: 0, duration: 0.35 }, label)
+      .add(counterTween(st.querySelector(".tnum"), m.total, 0.9), label)
+      .to(st.querySelector(".tbar"), { width: Math.max(6, m.total * TBAR_SCALE), duration: 0.9, ease: "power2.out" }, label)
+      .to(st.querySelector(".abar"), { width: Math.max(3, m.active * TBAR_SCALE), duration: 0.5 }, label);
+  }
+
+  // ---- timeline: 4 beats ----
+  var tl = gsap.timeline({ paused: true });
+
+  // beat 1: the three axes — subdividing grid, always-on cell, collapsing k
+  tl.fromTo(".axp", { opacity: 0, y: 16 }, { opacity: 1, y: 0, duration: 0.45, stagger: 0.18, ease: "power2.out" })
+    .fromTo("#fine0", { opacity: 0 }, { opacity: 1, duration: 0.8, ease: "power2.inOut" }, "-=0.4")
+    .fromTo("#shdot", { opacity: 0, scale: 0.3 }, { opacity: 1, scale: 1, duration: 0.4, ease: "back.out(2)" }, "<0.2")
+    .fromTo(spDots, { opacity: 0 }, { opacity: 1, duration: 0.25, stagger: 0.04 }, "<0.1")
+    .to(spDots.slice(2), { opacity: 0.07, duration: 0.6, stagger: 0.05 }, "+=0.3");
+  DECK.markStep(tl);
+
+  // beat 2: the race begins — V3 then K2: totals soar, active stays flat
+  tl.to(".axp", { opacity: 0.4, duration: 0.4 })
+    .fromTo(["#ww0", "#ww1"], { opacity: 0, y: 18 }, { opacity: 1, y: 0, duration: 0.5, stagger: 0.15, ease: "power2.out" })
+    .fromTo(tok, { opacity: 0 }, { opacity: 1, duration: 0.25 })
+    .add(pathTween(tok, [[50, 430], [110, 414], [236, 410], [362, 414], [430, 430]], 1.0))
+    .add("hit0", "-=0.62")
+    .add(function () {}, "hit0");
+  wallHit(tl, 0, "hit0");
+  tl.add(pathTween(tok, [[430, 430], [500, 414], [616, 410], [742, 414], [830, 430]], 1.0), "-=0.1")
+    .add("hit1", "-=0.62");
+  wallHit(tl, 1, "hit1");
+  DECK.markStep(tl);
+
+  // beat 3: K3 — 896 tiny experts, 16 lit, 1.8% — Stable LatentMoE
+  tl.fromTo("#ww2", { opacity: 0, y: 18 }, { opacity: 1, y: 0, duration: 0.5, ease: "power2.out" })
+    .add(pathTween(tok, [[830, 430], [880, 414], [996, 410], [1112, 414], [1160, 430]], 1.1))
+    .add("hit2", "-=0.68");
+  wallHit(tl, 2, "hit2");
+  tl.to("#ww2 .wall", { borderColor: "rgba(47,214,176,0.85)", boxShadow: "0 0 26px rgba(47,214,176,0.35)", duration: 0.4 }, "hit2+=0.5")
+    .fromTo("#ww2 .wtag", { opacity: 0, y: 8 }, { opacity: 1, y: 0, duration: 0.4, ease: "back.out(1.8)" }, "hit2+=0.7")
+    .fromTo("#ww2 .rate", { opacity: 0, scale: 0.7 }, { opacity: 1, scale: 1, duration: 0.45, ease: "back.out(2)" }, "hit2+=0.9");
+  DECK.markStep(tl);
+
+  // beat 4: the interpretation
+  tl.to(["#ww0", "#ww1"], { opacity: 0.55, duration: 0.4 })
+    .to(".axp", { opacity: 0.25, duration: 0.4 }, "<")
+    .fromTo("#interp", { opacity: 0, y: 10 }, { opacity: 1, y: 0, duration: 0.5, ease: "power2.out" })
+    .to(tok, { boxShadow: "0 0 20px rgba(47,214,176,1), 0 0 44px rgba(47,214,176,0.6)", duration: 0.4, yoyo: true, repeat: 1 }, "<");
+
+  DECK.register(tl, {
+    reset: function () {
+      gsap.set(tok, { left: 50, top: 430, boxShadow: "0 0 12px rgba(47,214,176,0.95), 0 0 30px rgba(47,214,176,0.5)" });
+      statEls.forEach(function (st, i) {
+        st.querySelector(".tnum").textContent = "0 B";
+        gsap.set([st.querySelector(".tbar"), st.querySelector(".abar")], { width: 0 });
+      });
+    }
+  });
+</script>
+</body>
+</html>

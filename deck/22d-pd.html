@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Prefill–Decode Disaggregation</title>
+<link rel="stylesheet" href="shared/deck.css?v=3">
+<style>
+  #honesty {
+    position: absolute; left: 44px; top: 98px; width: 1000px; font-size: 12.5px; font-style: italic;
+    color: var(--ink-2); opacity: 0;
+  }
+  .recap {
+    position: absolute; top: 138px; font: 700 12px ui-monospace, monospace;
+    border-radius: 999px; padding: 5px 14px; border: 1.5px solid; opacity: 0; white-space: nowrap;
+  }
+  #recapP { left: 330px; color: #6fb1ff; border-color: rgba(57,135,229,0.7); background: #0d1420; }
+  #recapD { left: 660px; color: var(--accent); border-color: rgba(47,214,176,0.7); background: #0e1a17; }
+
+  /* ---- the serving city ---- */
+  #monoframe {
+    position: absolute; left: 328px; top: 218px; width: 624px; height: 282px;
+    border: 1.5px dashed #4a5062; border-radius: 14px;
+  }
+  #monolab {
+    position: absolute; left: 328px; top: 508px; width: 624px; text-align: center;
+    font-size: 12px; color: var(--ink-2);
+  }
+  .zone {
+    position: absolute; top: 232px; width: 296px; height: 250px; border-radius: 10px;
+    border: 1.5px solid; background: rgba(18,21,29,0.6); overflow: visible;
+  }
+  #pzone { left: 340px; border-color: rgba(57,135,229,0.55); }
+  #dzone { left: 640px; border-color: rgba(47,214,176,0.5); }
+  .zone .zl { position: absolute; top: 7px; left: 10px; font: 700 11px ui-monospace, monospace; opacity: 0; }
+  #pzone .zl { color: #6fb1ff; } #dzone .zl { color: var(--accent); }
+  .zb { position: absolute; border-radius: 4px 4px 0 0; border: 1.5px solid; border-bottom: none; padding: 4px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 3px; }
+  #pzone .zb { border-color: rgba(57,135,229,0.4); background: #10151f; }
+  #dzone .zb { border-color: rgba(47,214,176,0.35); background: #0f1715; }
+  .zb i { border-radius: 1.5px; }
+  #pzone .zb i { background: rgba(57,135,229,0.16); }
+  #dzone .zb i { background: rgba(47,214,176,0.13); }
+  .zbase { position: absolute; left: 8px; right: 8px; bottom: 28px; height: 1.5px; background: var(--line); }
+
+  /* gauges */
+  .gauge { position: absolute; top: 494px; font: 700 11.5px ui-monospace, monospace; border-radius: 999px; padding: 4px 13px; border: 1.5px solid; opacity: 0; }
+  #gttft { left: 154px; color: #6fb1ff; border-color: rgba(57,135,229,0.6); background: #0d1420; }
+  #gtpot { left: 792px; color: var(--accent); border-color: rgba(47,214,176,0.6); background: #0e1a17; }
+
+  /* avenue + KV parcel */
+  #avenue { position: absolute; left: 420px; top: 372px; width: 340px; border-top: 1.5px dashed rgba(144,133,233,0.5); opacity: 0; }
+  #kv {
+    position: absolute; left: 386px; top: 356px; width: 52px; height: 30px; border-radius: 6px;
+    background: rgba(144,133,233,0.25); border: 2px solid #9085e9; color: #b7aff5;
+    font: 800 12px ui-monospace, monospace; display: flex; align-items: center; justify-content: center;
+    box-shadow: 0 0 14px rgba(144,133,233,0.5); opacity: 0; z-index: 6;
+  }
+  #costlab {
+    position: absolute; left: 420px; top: 320px; width: 340px; text-align: center;
+    font: 600 11px ui-monospace, monospace; color: #9085e9; opacity: 0; line-height: 1.4;
+  }
+  /* prompt dots in, token stream out */
+  .pdot { position: absolute; left: 0; top: 0; width: 10px; height: 10px; border-radius: 3px; background: #6fb1ff; box-shadow: 0 0 8px rgba(111,177,255,0.8); opacity: 0; z-index: 6; }
+  #outstream { position: absolute; left: 1094px; top: 366px; width: 150px; height: 14px; opacity: 0; }
+  #outstream i { position: absolute; top: 3px; width: 8px; height: 8px; border-radius: 50%; background: var(--accent); box-shadow: 0 0 8px rgba(47,214,176,0.8); animation: outflow 1.5s linear infinite; }
+  #outstream i:nth-child(2) { animation-delay: 0.5s; }
+  #outstream i:nth-child(3) { animation-delay: 1s; }
+  @keyframes outflow { from { left: -6px; opacity: 1; } 92% { opacity: 1; } to { left: 138px; opacity: 0; } }
+  #outlab { position: absolute; left: 1098px; top: 388px; font: 600 10.5px ui-monospace, monospace; color: var(--accent); opacity: 0; }
+
+  /* cached bypass (beat 4) */
+  #bypass { position: absolute; inset: 0; pointer-events: none; }
+  #bypass path { fill: none; stroke: rgba(47,214,176,0.55); stroke-width: 2; stroke-dasharray: 7 7; }
+  #bypass { opacity: 0; }
+  #bydot { position: absolute; left: 0; top: 0; width: 11px; height: 11px; border-radius: 3px; background: var(--accent); box-shadow: 0 0 10px rgba(47,214,176,0.9); opacity: 0; z-index: 7; }
+  #bylab { position: absolute; left: 64px; top: 196px; font: 700 11.5px ui-monospace, monospace; color: var(--accent); opacity: 0; }
+
+  /* benefits + cost (beat 3) */
+  #benefits { position: absolute; left: 44px; top: 556px; width: 1192px; display: flex; gap: 10px; opacity: 0; }
+  .ben {
+    font-size: 11.5px; color: #c7cce0; border: 1px solid var(--line); border-radius: 8px;
+    padding: 6px 12px; background: var(--panel);
+  }
+  .ben b { color: var(--accent); font-weight: 700; }
+
+  /* payoff (beat 4) */
+  #payoff { position: absolute; left: 44px; top: 606px; width: 1192px; opacity: 0; }
+  #prices { display: flex; align-items: center; gap: 14px; }
+  .price { font: 800 20px ui-monospace, monospace; border-radius: 8px; padding: 5px 14px; border: 1.5px solid; }
+  #pmiss { color: #e07b6d; border-color: rgba(224,75,56,0.55); background: rgba(38,17,14,0.6); }
+  #phit { color: var(--accent); border-color: rgba(47,214,176,0.7); background: #0e1a17; box-shadow: 0 0 16px rgba(47,214,176,0.2); }
+  #prices .plab { font-size: 11px; color: var(--ink-2); margin-left: -6px; }
+  #cacheline { margin-top: 9px; font-size: 12.5px; color: #e8eaf0; line-height: 1.45; max-width: 1050px; }
+  #vllmline { margin-top: 5px; font-size: 11px; color: #6b7284; }
+</style>
+</head>
+<body>
+<div class="stage">
+  <div class="slide-title">Prefill–Decode Disaggregation</div>
+  <div class="slide-sub">the last systems move: give each phase its own pool</div>
+
+  <div id="honesty"></div>
+  <div class="recap" id="recapP"></div>
+  <div class="recap" id="recapD"></div>
+
+  <div id="monoframe"></div>
+  <div id="monolab"></div>
+  <div class="zone" id="pzone"><span class="zl">P-pool — prefill</span><div class="zbase"></div></div>
+  <div class="zone" id="dzone"><span class="zl">D-pool — decode</span><div class="zbase"></div></div>
+  <div id="avenue"></div>
+  <div id="costlab"></div>
+  <div id="kv">KV</div>
+  <div id="outstream"><i></i><i></i><i></i></div>
+  <div id="outlab">tokens stream</div>
+  <div class="gauge" id="gttft">TTFT — owned by P</div>
+  <div class="gauge" id="gtpot">TPOT — owned by D</div>
+
+  <svg id="bypass" width="1280" height="720"><path d="M 60 235 Q 420 155 700 255"/></svg>
+  <div id="bydot"></div>
+  <div id="bylab">cached prefix — skips prefill</div>
+
+  <div id="benefits"></div>
+
+  <div id="payoff">
+    <div id="prices">
+      <span class="price" id="pmiss"></span><span class="plab">input</span>
+      <span style="color:#5b6172">vs</span>
+      <span class="price" id="phit"></span><span class="plab">cached input</span>
+    </div>
+    <div id="cacheline"></div>
+    <div id="vllmline"></div>
+  </div>
+</div>
+
+<script src="../vendor/gsap.min.js"></script>
+<script src="shared/moe.js?v=3"></script>
+<script src="shared/pricing.js?v=3"></script>
+<script src="shared/manifest.js?v=3"></script>
+<script src="shared/deck.js?v=3"></script>
+<script>
+  // ---- static content ----
+  document.getElementById("honesty").textContent = MOE.pd.honesty;
+  document.getElementById("recapP").textContent = MOE.pd.recap[0].join(" · ");
+  document.getElementById("recapD").textContent = MOE.pd.recap[1].join(" · ");
+  document.getElementById("monolab").textContent = MOE.pd.problem;
+  document.getElementById("costlab").textContent = MOE.pd.cost;
+  var bens = document.getElementById("benefits");
+  MOE.pd.benefits.forEach(function (b) {
+    bens.insertAdjacentHTML("beforeend", '<span class="ben">' + b + "</span>");
+  });
+  var K3 = PRICING.models[0];
+  document.getElementById("pmiss").textContent = PRICING.fmt$(K3.input);
+  document.getElementById("phit").textContent = PRICING.fmt$(K3.cached);
+  document.getElementById("cacheline").textContent = MOE.pd.cache;
+  document.getElementById("vllmline").textContent = MOE.pd.vllm;
+
+  // ---- build the two skylines ----
+  function buildZone(id) {
+    var z = document.getElementById(id);
+    var H = [118, 158, 132, 172];
+    H.forEach(function (h, i) {
+      var b = document.createElement("div");
+      b.className = "zb";
+      b.style.left = (16 + i * 68) + "px";
+      b.style.width = "56px";
+      b.style.top = (222 - h) + "px";
+      b.style.height = h + "px";
+      var n = Math.floor((h - 8) / 15) * 3;
+      for (var w = 0; w < n; w++) b.appendChild(document.createElement("i"));
+      z.appendChild(b);
+    });
+  }
+  buildZone("pzone"); buildZone("dzone");
+
+  // prompt dots
+  for (var p = 0; p < 6; p++) {
+    var d = document.createElement("div");
+    d.className = "pdot"; d.id = "pd" + p;
+    document.querySelector(".stage").appendChild(d);
+  }
+
+  // ---- timeline: 4 beats ----
+  var tl = gsap.timeline({ paused: true });
+
+  // beat 1: honesty + the two-phase recap
+  tl.fromTo("#honesty", { opacity: 0, y: -8 }, { opacity: 1, y: 0, duration: 0.45 })
+    .fromTo("#recapP", { opacity: 0, y: 10 }, { opacity: 1, y: 0, duration: 0.4, ease: "power2.out" })
+    .fromTo("#recapD", { opacity: 0, y: 10 }, { opacity: 1, y: 0, duration: 0.4, ease: "power2.out" }, "-=0.2")
+    .fromTo(".zone .zl", { opacity: 0 }, { opacity: 0.55, duration: 0.35 }, "-=0.1");
+  DECK.markStep(tl);
+
+  // beat 2: the city splits — prompt into P, KV convoy to D, tokens out of D
+  tl.to("#monoframe", { opacity: 0, duration: 0.4 })
+    .to("#monolab", { opacity: 0, duration: 0.3 }, "<")
+    .to("#pzone", { x: -220, duration: 0.8, ease: "power2.inOut" }, "-=0.1")
+    .to("#dzone", { x: 152, duration: 0.8, ease: "power2.inOut" }, "<")
+    .to(".zone .zl", { opacity: 1, duration: 0.3 }, "-=0.3")
+    .to("#avenue", { opacity: 1, duration: 0.35 })
+    // prompt arrives in P
+    .fromTo(".pdot", { x: 20, y: 380, opacity: 0 }, { opacity: 1, duration: 0.15, stagger: 0.06 })
+    .to(".pdot", { x: 230, duration: 0.55, ease: "power1.inOut", stagger: 0.06 }, "<")
+    .to(".pdot", { opacity: 0, duration: 0.2 }, "-=0.1")
+    // prefill burst
+    .to("#pzone .zb i", {
+      backgroundColor: "rgba(111,177,255,0.95)", duration: 0.22, yoyo: true, repeat: 3,
+      stagger: { each: 0.002, from: "random" }
+    })
+    .fromTo("#gttft", { opacity: 0, scale: 0.7 }, { opacity: 1, scale: 1, duration: 0.35, ease: "back.out(2)" }, "-=0.3")
+    // KV convoy
+    .fromTo("#kv", { opacity: 0, x: 0 }, { opacity: 1, duration: 0.25 })
+    .to("#kv", { x: 350, duration: 0.9, ease: "power1.inOut" })
+    .to("#dzone", { boxShadow: "0 0 24px rgba(47,214,176,0.35)", duration: 0.25, yoyo: true, repeat: 1 })
+    .to("#kv", { opacity: 0, scale: 0.6, duration: 0.25 }, "<")
+    // decode streams
+    .to("#dzone .zb i", { backgroundColor: "rgba(47,214,176,0.8)", duration: 0.4, stagger: { each: 0.004, from: "random" } })
+    .to("#outstream", { opacity: 1, duration: 0.35 })
+    .fromTo("#outlab", { opacity: 0 }, { opacity: 1, duration: 0.3 }, "<")
+    .fromTo("#gtpot", { opacity: 0, scale: 0.7 }, { opacity: 1, scale: 1, duration: 0.35, ease: "back.out(2)" }, "-=0.2");
+  DECK.markStep(tl);
+
+  // beat 3: what it buys, what it costs
+  tl.fromTo("#benefits", { opacity: 0, y: 14 }, { opacity: 1, y: 0, duration: 0.45, ease: "power2.out" })
+    .fromTo("#costlab", { opacity: 0, y: -8 }, { opacity: 1, y: 0, duration: 0.4 }, "+=0.2")
+    .to("#avenue", { borderTopColor: "rgba(144,133,233,0.9)", duration: 0.3, yoyo: true, repeat: 3 }, "<");
+  DECK.markStep(tl);
+
+  // beat 4: the payoff — the cache-hit gap is this architecture showing through
+  tl.to("#bypass", { opacity: 1, duration: 0.4 })
+    .fromTo("#bydot", { x: 55, y: 230, opacity: 0 }, { opacity: 1, duration: 0.15 })
+    .to("#bydot", { x: 350, y: 180, duration: 0.5, ease: "power1.in" })
+    .to("#bydot", { x: 694, y: 249, duration: 0.5, ease: "power1.out" })
+    .to("#bydot", { opacity: 0, duration: 0.2 })
+    .fromTo("#bylab", { opacity: 0 }, { opacity: 1, duration: 0.35 }, "-=0.6")
+    .to("#pzone", { opacity: 0.45, duration: 0.4 }, "<")
+    .fromTo("#payoff", { opacity: 0, y: 14 }, { opacity: 1, y: 0, duration: 0.5, ease: "power2.out" })
+    .fromTo("#phit", { scale: 1 }, { scale: 1.15, duration: 0.3, yoyo: true, repeat: 1, ease: "power1.inOut" });
+
+  DECK.register(tl, {});
+</script>
+</body>
+</html>

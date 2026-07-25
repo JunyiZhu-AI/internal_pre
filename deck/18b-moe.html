@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>MoE: Conditional Computation</title>
+<link rel="stylesheet" href="shared/deck.css?v=3">
+<style>
+  /* ---- variant-b ledger vocabulary ---- */
+  .ledger {
+    position: absolute; background: var(--panel); border: 1px solid var(--line);
+    border-radius: 14px; padding: 14px 16px;
+  }
+  .ledger h3 { margin: 0 0 10px; font-size: 15px; }
+  .ledger h3 .note { font-size: 11px; color: var(--ink-2); font-weight: 400; margin-left: 8px; }
+  .stamp {
+    position: absolute; font-weight: 800; font-size: 15px; letter-spacing: 0.04em;
+    border: 3px solid #e04b38; color: #e04b38; padding: 4px 10px; border-radius: 5px;
+    transform: rotate(-9deg); opacity: 0; z-index: 6;
+    background: rgba(11,13,18,0.55); font-family: ui-monospace, monospace;
+    box-shadow: 0 4px 14px rgba(0,0,0,0.4);
+  }
+  .mono { font-family: ui-monospace, "SF Mono", Menlo, monospace; }
+
+  /* ---- mechanism: dense FFN unzips into experts ---- */
+  #dense {
+    position: absolute; left: 239px; top: 230px; width: 130px; height: 230px;
+    border: 2px solid #4a5066; border-radius: 10px; background: #10141d;
+  }
+  #dense .dlab { position: absolute; bottom: 5px; width: 100%; text-align: center; font-size: 11px; color: #9aa1b5; font-weight: 600; }
+  #dense .tiles { position: absolute; inset: 8px 8px 24px; display: grid; gap: 3px; grid-template-columns: repeat(4, 1fr); grid-template-rows: repeat(7, 1fr); }
+  #dense .tiles i { background: rgba(57,135,229,0.3); border-radius: 2px; animation: dTw 2.4s ease-in-out infinite; }
+  #dense .tiles i:nth-child(3n) { animation-delay: 0.7s; }
+  #dense .tiles i:nth-child(4n) { animation-delay: 1.4s; }
+  @keyframes dTw { 50% { background: rgba(111,177,255,0.55); } }
+
+  #router {
+    position: absolute; left: 254px; top: 156px; width: 100px; height: 26px;
+    border: 1.5px solid var(--accent); border-radius: 999px; opacity: 0;
+    display: flex; align-items: center; justify-content: center;
+    font: 700 11px ui-monospace, monospace; color: var(--accent); background: rgba(11,13,18,0.9);
+  }
+  #switchchip {
+    position: absolute; left: 368px; top: 161px; font: 600 10px ui-monospace, monospace;
+    color: #6b7284; opacity: 0;
+  }
+  .exp {
+    position: absolute; top: 250px; width: 54px; height: 190px;
+    border: 1.5px solid #343a4a; border-radius: 8px; background: #10141d; opacity: 0;
+  }
+  .exp .elab { position: absolute; bottom: 4px; width: 100%; text-align: center; font: 600 9px ui-monospace, monospace; color: #6b7284; }
+  .exp .tiles { position: absolute; inset: 6px 6px 18px; display: grid; gap: 2px; grid-template-columns: repeat(2, 1fr); grid-template-rows: repeat(6, 1fr); }
+  .exp .tiles i { background: rgba(57,135,229,0.1); border-radius: 2px; }
+  .exp.hot { border-color: #3987e5; box-shadow: 0 0 16px rgba(57,135,229,0.5); animation: eHot 1.6s ease-in-out infinite; }
+  .exp.hot .tiles i { background: rgba(111,177,255,0.55); }
+  @keyframes eHot { 50% { box-shadow: 0 0 26px rgba(111,177,255,0.75); } }
+  #beams { position: absolute; inset: 0; pointer-events: none; }
+  #beams line { stroke: var(--accent); stroke-width: 2; stroke-dasharray: 6 5; opacity: 0; }
+  .tokdot {
+    position: absolute; width: 10px; height: 10px; border-radius: 50%;
+    background: var(--accent); box-shadow: 0 0 10px rgba(47,214,176,0.8); opacity: 0;
+  }
+  #mechcap { position: absolute; left: 44px; top: 555px; width: 550px; font: 500 11px ui-monospace, monospace; color: #9aa1b5; opacity: 0; line-height: 1.5; }
+
+  /* ---- the pay / get ledger ---- */
+  #pg { left: 640px; top: 112px; width: 596px; height: 216px; opacity: 0; }
+  .pgcol { position: absolute; top: 44px; width: 262px; }
+  #paycol { left: 16px; } #getcol { left: 316px; }
+  .pgcol .kicker { font: 700 10.5px ui-monospace, monospace; letter-spacing: 0.09em; }
+  #paycol .kicker { color: #6fb1ff; } #getcol .kicker { color: #e0a935; }
+  .pgcol .big { margin-top: 6px; font: 800 34px ui-monospace, monospace; letter-spacing: -0.01em; }
+  #payN { color: #6fb1ff; } #getN { color: #e0a935; }
+  .pgcol .big small { font-size: 13px; font-weight: 600; color: var(--ink-2); margin-left: 6px; }
+  .pgbar { margin-top: 8px; height: 13px; border-radius: 4px; transform-origin: left; }
+  #paybar { width: 52px; background: linear-gradient(90deg, rgba(57,135,229,0.4), #3987e5); }
+  #getbar { width: 188px; background: linear-gradient(90deg, rgba(201,133,0,0.4), #c98500); }
+  .pgcol .cap { margin-top: 8px; font-size: 10.5px; color: var(--ink-2); line-height: 1.4; opacity: 0; }
+  #arb {
+    position: absolute; left: 16px; right: 16px; bottom: 12px; text-align: center;
+    font: 600 12px ui-monospace, monospace; color: var(--accent); opacity: 0;
+  }
+
+  /* ---- iso-quality duel ---- */
+  #duel { left: 640px; top: 348px; width: 596px; height: 244px; opacity: 0; }
+  .tab {
+    display: inline-block; font: 600 10.5px ui-monospace, monospace; border: 1.5px solid var(--line);
+    border-radius: 999px; padding: 3px 10px; margin-right: 8px; color: #6b7284; opacity: 0;
+  }
+  .tab.hero { border-color: var(--accent); color: var(--accent); }
+  .bill { position: absolute; left: 16px; right: 16px; height: 54px; opacity: 0; display: flex; align-items: center; gap: 10px; }
+  #bill-dense { top: 62px; } #bill-moe { top: 128px; }
+  .bill .bname { width: 150px; }
+  .bill .bname b { display: block; font-size: 13px; }
+  .bill .bname span { font-size: 10px; color: var(--ink-2); font-family: ui-monospace, monospace; }
+  .bill .bwrap { flex: 1; height: 16px; position: relative; }
+  .bill .bbar { position: absolute; left: 0; top: 0; height: 16px; border-radius: 4px; transform-origin: left; }
+  #bill-dense .bbar { width: 280px; background: linear-gradient(90deg, rgba(57,135,229,0.5), #3987e5); box-shadow: 0 0 14px rgba(224,75,56,0.35); }
+  #bill-moe .bbar { width: 52px; background: linear-gradient(90deg, rgba(57,135,229,0.5), #3987e5); }
+  .bill .bamt { width: 118px; text-align: right; font: 700 12.5px ui-monospace, monospace; color: #c7cce0; }
+  #eqchip {
+    position: absolute; left: 16px; top: 108px; font: 700 10.5px ui-monospace, monospace;
+    color: var(--accent); border: 1.5px dashed rgba(47,214,176,0.5); border-radius: 999px;
+    padding: 2px 8px; opacity: 0; background: rgba(11,13,18,0.9); z-index: 5;
+  }
+  #st5 { left: 320px; top: 78px; font-size: 13.5px; }
+  #never { position: absolute; left: 16px; bottom: 10px; font-size: 10px; color: #6b7284; opacity: 0; }
+
+  /* ---- footer ---- */
+  #why { position: absolute; left: 44px; top: 622px; width: 960px; font-size: 12.5px; color: #c7cce0; opacity: 0; }
+  #why b { font-family: ui-monospace, monospace; font-size: 12px; }
+  #caution { position: absolute; left: 44px; top: 652px; width: 960px; font-size: 12.5px; color: #e0a935; opacity: 0; }
+</style>
+</head>
+<body>
+<div class="stage">
+  <div class="slide-title">MoE: Conditional Computation</div>
+  <div class="slide-sub">the FFN unzips — a router picks top-k experts per token</div>
+
+  <div id="dense"><div class="dlab">dense FFN</div></div>
+  <div id="router">router</div>
+  <div id="switchchip">Switch: k = 1</div>
+  <svg id="beams" width="1280" height="720">
+    <line id="bm1" x1="304" y1="184" x2="211" y2="252"/>
+    <line id="bm2" x1="304" y1="184" x2="397" y2="252"/>
+  </svg>
+  <div class="tokdot" id="tok" style="left:299px; top:96px"></div>
+  <div class="tokdot" id="tokA" style="left:206px; top:246px"></div>
+  <div class="tokdot" id="tokB" style="left:392px; top:246px"></div>
+  <div class="tokdot" id="tokOut" style="left:299px; top:470px"></div>
+  <div id="mechcap"></div>
+
+  <div class="ledger" id="pg">
+    <h3>The decoupling <span class="note">Mixtral 8×7B · per token</span></h3>
+    <div class="pgcol" id="paycol">
+      <div class="kicker">YOU PAY — FLOPs / TOKEN</div>
+      <div class="big"><span id="payN">0 B</span><small>active</small></div>
+      <div class="pgbar" id="paybar"></div>
+      <div class="cap" id="paycap"></div>
+    </div>
+    <div class="pgcol" id="getcol">
+      <div class="kicker">YOU GET — CAPABILITY</div>
+      <div class="big"><span id="getN">0 B</span><small>total</small></div>
+      <div class="pgbar" id="getbar"></div>
+      <div class="cap" id="getcap"></div>
+    </div>
+    <div id="arb"></div>
+  </div>
+
+  <div class="ledger" id="duel">
+    <div class="tab" id="tabflop"></div><div class="tab hero" id="tabqual"></div>
+    <div class="bill" id="bill-dense">
+      <div class="bname"><b>Llama-2-70B</b><span>dense</span></div>
+      <div class="bwrap"><div class="bbar"></div></div>
+      <div class="bamt">70 B / tok</div>
+    </div>
+    <div class="bill" id="bill-moe">
+      <div class="bname"><b>Mixtral 8×7B</b><span>MoE · 47 B total</span></div>
+      <div class="bwrap"><div class="bbar"></div></div>
+      <div class="bamt">13 B / tok</div>
+    </div>
+    <div id="eqchip">≈ same quality</div>
+    <div class="stamp" id="st5">5× THE FLOPs</div>
+    <div id="never"></div>
+  </div>
+
+  <div id="why"></div>
+  <div id="caution"></div>
+</div>
+
+<script src="../vendor/gsap.min.js"></script>
+<script src="shared/moe.js?v=3"></script>
+<script src="shared/manifest.js?v=3"></script>
+<script src="shared/deck.js?v=3"></script>
+<script>
+  // ---- static content from shared data ----
+  document.getElementById("mechcap").textContent = MOE.mech;
+  document.getElementById("paycap").textContent = MOE.decouple.flops;
+  document.getElementById("getcap").textContent = MOE.decouple.quality;
+  document.getElementById("arb").textContent = MOE.decouple.arb;
+  document.getElementById("tabflop").textContent = MOE.dual.isoFlop[0];
+  document.getElementById("tabqual").textContent = MOE.dual.isoQuality[0];
+  document.getElementById("never").textContent = MOE.dual.never;
+  document.getElementById("why").innerHTML = MOE.whyEveryone
+    .replace("TOTAL", '<b style="color:#e0a935">TOTAL</b>')
+    .replace("ACTIVE", '<b style="color:#6fb1ff">ACTIVE</b>');
+  document.getElementById("caution").textContent = MOE.keepBoth;
+
+  // dense tiles + 8 experts
+  function addTiles(host, n) {
+    var t = document.createElement("div"); t.className = "tiles";
+    for (var i = 0; i < n; i++) t.appendChild(document.createElement("i"));
+    host.appendChild(t);
+  }
+  addTiles(document.getElementById("dense"), 28);
+  var stage = document.querySelector(".stage");
+  var HOT = [2, 5];
+  for (var i = 0; i < 8; i++) {
+    var e = document.createElement("div");
+    e.className = "exp"; e.id = "exp" + i;
+    e.style.left = (60 + i * 62) + "px";
+    e.innerHTML = '<div class="elab">E' + (i + 1) + "</div>";
+    addTiles(e, 12);
+    stage.insertBefore(e, document.getElementById("beams"));
+  }
+
+  function hotOn() { HOT.forEach(function (i) { document.getElementById("exp" + i).classList.add("hot"); }); }
+  function hotOff() { HOT.forEach(function (i) { document.getElementById("exp" + i).classList.remove("hot"); }); }
+
+  // ---- counters ----
+  var cnt = { pay: 0, get: 0 };
+  var payN = document.getElementById("payN"), getN = document.getElementById("getN");
+  function paint() {
+    payN.textContent = Math.round(cnt.pay) + " B";
+    getN.textContent = Math.round(cnt.get) + " B";
+  }
+  paint();
+
+  // ---- timeline: 4 beats ----
+  var tl = gsap.timeline({ paused: true });
+
+  // beat 1: the dense FFN unzips — experts + router; a token runs top-2
+  tl.to("#dense", { opacity: 0, scale: 0.55, duration: 0.55, ease: "power2.in" })
+    .fromTo(".exp", { opacity: 0, scale: 0.4, x: function (i) { return 304 - (87 + i * 62); } },
+      { opacity: 1, scale: 1, x: 0, duration: 0.6, stagger: 0.05, ease: "power3.out" }, "-=0.2")
+    .fromTo("#router", { opacity: 0, y: -14 }, { opacity: 1, y: 0, duration: 0.4, ease: "back.out(2)" })
+    .fromTo("#switchchip", { opacity: 0 }, { opacity: 1, duration: 0.35 }, "-=0.1")
+    .fromTo("#tok", { opacity: 0, top: 96 }, { opacity: 1, top: 150, duration: 0.5, ease: "power1.in" })
+    .call(hotOn)
+    .to("#beams line", { opacity: 0.85, duration: 0.2, stagger: 0.06 })
+    .to("#tok", { opacity: 0, duration: 0.15 }, "<")
+    .fromTo("#tokA", { opacity: 0, top: 246 }, { opacity: 1, top: 420, duration: 0.5, ease: "power1.inOut" })
+    .fromTo("#tokB", { opacity: 0, top: 246 }, { opacity: 1, top: 420, duration: 0.5, ease: "power1.inOut" }, "<")
+    .to("#tokA", { left: 299, top: 470, opacity: 0, duration: 0.4, ease: "power1.in" })
+    .to("#tokB", { left: 299, top: 470, opacity: 0, duration: 0.4, ease: "power1.in" }, "<")
+    .fromTo("#tokOut", { opacity: 0 }, { opacity: 1, duration: 0.2 }, "-=0.1")
+    .to("#tokOut", { top: 505, opacity: 0, duration: 0.4, ease: "power1.in" })
+    .fromTo("#mechcap", { opacity: 0, y: 8 }, { opacity: 1, y: 0, duration: 0.4 }, "-=0.3")
+    .to("#beams line", { opacity: 0.35, duration: 0.3 });
+  DECK.markStep(tl);
+
+  // beat 2: the ledger — total spikes, FLOPs/token stays flat
+  tl.fromTo("#pg", { opacity: 0, y: 24 }, { opacity: 1, y: 0, duration: 0.5, ease: "power3.out" })
+    .to(cnt, { pay: 13, duration: 0.5, ease: "power1.out", onUpdate: paint })
+    .fromTo("#paybar", { scaleX: 0 }, { scaleX: 1, duration: 0.5, ease: "power2.out" }, "<")
+    .to(cnt, { get: 47, duration: 1.1, ease: "power2.inOut", onUpdate: paint }, "-=0.1")
+    .fromTo("#getbar", { scaleX: 0 }, { scaleX: 1, duration: 1.1, ease: "power2.inOut" }, "<")
+    .fromTo("#paycap", { opacity: 0, y: 6 }, { opacity: 1, y: 0, duration: 0.35 }, "-=0.3")
+    .fromTo("#getcap", { opacity: 0, y: 6 }, { opacity: 1, y: 0, duration: 0.35 }, "-=0.15")
+    .fromTo("#arb", { opacity: 0 }, { opacity: 1, duration: 0.45 });
+  DECK.markStep(tl);
+
+  // beat 3: iso-quality duel — the ghost dense model's meter runs 5× hotter
+  tl.fromTo("#duel", { opacity: 0, y: 24 }, { opacity: 1, y: 0, duration: 0.45, ease: "power3.out" })
+    .fromTo("#tabflop", { opacity: 0 }, { opacity: 0.7, duration: 0.3 })
+    .fromTo("#tabqual", { opacity: 0, scale: 0.8 }, { opacity: 1, scale: 1, duration: 0.35, ease: "back.out(2)" })
+    .fromTo("#bill-dense", { opacity: 0, x: -14 }, { opacity: 1, x: 0, duration: 0.4 })
+    .fromTo("#bill-dense .bbar", { scaleX: 0 }, { scaleX: 1, duration: 0.7, ease: "power2.out" }, "-=0.2")
+    .fromTo("#bill-moe", { opacity: 0, x: -14 }, { opacity: 1, x: 0, duration: 0.4 }, "-=0.3")
+    .fromTo("#bill-moe .bbar", { scaleX: 0 }, { scaleX: 1, duration: 0.4, ease: "power2.out" }, "-=0.2")
+    .fromTo("#eqchip", { opacity: 0, scale: 0.7 }, { opacity: 1, scale: 1, duration: 0.35, ease: "back.out(2)" })
+    .fromTo("#st5", { opacity: 0, scale: 2.2, rotate: -9 }, { opacity: 1, scale: 1, duration: 0.35, ease: "power3.in" })
+    .fromTo("#never", { opacity: 0 }, { opacity: 1, duration: 0.35 });
+  DECK.markStep(tl);
+
+  // beat 4: why everyone does it — and the amber caution that sets up the bill
+  tl.fromTo("#why", { opacity: 0, y: 10 }, { opacity: 1, y: 0, duration: 0.45, ease: "power2.out" })
+    .fromTo("#caution", { opacity: 0, y: 10 }, { opacity: 1, y: 0, duration: 0.45, ease: "power2.out" }, "+=0.2")
+    .fromTo("#getbar", { boxShadow: "0 0 0px rgba(224,169,53,0)" },
+      { boxShadow: "0 0 18px rgba(224,169,53,0.9)", duration: 0.3, yoyo: true, repeat: 3 }, "<");
+
+  DECK.register(tl, { reset: hotOff });
+</script>
+</body>
+</html>

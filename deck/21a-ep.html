@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Expert Parallelism</title>
+<link rel="stylesheet" href="shared/deck.css?v=3">
+<link rel="stylesheet" href="shared/bottlenecks.css?v=3">
+<style>
+  /* ---- the package, multiplied into a rack ---- */
+  .mpkg {
+    position: absolute; width: 160px; height: 200px;
+    border: 1.5px solid var(--line); border-radius: 12px; background: rgba(27,30,39,0.45);
+    opacity: 0;
+  }
+  .mpkg .mpl { position: absolute; left: 9px; top: 6px; font-size: 9px; color: var(--ink-2); letter-spacing: 0.06em; }
+  .mhbm {
+    position: absolute; left: 10px; top: 26px; width: 64px; height: 160px;
+    border: 1.5px solid rgba(201,133,0,0.6); border-radius: 6px;
+  }
+  .mhbm .echs { position: absolute; left: 5px; top: 6px; right: 5px; display: flex; flex-wrap: wrap; gap: 2px; }
+  .ech {
+    flex: none; width: 24px; height: 13px; border-radius: 2px;
+    background: linear-gradient(rgba(201,133,0,0.45), rgba(201,133,0,0.8));
+    animation: wGlow 2.6s ease-in-out infinite; opacity: 0;
+  }
+  .ech:nth-child(3n) { animation-delay: 0.7s; }
+  @keyframes wGlow { 50% { opacity: 0.55; } }
+  .mhbm .mcount { position: absolute; bottom: 4px; width: 100%; text-align: center; font: 700 9.5px ui-monospace, monospace; color: #e0a935; }
+  .mdie {
+    position: absolute; left: 86px; top: 56px; width: 62px; height: 92px;
+    border: 2px solid #3987e5; border-radius: 8px; background: #0d1420;
+  }
+  .mdie .mts { position: absolute; inset: 6px; display: grid; gap: 3px; grid-template-columns: 1fr 1fr; grid-template-rows: repeat(3, 1fr); }
+  .mdie .mts i { background: rgba(57,135,229,0.2); border-radius: 2px; }
+  .mdie.hot { border-color: #6fb1ff; box-shadow: 0 0 16px rgba(111,177,255,0.55); }
+  .mdie.hot .mts i { background: rgba(111,177,255,0.55); animation: mWork 0.8s ease-in-out infinite; }
+  @keyframes mWork { 50% { opacity: 0.45; } }
+
+  #drapechip {
+    position: absolute; left: 44px; top: 96px; width: 700px; text-align: center;
+    font: 700 11px ui-monospace, monospace; color: #e0a935; opacity: 0;
+  }
+  #sweep {
+    position: absolute; left: 44px; top: 122px; width: 240px; height: 424px;
+    background: linear-gradient(90deg, transparent, rgba(224,169,53,0.22), transparent);
+    opacity: 0; pointer-events: none;
+  }
+
+  .pdot { position: absolute; width: 9px; height: 9px; border-radius: 50%; z-index: 12; opacity: 0; }
+  .pdot.tk { background: #2fd6b0; box-shadow: 0 0 9px rgba(47,214,176,0.8); }
+  .pdot.pk { background: #9085e9; box-shadow: 0 0 9px rgba(144,133,233,0.8); }
+
+  .phch {
+    position: absolute; top: 560px; font: 700 10.5px ui-monospace, monospace;
+    border: 1.5px solid; border-radius: 999px; padding: 3px 11px;
+    background: rgba(11,13,18,0.9); opacity: 0; white-space: nowrap;
+  }
+  #ph0 { left: 92px; color: #9085e9; border-color: rgba(144,133,233,0.7); }
+  #ph1 { left: 300px; color: #6fb1ff; border-color: rgba(111,177,255,0.7); }
+  #ph2 { left: 512px; color: #9085e9; border-color: rgba(144,133,233,0.7); }
+  #nvl { position: absolute; left: 44px; top: 598px; width: 700px; font: 600 10.5px ui-monospace, monospace; color: var(--ink-2); line-height: 1.6; opacity: 0; }
+
+  /* ---- right column: vs TP, then the overlap ---- */
+  .tpcard {
+    position: absolute; left: 770px; width: 466px;
+    background: var(--panel); border: 1px solid var(--line); border-radius: 10px;
+    padding: 9px 13px; opacity: 0;
+  }
+  #tp0 { top: 122px; }
+  #tp1 { top: 208px; border-color: rgba(47,214,176,0.6); box-shadow: 0 0 14px rgba(47,214,176,0.15); }
+  .tpcard b { font: 700 12.5px ui-monospace, monospace; color: #9aa1b5; }
+  #tp1 b { color: var(--accent); }
+  .tpcard .td { margin-top: 3px; font-size: 11px; color: #c7cce0; line-height: 1.4; }
+
+  #gantt {
+    position: absolute; left: 770px; top: 306px; width: 466px; height: 152px;
+    background: var(--panel); border: 1px solid var(--line); border-radius: 10px; opacity: 0;
+  }
+  #gantt .glab { position: absolute; left: 12px; top: 8px; font-size: 10px; color: var(--ink-2); letter-spacing: 0.06em; }
+  .lane { position: absolute; left: 12px; font: 700 9.5px ui-monospace, monospace; width: 66px; text-align: right; }
+  #ln-c { top: 42px; color: #6fb1ff; } #ln-n { top: 88px; color: #9085e9; }
+  .gbar {
+    position: absolute; height: 24px; border-radius: 4px; transform-origin: left;
+    display: flex; align-items: center; justify-content: center;
+    font: 700 8.5px ui-monospace, monospace; color: #0b0d12; opacity: 0;
+  }
+  .gbar.gc { top: 36px; background: linear-gradient(#6fb1ff, #3987e5); }
+  .gbar.gn { top: 82px; background: linear-gradient(#b0a7f5, #9085e9); }
+  #gcap { position: absolute; left: 88px; top: 120px; font: 600 10px ui-monospace, monospace; color: var(--accent); opacity: 0; }
+  #gaxis { position: absolute; left: 88px; top: 114px; width: 360px; border-top: 1px solid var(--line); }
+
+  #reality { position: absolute; left: 770px; top: 474px; width: 466px; font-size: 11px; color: #c7cce0; line-height: 1.5; opacity: 0; }
+  #codesign { position: absolute; left: 770px; top: 536px; width: 466px; font-size: 11.5px; font-weight: 600; font-style: italic; color: var(--accent); line-height: 1.5; opacity: 0; }
+</style>
+</head>
+<body>
+<div class="stage">
+  <div class="slide-title">Expert Parallelism</div>
+  <div class="slide-sub">one package becomes a rack — experts stay whole, tokens do the travelling</div>
+
+  <div id="drapechip"></div>
+  <div id="rack"></div>
+  <div id="sweep"></div>
+
+  <div class="phch" id="ph0">1 · dispatch — all-to-all</div>
+  <div class="phch" id="ph1">2 · compute — local experts</div>
+  <div class="phch" id="ph2">3 · combine — all-to-all</div>
+  <div id="nvl"></div>
+
+  <div class="tpcard" id="tp0"><b></b><div class="td"></div></div>
+  <div class="tpcard" id="tp1"><b></b><div class="td"></div></div>
+
+  <div id="gantt">
+    <span class="glab">OVERLAP — MICRO-BATCH PIPELINE</span>
+    <span class="lane" id="ln-c">compute</span>
+    <span class="lane" id="ln-n">all-to-all</span>
+    <div id="gaxis"></div>
+    <div id="gcap">communication hides under compute</div>
+  </div>
+  <div id="reality"></div>
+  <div id="codesign"></div>
+</div>
+
+<script src="../vendor/gsap.min.js"></script>
+<script src="shared/moe.js?v=3"></script>
+<script src="shared/gpus.js?v=3"></script>
+<script src="shared/manifest.js?v=3"></script>
+<script src="shared/deck.js?v=3"></script>
+<script>
+  // ---- static content ----
+  var k3 = MOE.evo[2];
+  var perGpu = k3.routed / 8;
+  document.getElementById("drapechip").textContent =
+    (k3.total / 1000) + "T drapes across the rack — " + k3.routed + " experts / 8 GPUs = " + perGpu + " each";
+  document.getElementById("tp0").querySelector("b").textContent = MOE.ep.vsTP[0][0];
+  document.getElementById("tp0").querySelector(".td").textContent = MOE.ep.vsTP[0][1];
+  document.getElementById("tp1").querySelector("b").textContent = MOE.ep.vsTP[1][0];
+  document.getElementById("tp1").querySelector(".td").textContent = MOE.ep.vsTP[1][1];
+  document.getElementById("reality").textContent = MOE.ep.reality;
+  document.getElementById("codesign").textContent = MOE.ep.codesign;
+  var nv = GPUS.nvl72;
+  document.getElementById("nvl").textContent =
+    "the real rack: " + nv.name + " — " + nv.gpus + " GPUs · " + nv.hbm + " · " + nv.nvlink;
+
+  // ---- the rack: 8 mini packages ----
+  var rack = document.getElementById("rack");
+  var centers = [];
+  for (var i = 0; i < 8; i++) {
+    var x = 44 + (i % 4) * 180, y = 122 + Math.floor(i / 4) * 224;
+    centers.push([x + 80, y + 100]);
+    var p = document.createElement("div");
+    p.className = "mpkg"; p.id = "mp" + i;
+    p.style.left = x + "px"; p.style.top = y + "px";
+    var chips = "";
+    for (var j = 0; j < 10; j++) chips += "<i class='ech'></i>";
+    p.innerHTML = '<span class="mpl">GPU ' + i + "</span>" +
+      '<div class="mhbm"><div class="echs">' + chips + '</div><div class="mcount">×' + perGpu + "</div></div>" +
+      '<div class="mdie"><div class="mts"><i></i><i></i><i></i><i></i><i></i><i></i></div></div>';
+    rack.appendChild(p);
+  }
+
+  // travelling dots: 4 tokens in, 7 packets out+back, 1 result out
+  var stage = document.querySelector(".stage");
+  function mkdot(cls, id, x, y) {
+    var d = document.createElement("div");
+    d.className = "pdot " + cls; d.id = id;
+    d.style.left = x + "px"; d.style.top = y + "px";
+    stage.appendChild(d);
+  }
+  for (i = 0; i < 4; i++) mkdot("tk", "tk" + i, 14, 160 + i * 36);
+  var HOME = 1; // tokens land on GPU 1
+  var others = [0, 2, 3, 4, 5, 6, 7];
+  others.forEach(function (g, n) { mkdot("pk", "pk" + n, centers[HOME][0] - 4, centers[HOME][1] - 4); });
+  mkdot("tk", "out", centers[HOME][0] - 4, centers[HOME][1] - 4);
+
+  function diesHot(on) {
+    document.querySelectorAll(".mdie").forEach(function (d) { d.classList.toggle("hot", on); });
+  }
+
+  // gantt bars (pre-built, revealed in beat 4)
+  var gantt = document.getElementById("gantt");
+  for (var m = 0; m < 4; m++) {
+    var gb = document.createElement("div");
+    gb.className = "gbar gc"; gb.textContent = "µb" + (m + 1);
+    gb.style.left = (88 + m * 92) + "px"; gb.style.width = "84px";
+    gantt.appendChild(gb);
+  }
+  for (m = 0; m < 3; m++) {
+    gb = document.createElement("div");
+    gb.className = "gbar gn"; gb.textContent = "µb" + (m + 1) + " a2a";
+    gb.style.left = (180 + m * 92) + "px"; gb.style.width = "84px";
+    gantt.appendChild(gb);
+  }
+
+  // ---- timeline: 4 beats ----
+  var tl = gsap.timeline({ paused: true });
+
+  // beat 1: the package multiplies; the 2.8T model drapes across the rack
+  tl.fromTo(".mpkg", { opacity: 0, scale: 0.7 }, { opacity: 1, scale: 1, duration: 0.4, stagger: 0.07, ease: "back.out(1.5)" })
+    .fromTo("#drapechip", { opacity: 0, y: -8 }, { opacity: 1, y: 0, duration: 0.4 })
+    .fromTo("#sweep", { opacity: 0, x: -260 }, { opacity: 1, x: 0, duration: 0.15 })
+    .to("#sweep", { x: 700, duration: 1.0, ease: "power1.inOut" })
+    .to("#sweep", { opacity: 0, duration: 0.2 }, "-=0.2")
+    .fromTo(".ech", { opacity: 0 }, { opacity: 1, duration: 0.3, stagger: 0.008 }, "-=1.1")
+    .fromTo("#nvl", { opacity: 0 }, { opacity: 1, duration: 0.4 });
+  DECK.markStep(tl);
+
+  // beat 2: a batch dispatches — all-to-all out, local compute, all-to-all back
+  tl.fromTo("#ph0", { opacity: 0, y: 8 }, { opacity: 1, y: 0, duration: 0.3 })
+    .fromTo(".pdot.tk", { opacity: 0 }, { opacity: 1, duration: 0.2, stagger: 0.05 })
+    .to("#tk0", { left: centers[HOME][0] - 16, top: centers[HOME][1] - 12, duration: 0.55, ease: "power1.inOut" }, "<")
+    .to("#tk1", { left: centers[HOME][0] - 4, top: centers[HOME][1] - 12, duration: 0.55, ease: "power1.inOut" }, "<0.05")
+    .to("#tk2", { left: centers[HOME][0] - 16, top: centers[HOME][1], duration: 0.55, ease: "power1.inOut" }, "<0.05")
+    .to("#tk3", { left: centers[HOME][0] - 4, top: centers[HOME][1], duration: 0.55, ease: "power1.inOut" }, "<0.05")
+    .to(".pdot.tk", { opacity: 0, duration: 0.2 })
+    .fromTo(".pdot.pk", { opacity: 0 }, { opacity: 1, duration: 0.15 }, "<");
+  others.forEach(function (g, n) {
+    tl.to("#pk" + n, { left: centers[g][0] - 4, top: centers[g][1] - 4, duration: 0.55, ease: "power1.inOut" }, n ? "<0.04" : undefined);
+  });
+  tl.fromTo("#ph1", { opacity: 0, y: 8 }, { opacity: 1, y: 0, duration: 0.3 })
+    .call(function () { diesHot(true); })
+    .to({}, { duration: 0.7 })
+    .fromTo("#ph2", { opacity: 0, y: 8 }, { opacity: 1, y: 0, duration: 0.3 });
+  others.forEach(function (g, n) {
+    tl.to("#pk" + n, { left: centers[HOME][0] - 4, top: centers[HOME][1] - 4, duration: 0.55, ease: "power1.inOut" }, n ? "<0.04" : undefined);
+  });
+  tl.to(".pdot.pk", { opacity: 0, duration: 0.2 })
+    .call(function () { diesHot(false); })
+    .fromTo("#out", { opacity: 0 }, { opacity: 1, duration: 0.15 }, "<")
+    .to("#out", { left: 748, top: 340, duration: 0.5, ease: "power1.in" })
+    .to("#out", { opacity: 0, duration: 0.2 });
+  DECK.markStep(tl);
+
+  // beat 3: why not tensor parallelism
+  tl.fromTo("#tp0", { opacity: 0, x: 20 }, { opacity: 0.8, x: 0, duration: 0.4, ease: "power2.out" })
+    .fromTo("#tp1", { opacity: 0, x: 20 }, { opacity: 1, x: 0, duration: 0.45, ease: "power2.out" }, "<0.18");
+  DECK.markStep(tl);
+
+  // beat 4: the overlap trick — and the co-design point
+  tl.fromTo("#gantt", { opacity: 0, y: 14 }, { opacity: 1, y: 0, duration: 0.45, ease: "power2.out" })
+    .fromTo(".gbar.gc", { opacity: 0, scaleX: 0.3 }, { opacity: 1, scaleX: 1, duration: 0.3, stagger: 0.16, ease: "power2.out" })
+    .fromTo(".gbar.gn", { opacity: 0, scaleX: 0.3 }, { opacity: 1, scaleX: 1, duration: 0.3, stagger: 0.16, ease: "power2.out" }, "-=0.55")
+    .fromTo("#gcap", { opacity: 0 }, { opacity: 1, duration: 0.35 })
+    .fromTo("#reality", { opacity: 0, y: 8 }, { opacity: 1, y: 0, duration: 0.4 })
+    .fromTo("#codesign", { opacity: 0, y: 8 }, { opacity: 1, y: 0, duration: 0.4 });
+
+  DECK.register(tl, {
+    reset: function () {
+      diesHot(false);
+    }
+  });
+</script>
+</body>
+</html>

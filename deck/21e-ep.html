@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Expert parallelism</title>
+<link rel="stylesheet" href="shared/deck.css?v=3">
+<style>
+  .an { position: absolute; font-size: 10px; font-weight: 600; letter-spacing: .13em; text-transform: uppercase; color: #9aa1b5; }
+  .figno { position: absolute; font: 600 9px ui-monospace, Menlo, monospace; letter-spacing: .22em; color: #525a6e; text-transform: uppercase; }
+  .bp {
+    position: absolute; border: 1px solid var(--line); border-radius: 8px;
+    background-image:
+      linear-gradient(rgba(154,161,181,.045) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(154,161,181,.045) 1px, transparent 1px);
+    background-size: 26px 26px; background-color: rgba(27,30,39,.32);
+  }
+  svg text { font-family: ui-monospace, Menlo, monospace; }
+
+  #rack { left: 44px; top: 104px; width: 380px; height: 540px; }
+  #rack svg { position: absolute; inset: 0; }
+  #xbar { position: absolute; left: 424px; top: 104px; width: 150px; height: 540px; }
+  #xbar svg { position: absolute; inset: 0; }
+  #xbar .an { left: 0; width: 150px; text-align: center; top: 12px; color: #9085e9; opacity: 0; }
+  #a2asub { position: absolute; left: 424px; top: 610px; width: 150px; text-align: center;
+    font: 600 8.5px ui-monospace, Menlo, monospace; letter-spacing: .1em; color: #6b7284;
+  text-transform: uppercase; opacity: 0; }
+  .busline.flow { stroke-dasharray: 7 6; animation: busDash .8s linear infinite; }
+  @keyframes busDash { to { stroke-dashoffset: -26; } }
+
+  #vstp { left: 604px; top: 104px; width: 632px; height: 148px; opacity: 0; }
+  #vstp .an { left: 14px; top: 10px; }
+  .vsrow { position: absolute; left: 14px; width: 604px; display: flex; align-items: center; gap: 14px; opacity: 0; }
+  #row-tp { top: 38px; }
+  #row-ep { top: 94px; }
+  .vsrow svg { flex: none; }
+  .vsrow .vt { font: 600 12px ui-monospace, Menlo, monospace; line-height: 1.5; }
+  #row-tp .vt { color: #8a91a5; }
+  #row-ep .vt { color: #2fd6b0; }
+
+  #gantt { left: 604px; top: 272px; width: 632px; height: 300px; opacity: 0; }
+  #gantt .an { left: 14px; top: 10px; }
+  #gantt svg { position: absolute; left: 0; top: 30px; }
+  #overlap-note { position: absolute; left: 704px; top: 520px; width: 440px;
+    font-size: 11.5px; font-style: italic; color: var(--accent); opacity: 0; }
+
+  #codesign { position: absolute; left: 604px; top: 592px; width: 560px;
+    border: 1px solid rgba(47,214,176,.4); border-radius: 6px; padding: 8px 12px;
+    background: rgba(27,30,39,.5); opacity: 0; }
+  #codesign .ct { font-size: 9.5px; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; color: var(--accent); }
+  #codesign .cl { font-size: 11px; color: #c7cce0; line-height: 1.45; margin-top: 3px; }
+</style>
+</head>
+<body>
+<div class="stage">
+  <div class="slide-title">Expert parallelism</div>
+  <div class="slide-sub">the capacity problem becomes a placement problem — then a traffic problem</div>
+
+  <div class="bp" id="rack">
+    <svg viewBox="0 0 380 540" width="380" height="540"></svg>
+    <div class="figno" style="left:14px; bottom:9px;">Fig. 21</div>
+  </div>
+
+  <div id="xbar">
+    <div class="an">all-to-all</div>
+    <svg viewBox="0 0 150 540" width="150" height="540"></svg>
+  </div>
+  <div id="a2asub">dispatch · compute · combine</div>
+
+  <div class="bp" id="vstp">
+    <div class="an">vs tensor parallelism</div>
+    <div class="vsrow" id="row-tp">
+      <svg width="92" height="46" viewBox="0 0 92 46">
+        <rect x="6" y="6" width="80" height="24" rx="2" fill="none" stroke="#8a91a5" stroke-width="1.1"/>
+        <line x1="26" y1="6" x2="26" y2="30" stroke="#8a91a5" stroke-width="1" stroke-dasharray="3 3"/>
+        <line x1="46" y1="6" x2="46" y2="30" stroke="#8a91a5" stroke-width="1" stroke-dasharray="3 3"/>
+        <line x1="66" y1="6" x2="66" y2="30" stroke="#8a91a5" stroke-width="1" stroke-dasharray="3 3"/>
+        <text x="46" y="43" text-anchor="middle" font-size="7.5" fill="#6b7284">ALL-REDUCE / LAYER</text>
+      </svg>
+      <div class="vt" id="tp-t"></div>
+    </div>
+    <div class="vsrow" id="row-ep">
+      <svg width="92" height="46" viewBox="0 0 92 46">
+        <rect x="6" y="8" width="16" height="22" rx="2" fill="none" stroke="#2fd6b0" stroke-width="1.2"/>
+        <rect x="27" y="8" width="16" height="22" rx="2" fill="none" stroke="#2fd6b0" stroke-width="1.2"/>
+        <rect x="48" y="8" width="16" height="22" rx="2" fill="none" stroke="#2fd6b0" stroke-width="1.2"/>
+        <rect x="69" y="8" width="16" height="22" rx="2" fill="none" stroke="#2fd6b0" stroke-width="1.2"/>
+        <text x="46" y="43" text-anchor="middle" font-size="7.5" fill="#6b7284">WHOLE EXPERTS</text>
+      </svg>
+      <div class="vt" id="ep-t"></div>
+    </div>
+  </div>
+
+  <div class="bp" id="gantt">
+    <div class="an">overlap — compute & communication</div>
+    <svg viewBox="0 0 632 260" width="632" height="260"></svg>
+  </div>
+  <div id="overlap-note"></div>
+
+  <div id="codesign">
+    <div class="ct">co-design</div>
+    <div class="cl" id="codesign-l"></div>
+  </div>
+</div>
+
+<script src="../vendor/gsap.min.js"></script>
+<script src="shared/moe.js?v=3"></script>
+<script src="shared/gpus.js?v=3"></script>
+<script src="shared/manifest.js?v=3"></script>
+<script src="shared/deck.js?v=3"></script>
+<script>
+  var NS = "http://www.w3.org/2000/svg";
+  function el(tag, at, parent) {
+    var e = document.createElementNS(NS, tag);
+    for (var k in at) e.setAttribute(k, at[k]);
+    parent.appendChild(e);
+    return e;
+  }
+
+  var K3 = MOE.evo[2];
+  var NGPU = 8;
+  var perGpu = K3.routed / NGPU;                       // 112
+  var gbPer = Math.round(K3.total / 2 / NGPU);         // 175 GB @ 4-bit
+
+  // ---- rack elevation ----
+  var rs = document.querySelector("#rack svg");
+  var hd = el("text", { x: 190, y: 26, "text-anchor": "middle", fill: "#9aa1b5", "font-size": 10,
+    "letter-spacing": "2", "class": "rfade", opacity: 0 }, rs);
+  hd.textContent = "RACK — " + GPUS.nvl72.name;
+  var hd2 = el("text", { x: 190, y: 42, "text-anchor": "middle", fill: "#6b7284", "font-size": 8.5,
+    "class": "rfade", opacity: 0 }, rs);
+  hd2.textContent = GPUS.nvl72.nvlink.split(" (")[0].toUpperCase();
+  // rails
+  el("line", { x1: 40, y1: 54, x2: 40, y2: 512, stroke: "#4a5066", "stroke-width": 1.6, "class": "rdr" }, rs);
+  el("line", { x1: 316, y1: 54, x2: 316, y2: 512, stroke: "#4a5066", "stroke-width": 1.6, "class": "rdr" }, rs);
+  var slotY = [], SH = 50, SG = 7;
+  for (var i = 0; i < NGPU; i++) {
+    var sy = 58 + i * (SH + SG);
+    slotY.push(sy + SH / 2);
+    el("circle", { cx: 32, cy: sy + SH / 2, r: 2, fill: "none", stroke: "#4a5066", "stroke-width": 1, "class": "rdr" }, rs);
+    el("circle", { cx: 324, cy: sy + SH / 2, r: 2, fill: "none", stroke: "#4a5066", "stroke-width": 1, "class": "rdr" }, rs);
+    el("rect", { x: 48, y: sy, width: 260, height: SH, rx: 3, fill: "none", stroke: "#9aa1b5",
+      "stroke-opacity": .8, "stroke-width": 1.1, "class": "rdr", id: "slot" + i }, rs);
+    var lt = el("text", { x: 58, y: sy + SH / 2 + 3.5, fill: "#6b7284", "font-size": 9, "class": "rfade", opacity: 0 }, rs);
+    lt.textContent = "GPU " + i;
+    // expert chips (the drape — beat 1b)
+    var gch = el("g", { "class": "chips", opacity: 0 }, rs);
+    for (var c = 0; c < 6; c++) {
+      el("rect", { x: 108 + c * 22, y: sy + SH / 2 - 8, width: 15, height: 16, rx: 2,
+        fill: "#2fd6b0", "fill-opacity": .12, stroke: "#2fd6b0", "stroke-opacity": .8, "stroke-width": 1, "class": "chip r" + i }, gch);
+    }
+    var ct = el("text", { x: 246, y: sy + SH / 2 + 3.5, fill: "#2fd6b0", "font-size": 9, "class": "chips", opacity: 0 }, rs);
+    ct.textContent = "×" + perGpu;
+  }
+  // drape bracket + caption
+  el("path", { d: "M 336 58 H 344 V 512 H 336", fill: "none", stroke: "#e0a935", "stroke-opacity": .8,
+    "stroke-width": 1.1, "class": "ddr" }, rs);
+  var dl = el("text", { x: 358, y: 285, fill: "#e0a935", "font-size": 10, "font-weight": 700,
+    transform: "rotate(-90 358 285)", "text-anchor": "middle", "class": "chips", opacity: 0 }, rs);
+  dl.textContent = (K3.total / 1000).toFixed(1) + " T · " + K3.routed + " EXPERTS";
+  var dc = el("text", { x: 332, y: 530, "text-anchor": "end", fill: "#e0a935", "font-size": 9.5,
+    "class": "chips", opacity: 0 }, rs);
+  dc.textContent = perGpu + " experts / GPU · ≈" + gbPer + " GB @ 4-bit";
+
+  // ---- crossbar ----
+  var xs = document.querySelector("#xbar svg");
+  var BUSX = 104;
+  el("line", { x1: BUSX, y1: slotY[0], x2: BUSX, y2: slotY[7], stroke: "#9085e9", "stroke-width": 1.6,
+    "stroke-opacity": .8, "class": "xdr busline", id: "busmain" }, xs);
+  slotY.forEach(function (cy) {
+    el("line", { x1: 4, y1: cy, x2: BUSX, y2: cy, stroke: "#9085e9", "stroke-width": 1.1,
+      "stroke-opacity": .6, "class": "xdr busline" }, xs);
+  });
+  // packets: [fromSlot, toSlot, color]
+  var HOPS = [[1, 5, "#9085e9"], [6, 2, "#9085e9"], [3, 7, "#9085e9"], [4, 0, "#9085e9"]];
+  var pkts = [];
+  HOPS.forEach(function (h) {
+    var p = el("rect", { x: 6, y: slotY[h[0]] - 4, width: 11, height: 8, rx: 1.5, fill: h[2], opacity: 0 }, xs);
+    p._from = h[0]; p._to = h[1];
+    pkts.push(p);
+  });
+  var rpkts = HOPS.map(function (h) {
+    var p = el("rect", { x: 6, y: slotY[h[1]] - 4, width: 11, height: 8, rx: 1.5, fill: "#2fd6b0", opacity: 0 }, xs);
+    p._from = h[1]; p._to = h[0];
+    return p;
+  });
+
+  // ---- vs TP ----
+  document.getElementById("tp-t").textContent = MOE.ep.vsTP[0][0] + " — " + MOE.ep.vsTP[0][1];
+  document.getElementById("ep-t").textContent = MOE.ep.vsTP[1][0] + " — " + MOE.ep.vsTP[1][1];
+
+  // ---- Gantt ----
+  var gs = document.querySelector("#gantt svg");
+  var U = 96, GAP = 8, X0 = 110;
+  function bx(slot) { return X0 + slot * (U + GAP); }
+  var rows = [
+    { lab: "ALL-TO-ALL", y: 60, color: "#9085e9", slots: [0, 1, 2, 3], pre: "a2a µ" },
+    { lab: "COMPUTE", y: 118, color: "#3987e5", slots: [1, 2, 3, 4], pre: "µ" },
+  ];
+  var blocks = [];   // [ [commBlock µ1], [computeµ1, commµ2], ... ] by wave
+  rows.forEach(function (r) {
+    var t = el("text", { x: X0 - 10, y: r.y + 22, "text-anchor": "end", fill: "#6b7284", "font-size": 9, "class": "gfade", opacity: 0 }, gs);
+    t.textContent = r.lab;
+    r.els = r.slots.map(function (s, i) {
+      var g = el("g", {}, gs);
+      el("rect", { x: bx(s), y: r.y, width: U, height: 34, rx: 3, fill: r.color, "fill-opacity": .14,
+        stroke: r.color, "stroke-width": 1.2 }, g);
+      var bt = el("text", { x: bx(s) + U / 2, y: r.y + 21, "text-anchor": "middle", fill: r.color, "font-size": 10, "font-weight": 700 }, g);
+      bt.textContent = r.pre + (i + 1);
+      gsap.set(g.firstChild, { transformOrigin: "0% 50%", scaleX: 0 });
+      gsap.set(bt, { opacity: 0 });
+      return g;
+    });
+  });
+  // dashed alignment guides
+  [1, 2, 3, 4].forEach(function (s) {
+    el("line", { x1: bx(s) - GAP / 2, y1: 48, x2: bx(s) - GAP / 2, y2: 166, stroke: "#3d4356",
+      "stroke-width": .8, "stroke-dasharray": "3 4", "class": "gfade", opacity: 0 }, gs);
+  });
+  // time axis
+  el("line", { x1: X0, y1: 186, x2: 600, y2: 186, stroke: "#4a5066", "stroke-width": 1, "class": "gfade", opacity: 0 }, gs);
+  el("path", { d: "M 594 182 L 602 186 L 594 190", fill: "none", stroke: "#4a5066", "stroke-width": 1, "class": "gfade", opacity: 0 }, gs);
+  var ta = el("text", { x: 604, y: 203, "text-anchor": "end", fill: "#6b7284", "font-size": 8.5, "class": "gfade", opacity: 0 }, gs);
+  ta.textContent = "TIME";
+
+  document.getElementById("overlap-note").textContent =
+    "“" + MOE.ep.reality.split("→ overlap it: ")[1] + "”";
+  document.getElementById("codesign-l").textContent = MOE.ep.codesign;
+
+  // draw-on prep
+  document.querySelectorAll(".rdr, .ddr, .xdr").forEach(function (p) {
+    var L = p.getTotalLength();
+    p.style.strokeDasharray = L + " " + L;
+    p.style.strokeDashoffset = L;
+  });
+
+  function busFlow(on) {
+    document.querySelectorAll(".busline").forEach(function (l) {
+      l.classList.toggle("flow", on);
+      if (on) { l.style.strokeDasharray = ""; l.style.strokeDashoffset = ""; }
+    });
+  }
+  function busSolid() {
+    // restore draw-on state for reset
+    document.querySelectorAll(".busline").forEach(function (l) {
+      l.classList.remove("flow");
+      var L = l.getTotalLength();
+      l.style.strokeDasharray = L + " " + L;
+      l.style.strokeDashoffset = L;
+    });
+  }
+
+  // ---- timeline: 4 beats ----
+  var tl = gsap.timeline({ paused: true });
+
+  // beat 1: the rack draws; the 2.8T model drapes across it
+  tl.to("#rack .rdr", { strokeDashoffset: 0, duration: .55, stagger: .025, ease: "none" })
+    .to("#rack .rfade", { opacity: 1, duration: .35, stagger: .02 }, "-=0.25")
+    .to("#rack .ddr", { strokeDashoffset: 0, duration: .45, ease: "none" })
+    .to("#rack .chips", { opacity: 1, duration: .4, stagger: .045 }, "-=0.2");
+  DECK.markStep(tl);
+
+  // beat 2: a batch dispatches — packets fly GPU-to-GPU, compute, combine back
+  tl.to("#xbar .an", { opacity: 1, duration: .3 })
+    .to(".xdr", { strokeDashoffset: 0, duration: .5, stagger: .04, ease: "none" }, "<")
+    .to("#a2asub", { opacity: 1, duration: .3 }, "-=0.2");
+  pkts.forEach(function (p, i) {
+    var dy = slotY[p._to] - slotY[p._from];
+    tl.to(p, { keyframes: [
+      { opacity: 1, duration: .06 },
+      { x: BUSX - 14, duration: .28, ease: "power1.in" },
+      { y: dy, duration: .34, ease: "none" },
+      { x: 0, duration: .28, ease: "power1.out" },
+      { opacity: 0, duration: .1 }] }, i ? "<0.14" : "+=0.1");
+  });
+  tl.to(".chip", { fillOpacity: .5, duration: .18, yoyo: true, repeat: 3, stagger: 0 }, "-=0.2");
+  rpkts.forEach(function (p, i) {
+    var dy = slotY[p._to] - slotY[p._from];
+    tl.to(p, { keyframes: [
+      { opacity: 1, duration: .06 },
+      { x: BUSX - 14, duration: .28, ease: "power1.in" },
+      { y: dy, duration: .34, ease: "none" },
+      { x: 0, duration: .28, ease: "power1.out" },
+      { opacity: 0, duration: .1 }] }, i ? "<0.14" : "+=0.05");
+  });
+  tl.call(function () { busFlow(true); });
+  DECK.markStep(tl);
+
+  // beat 3: EP vs TP — two lines, that's all
+  tl.to("#vstp", { opacity: 1, duration: .4 })
+    .to("#row-tp", { opacity: 1, duration: .4 }, "-=0.15")
+    .to("#row-ep", { opacity: 1, duration: .4 }, "+=0.2");
+  DECK.markStep(tl);
+
+  // beat 4: the overlap trick — and the co-design behind it
+  tl.to("#gantt", { opacity: 1, duration: .4 })
+    .to("#gantt .gfade", { opacity: 1, duration: .35, stagger: .03 }, "-=0.15");
+  // waves: comm µ1 | compute µ1 + comm µ2 | compute µ2 + comm µ3 | ...
+  for (var w = 0; w < 5; w++) {
+    var wave = [];
+    if (w < 4) wave.push(rows[0].els[w]);          // comm µ(w+1) at slot w
+    if (w >= 1) wave.push(rows[1].els[w - 1]);     // compute µw at slot w
+    wave.forEach(function (g, gi) {
+      tl.to(g.firstChild, { scaleX: 1, duration: .32, ease: "power1.out" }, gi ? "<" : (w ? "+=0.08" : "+=0.1"))
+        .to(g.lastChild, { opacity: 1, duration: .2 }, "-=0.12");
+    });
+  }
+  tl.to("#overlap-note", { opacity: 1, duration: .4 })
+    .to("#codesign", { opacity: 1, duration: .45 }, "+=0.15");
+
+  DECK.register(tl, { reset: busSolid });
+</script>
+</body>
+</html>
