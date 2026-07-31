@@ -19,10 +19,9 @@ window.DECK_PAGES = [
   "15-payoff.html",
   "16-quant-notation.html",
   "17-quant-sota.html",
-  // MoE section variants (a–e) — one flow will be promoted, the rest deleted
-  "18a-moe.html", "19a-moe-evo.html", "20a-moe-bill.html", "21a-ep.html", "22a-pd.html",
-  "18b-moe.html", "19b-moe-evo.html", "20b-moe-bill.html", "21b-ep.html", "22b-pd.html",
-  "18c-moe.html", "19c-moe-evo.html", "20c-moe-bill.html", "21c-ep.html", "22c-pd.html",
-  "18d-moe.html", "19d-moe-evo.html", "20d-moe-bill.html", "21d-ep.html", "22d-pd.html",
-  "18e-moe.html", "19e-moe-evo.html", "20e-moe-bill.html", "21e-ep.html", "22e-pd.html",
+  "18-moe.html",
+  "19-moe-evo.html",
+  "20-moe-bill.html",
+  "21-ep.html",
+  "22-pd.html",
 ];

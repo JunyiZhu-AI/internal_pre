@@ -470,6 +470,122 @@ slide 03 deliberately reappear here.*
 
 ---
 
+## Pages 18–22 — MoE and the systems layer (one flow, five slides)
+
+*The machine continues: the GPU package from 16–17 stays on stage. We zoom
+into the die for the unzip, fill HBM with the expert grid, hit the capacity
+wall, multiply the package into a rack, and finally split the rack into two
+pools — landing back on the rate card's $0.30.*
+
+### 18 — MoE: Conditional Computation
+
+1. "Slide 17 ended on a promise: what if a token simply used fewer weights?
+   Here's the machine again. Zoom into the die — one layer of the stack,
+   the part we haven't touched all talk: the FFN. Dense, it's roughly
+   two-thirds of the parameters, and every token pays for all of it."
+2. "The trick: unzip the FFN into N parallel experts and put a router in
+   front. Each token activates only the top-k — here two of eight; Switch
+   Transformer pushed it all the way to k = 1. The experts a token doesn't
+   route to simply don't run."
+3. "That one move decouples two numbers that used to be the same. FLOPs per
+   token follow the ACTIVE parameters. Capability — roughly — follows the
+   TOTAL. MoE is the arbitrage between the two."
+4. "And you can cash the arbitrage two ways. The researcher's framing:
+   iso-FLOP — about seven times the parameters at equal compute; Switch,
+   GLaM. The operator's framing — the one this talk bills in: iso-quality.
+   Mixtral 8×7B matched Llama-2-70B-class quality on 13 billion active;
+   the dense ghost next to it burns roughly five times the FLOPs per token
+   for the same answers. Careful phrasing: never 'same parameters' — total
+   parameters go UP."
+5. "So why is every frontier open model MoE now? Because capability is
+   marketed in total params, and the bill — training and decode alike — is
+   computed in active FLOPs. But hold both numbers: decode still reads the
+   active parameters from HBM every token — and HBM has to store ALL of
+   them. That second number is about to send us a bill."
+
+### 19 — The MoE Evolution: Finer, Sparser, Shared
+
+1. "The frontier pushed MoE along three axes. Finer: DeepSeekMoE split
+   coarse experts into many small ones — more routing combinations, better
+   specialization. Shared: one always-on expert carries the common
+   knowledge, freeing the routed ones to specialize. And sparser — watch
+   the activation rate collapse."
+2. "Run the race. DeepSeek-V3, 2024: 671 billion total, 37 active — 256
+   routed experts, top-8, one shared. Kimi K2, 2025: a trillion total,
+   32 active — 384 experts, still top-8."
+3. "And K3: 896 routed experts, top-16 plus the shared one — 2.8 trillion
+   total, 41 billion active. Sixteen out of 896 is a 1.8 percent
+   activation rate; the recipe is called Stable LatentMoE. That's the grid
+   filling HBM on the left — the teal bar on top is the shared expert,
+   never off."
+4. "One line of interpretation: the field is buying enormous capacity at
+   near-constant per-token cost. Total goes 671 → 1,000 → 2,800; the
+   active row — note the ×10 zoom it needs to even be visible — barely
+   moves."
+
+### 20 — MoE's Hidden Bill
+
+1. "The four buckets from the start of the talk are back. Turn the model
+   MoE and watch compute: it relaxes — the matmul bill follows 41 billion
+   active, not 2.8 trillion. But in this talk, a discount at one bucket
+   usually means an invoice at another."
+2. "Invoice one: capacity. All 2.8 trillion parameters must sit in HBM,
+   even though ninety-eight percent are idle for any given token. At four
+   bits that's about 1.4 terabytes of weights — at least eight B200s
+   before a single byte of KV cache. It does not fit in one package."
+3. "Invoice two: communication. The moment experts live on different GPUs,
+   every MoE layer becomes an all-to-all token exchange — out to the
+   experts, back from the experts, every layer. Interconnect is now a
+   first-class bottleneck."
+4. "So the reframe: MoE moved the bottleneck — from compute to capacity
+   plus interconnect. The rest of this section is the systems layer
+   answering: expert parallelism, then prefill–decode disaggregation."
+
+### 21 — Expert Parallelism
+
+1. "One package becomes eight. Expert parallelism: different experts on
+   different GPUs — 896 experts across 8 GPUs is 112 each — and the model
+   that didn't fit now drapes across a rack."
+2. "The cost is choreography. A batch arrives: dispatch — all-to-all —
+   every token flies to the GPUs that hold its experts. Compute happens
+   locally — watch the dies flash. Combine — all-to-all again — and
+   everything is back where it started."
+3. "Why not tensor parallelism? TP splits every matmul — an all-reduce
+   every single layer, latency-bound. EP keeps whole experts local and
+   communicates only at expert boundaries."
+4. "All-to-all is latency- and topology-sensitive, so the serving trick is
+   overlap: while one micro-batch computes, the next one's tokens are in
+   flight — communication tucks under compute. And notice the direction of
+   design: expert size, top-k, group-limited routing are chosen to make EP
+   cheap. The architecture serves the system — and racks like the GB200
+   NVL72, 1.8 terabytes a second of NVLink per GPU, are the system."
+
+### 22 — Prefill–Decode Disaggregation
+
+1. "Honesty first: this last one is not an MoE trick — Splitwise, DistServe,
+   Mooncake all did it for dense models. It answers the oldest split in
+   this talk: prefill is compute-bound and owns time-to-first-token;
+   decode is bandwidth-bound and owns time-per-output-token. Co-locate
+   them and they fight for the same GPU — and couple those two latency
+   targets."
+2. "So split the machines. A prefill pool builds the KV cache; the parcel
+   ships over the interconnect; a decode pool streams tokens out. TTFT and
+   TPOT are now tuned independently — each gauge has its own owner."
+3. "What it buys: each pool scales to its own traffic; each phase gets its
+   own parallelism and batching — frontier MoE clusters run different EP
+   degrees in P and D; and a prefill spike no longer stalls everyone's
+   decode. The price: shipping KV caches across the network, fast."
+4. "And with that, the rate card again. Question 2 — why is a cache hit
+   ten times cheaper? Prefix caching plus PD-aware routing: a cached
+   prefix skips prefill entirely — watch the bypass path. $3.00 becomes
+   $0.30. That discount isn't marketing; it's this architecture showing
+   through the price sheet. K3's team upstreamed prefix-caching work to
+   vLLM — the economics and the engineering are one story."
+
+*(final click → next page)*
+
+---
+
 ## Template page — QKᵀ: where attention scores come from
 
 **Load:** title only; empty score grid awaits.
