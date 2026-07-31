@@ -24,4 +24,6 @@ window.DECK_PAGES = [
   "20-moe-bill.html",
   "21-ep.html",
   "22-pd.html",
+  // MTP variants (a–e) — one will be promoted, the rest deleted
+  "23a-mtp.html", "23b-mtp.html", "23c-mtp.html", "23d-mtp.html", "23e-mtp.html",
 ];

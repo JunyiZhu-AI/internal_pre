@@ -1,0 +1,382 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Multi-Token Prediction</title>
+<link rel="stylesheet" href="shared/deck.css?v=4">
+<style>
+  .sc { font-family: ui-monospace, Menlo, monospace; text-transform: uppercase; letter-spacing: 0.14em; }
+  .note { font: 500 9.5px/1.35 ui-monospace, Menlo, monospace; color: var(--ink-2); }
+
+  /* left rail: row labels */
+  .rowlab { position: absolute; left: 44px; width: 114px; color: #c7cce0; font-weight: 700; font-size: 11px; opacity: 0; }
+  .rowsub { position: absolute; left: 44px; width: 114px; color: #6b7284; font-size: 8.5px; opacity: 0; }
+  .dielab { position: absolute; left: 44px; width: 114px; color: #6b7284; font-size: 8px; opacity: 0; }
+
+  /* right rail: margin notes + tallies */
+  .mnote { position: absolute; right: 44px; text-align: right; opacity: 0; }
+  .tally { position: absolute; left: 1150px; width: 86px; text-align: right; font-family: ui-monospace, monospace; opacity: 0; }
+  .tally b { font-size: 15px; font-weight: 800; }
+  .tally .tr { display: block; font-size: 8.5px; color: rgba(224, 169, 53, 0.8); margin-top: 1px; }
+  .tally .tu { font-size: 8.5px; color: #6b7284; }
+
+  .axis { position: absolute; height: 1px; background: #39404f; transform-origin: left; opacity: 0; }
+
+  /* weight-read bar: amber hatch + KV end-cap */
+  .sread { position: absolute; height: 26px; border: 1px solid rgba(224, 169, 53, 0.5);
+    background: repeating-linear-gradient(135deg, rgba(224, 169, 53, 0.26) 0 1px, rgba(224, 169, 53, 0.05) 1px 6px);
+    transform-origin: left; opacity: 0; }
+  .kvseg { position: absolute; right: 0; top: 0; bottom: 0; width: 24px; border-left: 1px solid rgba(144, 133, 233, 0.55);
+    background: repeating-linear-gradient(135deg, rgba(144, 133, 233, 0.3) 0 1px, rgba(144, 133, 233, 0.06) 1px 6px); }
+  .inlab { position: absolute; font-size: 7.5px; letter-spacing: 0.12em; white-space: nowrap;
+    background: rgba(11, 13, 18, 0.78); padding: 1px 4px; border-radius: 2px; opacity: 0; }
+
+  .semit { position: absolute; width: 12px; height: 12px; border-radius: 2px; background: rgba(47, 214, 176, 0.92);
+    box-shadow: 0 0 6px rgba(47, 214, 176, 0.4); opacity: 0; animation: emitGlow 2.4s ease-in-out infinite; }
+  @keyframes emitGlow { 50% { box-shadow: 0 0 2px rgba(47, 214, 176, 0.15); } }
+
+  .dmark { position: absolute; width: 6px; height: 6px; border: 1px solid #3987e5; border-radius: 1px;
+    background: rgba(57, 135, 229, 0.18); opacity: 0; }
+  .vpos { position: absolute; width: 4px; height: 3px; background: rgba(57, 135, 229, 0.85); opacity: 0; }
+
+  #rej { position: absolute; width: 12px; height: 12px; border-radius: 2px; border: 1px solid rgba(224, 75, 56, 0.85);
+    background: rgba(224, 75, 56, 0.14); color: #e04b38; font: 700 9px/11px ui-monospace, monospace;
+    text-align: center; opacity: 0; }
+
+  .blab { position: absolute; font-size: 7.5px; letter-spacing: 0.14em; color: #6b7284; opacity: 0; }
+  #redraw { position: absolute; font-size: 7.5px; letter-spacing: 0.14em; color: rgba(224, 75, 56, 0.75); opacity: 0; }
+  #idletag { position: absolute; font-size: 7.5px; letter-spacing: 0.16em; color: #565c6e; opacity: 0; }
+
+  #ov { position: absolute; inset: 0; pointer-events: none; }
+  #ov .draw { fill: none; stroke-dasharray: 1; stroke-dashoffset: 1; }
+  #trSf, #trPf { fill: rgba(57, 135, 229, 0.13); stroke: none; opacity: 0; }
+
+  #brSlab { position: absolute; text-align: center; font-size: 8px; letter-spacing: 0.14em; color: rgba(224, 169, 53, 0.85); opacity: 0; }
+  #divk { position: absolute; text-align: center; font: 700 10px ui-monospace, monospace; color: var(--accent); opacity: 0; }
+  #econ { position: absolute; font: 600 10px ui-monospace, monospace; color: var(--accent); opacity: 0; }
+  #callout { position: absolute; font-size: 8.5px; letter-spacing: 0.12em; color: var(--accent); opacity: 0; }
+
+  #stmt { position: absolute; left: 300px; top: 388px; width: 900px; border-left: 2px solid var(--accent); padding-left: 14px; opacity: 0; }
+  #st1 { font: 500 10.5px ui-monospace, monospace; color: var(--ink-2); opacity: 0; }
+  #st2 { margin-top: 7px; font: 700 12.5px ui-monospace, monospace; color: #e8eaf0; opacity: 0; }
+  #st3 { margin-top: 5px; font: 500 10px ui-monospace, monospace; color: #6b7284; opacity: 0; }
+
+  /* beat 4: bottom band */
+  #rule { position: absolute; left: 44px; top: 464px; width: 1192px; height: 1px; background: var(--line); transform-origin: left; opacity: 0; }
+  .bhead { position: absolute; top: 478px; font-size: 9px; letter-spacing: 0.18em; color: #6b7284; opacity: 0; }
+  .box { position: absolute; top: 494px; height: 46px; border-radius: 6px; background: rgba(27, 30, 39, 0.6);
+    display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; opacity: 0; }
+  #bb { left: 44px; width: 160px; border: 1px solid #3a3f4f; font: 600 10.5px ui-monospace, monospace; color: #c7cce0; letter-spacing: 0.1em; }
+  #mtpbox { left: 244px; width: 250px; border: 1px solid rgba(57, 135, 229, 0.65); }
+  #mtpbox .m1 { font: 700 10.5px ui-monospace, monospace; color: #6fb1ff; letter-spacing: 0.1em; }
+  #mtpbox .m2 { font: 500 8.5px ui-monospace, monospace; color: #6b7284; letter-spacing: 0.12em; }
+  #arr1 { position: absolute; left: 210px; top: 507px; font-size: 14px; color: #6b7284; opacity: 0; }
+  #acc { position: absolute; left: 518px; top: 505px; border: 1px solid rgba(47, 214, 176, 0.65); border-radius: 999px;
+    padding: 4px 11px; font: 700 10px ui-monospace, monospace; color: var(--accent); white-space: nowrap; opacity: 0; }
+  #caption { position: absolute; left: 44px; top: 556px; width: 650px; font: 500 10.5px/1.5 ui-monospace, monospace; color: var(--ink-2); opacity: 0; }
+  #motto { position: absolute; left: 44px; top: 602px; font-size: 12px; font-style: italic; color: var(--accent); opacity: 0; }
+  #drtag { position: absolute; left: 44px; top: 426px; width: 130px; text-align: left; font-size: 8px; letter-spacing: 0.1em; color: rgba(111, 177, 255, 0.8); opacity: 0; }
+
+  .cav { position: absolute; left: 740px; width: 496px; border-left: 2px solid rgba(224, 75, 56, 0.5);
+    padding-left: 11px; font: 500 10px/1.5 ui-monospace, monospace; color: var(--ink-2); opacity: 0; }
+  #cav1 { top: 496px; } #cav2 { top: 546px; }
+  .cnum { color: rgba(224, 75, 56, 0.85); font-weight: 700; margin-right: 7px; letter-spacing: 0.1em; }
+  #pdglyph { position: absolute; left: 753px; top: 596px; width: 120px; height: 16px;
+    border: 1px solid #3a3f4f; border-radius: 3px; opacity: 0; }
+  #pfill { position: absolute; left: 0; top: 0; bottom: 0; width: 48px; background: rgba(57, 135, 229, 0.28);
+    border-right: 1px solid rgba(111, 177, 255, 0.8); }
+  #pdglyph .pg { position: absolute; top: 2px; font: 700 8px ui-monospace, monospace; }
+  #pg-p { left: 6px; color: #6fb1ff; } #pg-d { right: 6px; color: var(--accent); }
+  #pdlab { position: absolute; left: 884px; top: 599px; font-size: 8px; letter-spacing: 0.12em; color: #565c6e; opacity: 0; }
+</style>
+</head>
+<body>
+<div class="stage">
+  <div class="slide-title">Multi-Token Prediction</div>
+  <div class="slide-sub">the decode timeline, drawn to scale</div>
+
+  <!-- built by JS: bars, emits, drafts, traces, brackets -->
+  <svg id="ov" width="1280" height="720"></svg>
+
+  <div id="stmt">
+    <div id="st1"></div>
+    <div id="st2"></div>
+    <div id="st3"></div>
+  </div>
+
+  <div id="rule"></div>
+  <div class="bhead sc" id="dshead" style="left:44px;"></div>
+  <div class="box" id="bb">BACKBONE</div>
+  <div id="arr1">&rarr;</div>
+  <div class="box" id="mtpbox"><span class="m1">MTP MODULE</span><span class="m2 sc">next-next token</span></div>
+  <div id="acc"></div>
+  <div id="caption"></div>
+  <div id="motto"></div>
+  <div id="drtag" class="sc"></div>
+
+  <div class="bhead sc" id="cavhead" style="left:740px;"></div>
+  <div class="cav" id="cav1"></div>
+  <div class="cav" id="cav2"></div>
+  <div id="pdglyph"><div id="pfill"></div><span class="pg" id="pg-p">P</span><span class="pg" id="pg-d">D</span></div>
+  <div id="pdlab" class="sc"></div>
+</div>
+
+<script src="../vendor/gsap.min.js"></script>
+<script src="shared/mtp.js?v=4"></script>
+<script src="shared/gpus.js?v=4"></script>
+<script src="shared/manifest.js?v=4"></script>
+<script src="shared/deck.js?v=4"></script>
+<script>
+  var stage = document.querySelector(".stage");
+  var ov = document.getElementById("ov");
+  var SVGNS = "http://www.w3.org/2000/svg";
+
+  // ---------- geometry (single source for bars, traces, brackets) ----------
+  var X0 = 170;
+  var SER = { barY: 128, h: 26, axisY: 155, n: 6, rw: 142, ew: 12, pitch: 163, emitY: 142 };
+  var SPC = { barY: 284, h: 26, axisY: 311, dw: 26, vw: 142, ew: 12, k: 3, emitY: 296 };
+  var ROUNDS = [{ acc: 3 }, { acc: 2, rej: true }, { acc: 3 }, { acc: 3 }];
+
+  function div(cls, css, html) {
+    var d = document.createElement("div");
+    if (cls) d.className = cls;
+    d.style.cssText = css || "";
+    if (html) d.innerHTML = html;
+    stage.appendChild(d);
+    return d;
+  }
+  function path(id, stroke, extra) {
+    var p = document.createElementNS(SVGNS, "path");
+    p.setAttribute("id", id);
+    if (stroke) { p.setAttribute("stroke", stroke); p.setAttribute("stroke-width", "1"); p.classList.add("draw"); }
+    p.setAttribute("pathLength", "1");
+    if (extra) for (var k in extra) p.setAttribute(k, extra[k]);
+    ov.appendChild(p);
+    return p;
+  }
+
+  // ---------- SERIAL row ----------
+  div("rowlab", "top:132px;", "SERIAL");
+  div("rowsub sc", "top:148px;", "baseline");
+  var bal = GPUS.balance(GPUS.list.filter(function (g) { return g.key === "h100"; })[0]);
+  div("mnote note", "top:96px; width:560px;", MTP.serial).id = "sernote1";
+  div("mnote note", "top:110px; width:560px; color:#6fb1ff;",
+    MTP.ai + " &middot; H100 machine balance &asymp; " + bal + " FLOP/byte").id = "sernote2";
+
+  var seraxis = div("axis", "left:" + X0 + "px; top:" + SER.axisY + "px; width:978px;");
+  var sreads = [], semits = [];
+  for (var i = 0; i < SER.n; i++) {
+    var sx = X0 + i * SER.pitch;
+    var r = div("sread", "left:" + sx + "px; top:" + SER.barY + "px; width:" + SER.rw + "px;",
+      '<div class="kvseg"></div>');
+    sreads.push(r);
+    semits.push(div("semit", "left:" + (sx + SER.rw + 4) + "px; top:" + SER.emitY + "px;"));
+  }
+  var wlab = div("inlab", "left:180px; top:135px; color:rgba(224,169,53,0.9);", "WEIGHTS");
+  var klab = div("inlab", "left:287px; top:135px; color:rgba(144,133,233,0.95);", "KV");
+  var sertally = div("tally", "top:124px;",
+    "<b>" + SER.n + "</b> <span class='tu'>tok</span><span class='tr'>" + SER.n + " reads</span>");
+  sertally.id = "sertally";
+
+  // serial die trace (beat 3)
+  div("dielab sc", "top:172px;", "die").id = "dieS";
+  var dS = "M" + X0 + ",186";
+  for (i = 0; i < SER.n; i++) {
+    var ex = X0 + i * SER.pitch + SER.rw + 4;
+    dS += " H" + ex + " V168 h" + SER.ew + " V186";
+  }
+  dS += " H1143";
+  path("trSf", null, { d: dS + " Z" });
+  path("trS", "rgba(57,135,229,0.8)", { d: dS });
+  var idletag = div("sc", "position:absolute; left:224px; top:173px;", "idle");
+  idletag.id = "idletag";
+
+  // serial bytes/token bracket (beat 3)
+  path("brS", "rgba(224,169,53,0.6)", { d: "M" + X0 + ",196 v5 h" + SER.rw + " v-5" });
+  var brSlab = div("sc", "position:absolute; left:" + X0 + "px; top:206px; width:" + SER.rw + "px;", "bytes / token");
+  brSlab.id = "brSlab";
+
+  // ---------- SPECULATIVE row ----------
+  div("rowlab", "top:288px;", "SPECULATIVE");
+  div("rowsub sc", "top:304px;", "k = " + SPC.k).id = "ktag";
+  div("mnote note", "top:250px; width:580px;", MTP.spec.draft + " &middot; " + MTP.spec.verify).id = "spcnote";
+  div("mnote note", "top:264px; width:580px; color:rgba(47,214,176,0.85);", MTP.spec.lossless).id = "lossless";
+
+  var spcaxis = div("axis", "left:" + X0 + "px; top:" + SPC.axisY + "px; width:978px;");
+  var rounds = [], rejEl = null, rejX = 0;
+  var rx = X0, tokCount = 0;
+  ROUNDS.forEach(function (rd) {
+    var R = { drafts: [], emits: [], verify: null };
+    for (var j = 0; j < SPC.k; j++)
+      R.drafts.push(div("dmark", "left:" + (rx + 2 + j * 8) + "px; top:301px;"));
+    R.verify = div("sread", "left:" + (rx + SPC.dw + 4) + "px; top:" + SPC.barY + "px; width:" + SPC.vw + "px;",
+      '<div class="kvseg"></div>' +
+      '<div class="vpos" style="left:22px; bottom:2px;"></div>' +
+      '<div class="vpos" style="left:68px; bottom:2px;"></div>' +
+      '<div class="vpos" style="left:112px; bottom:2px;"></div>');
+    var ex0 = rx + SPC.dw + 4 + SPC.vw + 6;
+    for (j = 0; j < rd.acc; j++) {
+      R.emits.push(div("semit", "left:" + (ex0 + j * 14) + "px; top:" + SPC.emitY + "px;"));
+      tokCount++;
+    }
+    if (rd.rej) {
+      rejX = ex0 + rd.acc * 14;
+      rejEl = div("", "left:" + rejX + "px; top:" + SPC.emitY + "px;", "&times;");
+      rejEl.id = "rej";
+    }
+    rounds.push(R);
+    var slots = rd.acc + (rd.rej ? 1 : 0);
+    rx += SPC.dw + 4 + SPC.vw + 6 + slots * 14 - 2 + 14;
+  });
+  var vlab = div("inlab", "left:242px; top:291px; color:rgba(224,169,53,0.9);", "ONE READ");
+  div("blab sc", "left:168px; top:315px;", "draft").classList.add("b1");
+  div("blab sc", "left:246px; top:315px;", "verify").classList.add("b1");
+  div("blab sc", "left:348px; top:315px;", "emit").classList.add("b1");
+  var r3x = X0 + 2 * 232;
+  var redraw = div("sc", "left:" + r3x + "px; top:315px;", "redrawn");
+  redraw.id = "redraw";
+  var spctally = div("tally", "top:280px;",
+    "<b style='color:var(--accent)'>" + tokCount + "</b> <span class='tu'>tok</span>" +
+    "<span class='tr'>" + ROUNDS.length + " reads</span>");
+  spctally.id = "spctally";
+
+  // spec die trace (beat 3)
+  div("dielab sc", "top:334px;", "die").id = "dieP";
+  var dP = "M" + X0 + ",348", px = X0;
+  ROUNDS.forEach(function (rd) {
+    dP += " H" + px + " V330 h" + SPC.dw + " V337 h" + (4 + SPC.vw) + " V348";
+    var slots = rd.acc + (rd.rej ? 1 : 0);
+    px += SPC.dw + 4 + SPC.vw + 6 + slots * 14 - 2 + 14;
+  });
+  dP += " H" + (px - 14);
+  path("trPf", null, { d: dP + " Z" });
+  path("trP", "rgba(57,135,229,0.8)", { d: dP });
+
+  // spec brackets: bytes/token divided by k (beat 3)
+  var vx0 = X0 + SPC.dw + 4, seg = SPC.vw / SPC.k, dBr = "";
+  for (i = 0; i < SPC.k; i++) dBr += "M" + (vx0 + i * seg).toFixed(1) + ",356 v5 h" + seg.toFixed(1) + " v-5 ";
+  path("brP", "rgba(47,214,176,0.6)", { d: dBr });
+  var divk = div(null, "left:" + vx0 + "px; top:365px; width:" + SPC.vw + "px;", "&divide; " + SPC.k);
+  divk.id = "divk";
+  var econ = div(null, "left:" + (vx0 + SPC.vw + 16) + "px; top:355px;");
+  econ.id = "econ"; econ.textContent = MTP.econ;
+
+  // mini-prefill callout over round-1 verify (beat 3)
+  path("brC", "rgba(47,214,176,0.55)", { d: "M" + vx0 + ",280 v-5 h" + SPC.vw + " v5" });
+  var callout = div("sc", "left:" + (vx0 + SPC.vw + 12) + "px; top:268px;");
+  callout.id = "callout"; callout.textContent = MTP.reframe.split(" — ")[0];
+
+  // statements (beat 3)
+  var refParts = MTP.reframe.split(". ");
+  document.getElementById("st1").textContent = refParts[1];
+  document.getElementById("st2").textContent = MTP.unique.split(" — ")[0];
+  document.getElementById("st3").textContent = MTP.unique.split(" — ")[1];
+
+  // ---------- beat 4 statics ----------
+  document.getElementById("dshead").textContent = "DeepSeek-V3 · MTP head";
+  document.getElementById("acc").textContent = MTP.dsv3.accept;
+  document.getElementById("caption").textContent = MTP.dsv3.what;
+  document.getElementById("motto").textContent = MTP.dsv3.point;
+  document.getElementById("drtag").textContent = "reused as the drafter";
+  document.getElementById("cavhead").textContent = "fine print";
+  document.getElementById("cav1").innerHTML = "<span class='cnum'>I</span>" + MTP.caveats[0];
+  document.getElementById("cav2").innerHTML = "<span class='cnum'>II</span>" + MTP.caveats[1];
+  document.getElementById("pdlab").textContent = "P : D shifts";
+
+  // drafter leader: MTP module -> round-1 draft block
+  var ldr = path("ldr", null, { d: "M364,494 C316,466 196,424 184,322" });
+  ldr.setAttribute("stroke", "rgba(111,177,255,0.55)");
+  ldr.setAttribute("stroke-width", "1");
+  ldr.setAttribute("stroke-dasharray", "4 3");
+  ldr.setAttribute("fill", "none");
+  ldr.style.opacity = "0";
+  var ldot = document.createElementNS(SVGNS, "circle");
+  ldot.setAttribute("cx", "184"); ldot.setAttribute("cy", "320"); ldot.setAttribute("r", "3");
+  ldot.setAttribute("fill", "#3987e5"); ldot.style.opacity = "0"; ldot.id = "ldot";
+  ov.appendChild(ldot);
+
+  // ---------- timeline: 4 beats ----------
+  var tl = gsap.timeline({ paused: true });
+  var LBLS_S = [document.querySelectorAll(".rowlab")[0], document.querySelectorAll(".rowsub")[0]];
+
+  // beat 1 — the serial treadmill
+  tl.fromTo(LBLS_S, { opacity: 0 }, { opacity: 1, duration: 0.35, stagger: 0.06 })
+    .fromTo("#sernote1", { opacity: 0, y: -4 }, { opacity: 1, y: 0, duration: 0.4 }, "<0.05")
+    .fromTo(seraxis, { opacity: 0, scaleX: 0 }, { opacity: 1, scaleX: 1, duration: 0.55, ease: "power2.out" })
+    .fromTo(sreads, { opacity: 0, scaleX: 0 }, { opacity: 1, scaleX: 1, duration: 0.34, stagger: 0.15, ease: "power2.out" }, "-=0.25")
+    .fromTo(semits, { opacity: 0, scale: 0.4 }, { opacity: 1, scale: 1, duration: 0.22, stagger: 0.15, ease: "back.out(2)" }, "<0.3")
+    .fromTo([wlab, klab], { opacity: 0 }, { opacity: 1, duration: 0.3, stagger: 0.08 }, "-=0.5")
+    .fromTo("#sernote2", { opacity: 0, y: -4 }, { opacity: 1, y: 0, duration: 0.4 })
+    .fromTo(sertally, { opacity: 0, x: 6 }, { opacity: 1, x: 0, duration: 0.35 }, "<0.1");
+  DECK.markStep(tl);
+
+  // beat 2 — speculative decoding: draft, verify, accept / reject
+  tl.fromTo(document.querySelectorAll(".rowlab")[1], { opacity: 0 }, { opacity: 1, duration: 0.3 })
+    .fromTo("#ktag", { opacity: 0 }, { opacity: 1, duration: 0.3 }, "<0.08")
+    .fromTo("#spcnote", { opacity: 0, y: -4 }, { opacity: 1, y: 0, duration: 0.4 }, "<0.05")
+    .fromTo(spcaxis, { opacity: 0, scaleX: 0 }, { opacity: 1, scaleX: 1, duration: 0.5, ease: "power2.out" });
+  ROUNDS.forEach(function (rd, ri) {
+    var R = rounds[ri], f = ri < 2 ? 1 : 0.55;
+    tl.fromTo(R.drafts, { opacity: 0, y: 5 }, { opacity: 1, y: 0, duration: 0.16 * f, stagger: 0.07 * f, ease: "power2.out" }, ri ? "+=0.12" : "+=0.05")
+      .fromTo(R.verify, { opacity: 0, scaleX: 0 }, { opacity: 1, scaleX: 1, duration: 0.5 * f, ease: "power2.inOut" })
+      .fromTo(R.verify.querySelectorAll(".vpos"), { opacity: 0 }, { opacity: 1, duration: 0.15 * f, stagger: 0.05 * f }, "-=0.2")
+      .fromTo(R.emits, { opacity: 0, scale: 0.4 }, { opacity: 1, scale: 1, duration: 0.2 * f, stagger: 0.13 * f, ease: "back.out(2)" });
+    if (ri === 0) {
+      tl.fromTo(vlab, { opacity: 0 }, { opacity: 1, duration: 0.3 }, "-=0.3")
+        .fromTo(".blab.b1", { opacity: 0 }, { opacity: 1, duration: 0.25, stagger: 0.06 });
+    }
+    if (rd.rej) {
+      tl.fromTo(rejEl, { opacity: 0, scale: 0.4 }, { opacity: 1, scale: 1, duration: 0.2, ease: "back.out(2)" })
+        .to(rejEl, { y: 24, opacity: 0, rotation: 14, duration: 0.5, ease: "power1.in" }, "+=0.35")
+        .fromTo(redraw, { opacity: 0 }, { opacity: 1, duration: 0.3 }, "-=0.2");
+    }
+  });
+  tl.fromTo("#lossless", { opacity: 0, y: -4 }, { opacity: 1, y: 0, duration: 0.45 })
+    .fromTo(spctally, { opacity: 0, x: 6 }, { opacity: 1, x: 0, duration: 0.35 }, "<0.15");
+  DECK.markStep(tl);
+
+  // beat 3 — amortisation read off the drawing: brackets, die traces, mini-prefill
+  tl.fromTo("#brS", { strokeDashoffset: 1 }, { strokeDashoffset: 0, duration: 0.45, ease: "power2.out" })
+    .fromTo(brSlab, { opacity: 0 }, { opacity: 1, duration: 0.3 }, "-=0.15")
+    .fromTo("#brP", { strokeDashoffset: 1 }, { strokeDashoffset: 0, duration: 0.55, ease: "power2.out" })
+    .fromTo(divk, { opacity: 0, scale: 0.6 }, { opacity: 1, scale: 1, duration: 0.3, ease: "back.out(2)" }, "-=0.15")
+    .fromTo(econ, { opacity: 0, x: -8 }, { opacity: 1, x: 0, duration: 0.4 })
+    .fromTo("#trS", { strokeDashoffset: 1 }, { strokeDashoffset: 0, duration: 0.7, ease: "none" }, "+=0.1")
+    .fromTo("#dieS", { opacity: 0 }, { opacity: 1, duration: 0.3 }, "<")
+    .fromTo("#trSf", { opacity: 0 }, { opacity: 1, duration: 0.35 }, "-=0.2")
+    .fromTo(idletag, { opacity: 0 }, { opacity: 1, duration: 0.3 })
+    .fromTo("#trP", { strokeDashoffset: 1 }, { strokeDashoffset: 0, duration: 0.7, ease: "none" }, "<0.1")
+    .fromTo("#dieP", { opacity: 0 }, { opacity: 1, duration: 0.3 }, "<")
+    .fromTo("#trPf", { opacity: 0 }, { opacity: 1, duration: 0.35 }, "-=0.2")
+    .fromTo("#brC", { strokeDashoffset: 1 }, { strokeDashoffset: 0, duration: 0.4, ease: "power2.out" })
+    .fromTo(callout, { opacity: 0, x: -6 }, { opacity: 1, x: 0, duration: 0.35 }, "-=0.1")
+    .fromTo("#stmt", { opacity: 0 }, { opacity: 1, duration: 0.3 })
+    .fromTo("#st1", { opacity: 0, y: 6 }, { opacity: 1, y: 0, duration: 0.4 }, "<")
+    .fromTo("#st2", { opacity: 0, y: 6 }, { opacity: 1, y: 0, duration: 0.45 }, "<0.2")
+    .fromTo("#st3", { opacity: 0, y: 6 }, { opacity: 1, y: 0, duration: 0.4 }, "<0.2");
+  DECK.markStep(tl);
+
+  // beat 4 — DeepSeek-V3's answer + the fine print
+  tl.fromTo("#rule", { opacity: 0, scaleX: 0 }, { opacity: 1, scaleX: 1, duration: 0.5, ease: "power2.out" })
+    .fromTo("#dshead", { opacity: 0 }, { opacity: 1, duration: 0.3 }, "-=0.2")
+    .fromTo("#bb", { opacity: 0, y: 10 }, { opacity: 1, y: 0, duration: 0.35, ease: "power2.out" })
+    .fromTo("#arr1", { opacity: 0 }, { opacity: 1, duration: 0.25 }, "<0.15")
+    .fromTo("#mtpbox", { opacity: 0, y: 10 }, { opacity: 1, y: 0, duration: 0.35, ease: "power2.out" }, "<0.1")
+    .fromTo("#ldr", { opacity: 0 }, { opacity: 0.9, duration: 0.5 })
+    .fromTo("#ldot", { opacity: 0 }, { opacity: 1, duration: 0.2 }, "-=0.15")
+    .fromTo("#drtag", { opacity: 0 }, { opacity: 1, duration: 0.3 }, "<")
+    .fromTo("#acc", { opacity: 0, scale: 0.6 }, { opacity: 1, scale: 1, duration: 0.4, ease: "back.out(2)" })
+    .fromTo("#caption", { opacity: 0, y: 6 }, { opacity: 1, y: 0, duration: 0.4 })
+    .fromTo("#motto", { opacity: 0, y: 6 }, { opacity: 1, y: 0, duration: 0.4 }, "<0.15")
+    .fromTo("#cavhead", { opacity: 0 }, { opacity: 1, duration: 0.3 })
+    .fromTo("#cav1", { opacity: 0, x: 10 }, { opacity: 1, x: 0, duration: 0.4, ease: "power2.out" }, "<0.1")
+    .fromTo("#cav2", { opacity: 0, x: 10 }, { opacity: 1, x: 0, duration: 0.4, ease: "power2.out" }, "<0.15")
+    .fromTo("#pdglyph", { opacity: 0 }, { opacity: 1, duration: 0.3 })
+    .fromTo("#pfill", { width: 48 }, { width: 76, duration: 0.6, ease: "power2.inOut" }, "<0.2")
+    .fromTo("#pdlab", { opacity: 0 }, { opacity: 1, duration: 0.3 }, "<0.2");
+
+  DECK.register(tl);
+</script>
+</body>
+</html>
