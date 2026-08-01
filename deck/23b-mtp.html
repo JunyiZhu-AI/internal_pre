@@ -4,8 +4,8 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Multi-Token Prediction</title>
-<link rel="stylesheet" href="shared/deck.css?v=4">
-<link rel="stylesheet" href="shared/bottlenecks.css?v=4">
+<link rel="stylesheet" href="shared/deck.css?v=5">
+<link rel="stylesheet" href="shared/bottlenecks.css?v=5">
 <style>
   /* ---- the two lanes ---- */
   .lane {
@@ -87,48 +87,50 @@
     border: 1.5px solid rgba(47,214,176,0.5); border-radius: 999px; padding: 3px 10px;
     background: rgba(11,13,18,0.9); opacity: 0; white-space: nowrap;
   }
-  #capD { position: absolute; left: 44px; top: 388px; font-size: 11px; color: var(--ink-2); opacity: 0; }
-  #lossless { position: absolute; left: 44px; top: 407px; font-size: 11px; font-weight: 600; color: var(--accent); opacity: 0; }
+  #capD { position: absolute; left: 44px; top: 386px; font-size: 11px; color: var(--ink-2); opacity: 0; }
+  #classic { position: absolute; left: 44px; top: 403px; font-size: 11px; color: var(--ink-2); opacity: 0; }
+  #lossless { position: absolute; left: 44px; top: 420px; font-size: 11px; font-weight: 600; color: var(--accent); opacity: 0; }
 
   /* ---- the frozen-race economics panel ---- */
-  #reframe { position: absolute; left: 44px; top: 430px; width: 1192px; font-size: 13px; font-weight: 600; color: #c7cce0; opacity: 0; }
+  #reframe { position: absolute; left: 44px; top: 442px; width: 1192px; font-size: 13px; font-weight: 600; color: #c7cce0; opacity: 0; }
 
-  #bpt { position: absolute; left: 44px; top: 462px; font: 700 10px ui-monospace, monospace; letter-spacing: 0.08em; color: #6b7284; opacity: 0; }
+  #bpt { position: absolute; left: 44px; top: 470px; font: 700 10px ui-monospace, monospace; letter-spacing: 0.08em; color: #6b7284; opacity: 0; }
   .brow { position: absolute; left: 44px; display: flex; align-items: center; gap: 10px; opacity: 0; }
-  #rowS { top: 480px; } #rowD { top: 508px; }
+  #rowS { top: 486px; } #rowD { top: 514px; }
   .brow .bn { width: 92px; font: 600 10.5px ui-monospace, monospace; color: #9aa1b5; }
   #rowD .bn { color: var(--accent); }
   .brow .btrack { width: 420px; height: 14px; border: 1px solid var(--line); border-radius: 4px; background: rgba(11,13,18,0.6); overflow: hidden; }
   .brow .bfill { height: 100%; transform-origin: left; background: linear-gradient(90deg, rgba(201,133,0,0.45), #e0a935); }
   #ktag {
-    position: absolute; left: 292px; top: 505px; font: 700 12px ui-monospace, monospace; color: var(--accent);
+    position: absolute; left: 292px; top: 511px; font: 700 12px ui-monospace, monospace; color: var(--accent);
     border: 1.5px solid rgba(47,214,176,0.55); border-radius: 999px; padding: 2px 8px;
     background: rgba(11,13,18,0.92); opacity: 0; z-index: 5;
   }
-  #econ { position: absolute; left: 44px; top: 548px; width: 600px; font-size: 11px; color: var(--ink-2); line-height: 1.45; opacity: 0; }
+  #econ { position: absolute; left: 44px; top: 552px; width: 600px; font-size: 11px; color: var(--ink-2); line-height: 1.45; opacity: 0; }
 
-  #payflow { position: absolute; left: 700px; top: 450px; display: flex; align-items: center; gap: 14px; opacity: 0; }
+  #payflow { position: absolute; left: 700px; top: 458px; display: flex; align-items: center; gap: 14px; opacity: 0; }
   #payflow .pfcol { display: flex; flex-direction: column; align-items: center; }
   #payflow .pfl { margin-top: 2px; font: 700 9px ui-monospace, monospace; letter-spacing: 0.05em; }
   #payflow .pfl.c { color: #6fb1ff; } #payflow .pfl.b { color: var(--accent); }
   #payflow .pfarr { font: 800 12px ui-monospace, monospace; color: #6b7284; padding-bottom: 14px; }
-  #util { position: absolute; left: 956px; top: 466px; width: 280px; opacity: 0; }
+  #util { position: absolute; left: 956px; top: 474px; width: 280px; opacity: 0; }
   #util .ul { font: 700 10px ui-monospace, monospace; letter-spacing: 0.07em; color: #6b7284; }
   #util .ut { margin-top: 7px; width: 280px; height: 14px; border: 1px solid var(--line); border-radius: 4px; background: rgba(11,13,18,0.6); overflow: hidden; }
   #util .uf { height: 100%; transform-origin: left; transform: scaleX(0.05); background: linear-gradient(90deg, rgba(57,135,229,0.45), #3987e5); }
-  #uniq { position: absolute; left: 700px; top: 548px; width: 536px; font-size: 11.5px; font-weight: 600; color: #6fb1ff; line-height: 1.45; opacity: 0; }
+  #uniq { position: absolute; left: 700px; top: 552px; width: 536px; font-size: 11.5px; font-weight: 600; color: #6fb1ff; line-height: 1.45; opacity: 0; }
 
   /* ---- beat 5: MTP head + trackside fine print ---- */
-  #dsv3 { position: absolute; left: 44px; top: 596px; width: 600px; font-size: 11px; color: #c7cce0; line-height: 1.45; opacity: 0; }
+  #frame { position: absolute; left: 44px; top: 592px; width: 630px; font-size: 13px; font-weight: 700; color: var(--accent); line-height: 1.4; opacity: 0; }
+  #dsv3 { position: absolute; left: 44px; top: 630px; width: 630px; font-size: 10.5px; color: #9aa1b5; line-height: 1.45; opacity: 0; }
   #acc {
-    position: absolute; left: 44px; top: 638px; font: 600 10px ui-monospace, monospace; color: var(--accent);
+    position: absolute; left: 44px; top: 660px; font: 600 10px ui-monospace, monospace; color: var(--accent);
     border: 1.5px solid rgba(47,214,176,0.55); border-radius: 999px; padding: 3px 10px;
     background: rgba(11,13,18,0.9); opacity: 0; white-space: nowrap;
   }
-  #motto { position: absolute; left: 44px; top: 672px; width: 620px; font-size: 13px; font-weight: 700; color: var(--accent); opacity: 0; }
+  #motto { position: absolute; left: 248px; top: 663px; width: 420px; font-size: 11.5px; font-weight: 700; color: #c7cce0; opacity: 0; }
 
   .sign {
-    position: absolute; top: 596px; width: 262px; background: var(--panel);
+    position: absolute; top: 598px; width: 262px; background: var(--panel);
     border: 1.5px solid rgba(224,75,56,0.45); border-radius: 10px;
     padding: 8px 11px; font-size: 9.5px; color: #b9bfd2; line-height: 1.4; opacity: 0;
   }
@@ -142,7 +144,7 @@
 <body>
 <div class="stage">
   <div class="slide-title">Multi-Token Prediction</div>
-  <div class="slide-sub">two lanes, one race &mdash; spend the idle die, buy back the bandwidth bill</div>
+  <div class="slide-sub">two lanes, one race &mdash; speculative decoding, then the drafter moves in-house</div>
 
   <div class="lane" id="laneS"></div>
   <div class="lane" id="laneD"></div>
@@ -150,6 +152,7 @@
   <div id="capS"></div>
   <div id="aichip"></div>
   <div id="capD"></div>
+  <div id="classic"></div>
   <div id="lossless"></div>
 
   <div id="reframe"></div>
@@ -167,6 +170,7 @@
   <div id="util"><div class="ul">DIE UTILIZATION &mdash; LANE 2</div><div class="ut"><div class="uf"></div></div></div>
   <div id="uniq"></div>
 
+  <div id="frame"></div>
   <div id="dsv3"></div>
   <div id="acc"></div>
   <div id="motto"></div>
@@ -175,11 +179,11 @@
 </div>
 
 <script src="../vendor/gsap.min.js"></script>
-<script src="shared/gpus.js?v=4"></script>
-<script src="shared/bottlenecks.js?v=4"></script>
-<script src="shared/mtp.js?v=4"></script>
-<script src="shared/manifest.js?v=4"></script>
-<script src="shared/deck.js?v=4"></script>
+<script src="shared/gpus.js?v=5"></script>
+<script src="shared/bottlenecks.js?v=5"></script>
+<script src="shared/mtp.js?v=5"></script>
+<script src="shared/manifest.js?v=5"></script>
+<script src="shared/deck.js?v=5"></script>
 <script>
   // ---- build the two lanes ----
   function laneHTML(label) {
@@ -197,11 +201,11 @@
       '<div class="srow"><span class="sk">tokens out</span><b class="sv tk">0</b></div></div>';
   }
   var laneS = document.getElementById("laneS"), laneD = document.getElementById("laneD");
-  laneS.innerHTML = laneHTML("LANE 1 &mdash; SERIAL");
-  laneD.innerHTML = laneHTML("LANE 2 &mdash; SPECULATIVE");
+  laneS.innerHTML = laneHTML("SERIAL DECODE");
+  laneD.innerHTML = laneHTML(MTP.spec.name.toUpperCase());
   // lane D extras: drafter chip, draft slots, verify scanline
   laneD.insertAdjacentHTML("beforeend",
-    '<div id="drafter">DRAFTER</div>' +
+    '<div id="drafter">DRAFT MODEL</div>' +
     '<div class="dt" style="left:262px"></div><div class="dt" style="left:286px"></div>' +
     '<div class="dt" style="left:310px"></div><div class="dt" style="left:334px"></div>' +
     '<div id="scan"></div>');
@@ -222,7 +226,9 @@
   document.getElementById("capS").textContent = MTP.serial;
   document.getElementById("aichip").textContent = MTP.ai;
   document.getElementById("capD").textContent = MTP.spec.draft + "  →  " + MTP.spec.verify;
+  document.getElementById("classic").textContent = MTP.spec.classic;
   document.getElementById("lossless").textContent = MTP.spec.lossless;
+  document.getElementById("frame").textContent = MTP.dsv3.frame;
   document.getElementById("reframe").textContent = MTP.reframe;
   document.getElementById("econ").textContent = MTP.econ;
   document.getElementById("uniq").textContent = MTP.unique;
@@ -350,8 +356,9 @@
   // beat 2: the speculative lane joins the race — and one draft gets yanked
   tl.fromTo("#laneD", { opacity: 0, y: 14 }, { opacity: 1, y: 0, duration: 0.5, ease: "power2.out" })
     .fromTo("#capD", { opacity: 0, y: 6 }, { opacity: 1, y: 0, duration: 0.4 })
+    .fromTo("#classic", { opacity: 0, y: 6 }, { opacity: 1, y: 0, duration: 0.4 }, "<0.15")
     .call(function () { dLoop.play(); })
-    .to({}, { duration: 3.4 })
+    .to({}, { duration: 3.2 })
     .fromTo("#lossless", { opacity: 0, y: 6 }, { opacity: 1, y: 0, duration: 0.4 });
   DECK.markStep(tl);
 
@@ -380,6 +387,7 @@
     .call(function () { drafter.textContent = "MTP HEAD"; drafter.classList.add("mtp"); })
     .to("#drafter", { x: -72, y: 6, duration: 0.01 })
     .to("#drafter", { scale: 1, opacity: 1, duration: 0.4, ease: "back.out(2)" })
+    .fromTo("#frame", { opacity: 0, y: 8 }, { opacity: 1, y: 0, duration: 0.5, ease: "power2.out" })
     .call(function () { mtpMode = true; resumeAll(); })
     .fromTo("#dsv3", { opacity: 0, y: 8 }, { opacity: 1, y: 0, duration: 0.45 })
     .fromTo("#acc", { opacity: 0, scale: 0.7 }, { opacity: 1, scale: 1, duration: 0.35, ease: "back.out(1.8)" })
@@ -402,7 +410,7 @@
       dieS.classList.remove("hot"); dieD.classList.remove("hot");
       gsap.set(".rfill", { scaleX: 0 });
       gsap.set([sPulse, dPulse, scan], { opacity: 0, x: 0 });
-      drafter.textContent = "DRAFTER"; drafter.classList.remove("mtp");
+      drafter.textContent = "DRAFT MODEL"; drafter.classList.remove("mtp");
       gsap.set(drafter, { x: 0, y: 0, scale: 1, opacity: 1 });
     }
   });

@@ -4,8 +4,8 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Multi-Token Prediction</title>
-<link rel="stylesheet" href="shared/deck.css?v=4">
-<link rel="stylesheet" href="shared/bottlenecks.css?v=4">
+<link rel="stylesheet" href="shared/deck.css?v=5">
+<link rel="stylesheet" href="shared/bottlenecks.css?v=5">
 <style>
   /* ---- the GPU-package machine (slides 16-22 language) ---- */
   #machine { position: absolute; inset: 0; opacity: 0.13; filter: grayscale(0.9); }
@@ -95,13 +95,13 @@
     color: rgba(47,214,176,0.85);
   }
 
-  /* the drafter, bolted onto the die */
+  /* the draft model — a separate little model, NOT part of the die (until beat 4) */
   #drafter {
-    position: absolute; left: 398px; top: 320px; width: 56px; height: 40px;
-    border: 1.5px dashed rgba(111,177,255,0.85); border-radius: 8px;
-    background: rgba(13,20,32,0.95); z-index: 13; opacity: 0;
+    position: absolute; left: 464px; top: 330px; width: 62px; height: 42px;
+    border: 1.5px solid rgba(154,161,181,0.75); border-radius: 8px;
+    background: rgba(27,30,39,0.96); z-index: 13; opacity: 0;
     display: flex; align-items: center; justify-content: center;
-    font: 700 9.5px ui-monospace, monospace; color: #6fb1ff; text-align: center;
+    font: 700 9px ui-monospace, monospace; color: #c7cce0; text-align: center; line-height: 1.3;
   }
 
   /* ---- chips / captions ---- */
@@ -116,9 +116,11 @@
   #tally { right: 46px; top: 242px; color: #c7cce0; border-color: #3a3f4f; }
   #tally .am { color: #e0a935; } #tally .tl { color: var(--accent); }
 
-  #draftchip { left: 464px; top: 338px; color: #6fb1ff; border-color: rgba(111,177,255,0.7); }
-  #verifychip { left: 648px; top: 338px; color: var(--accent); border-color: rgba(47,214,176,0.7); }
-  #lossless { position: absolute; left: 464px; top: 376px; width: 740px; font-size: 11.5px; font-style: italic; color: var(--accent); opacity: 0; }
+  #specname { position: absolute; left: 540px; top: 328px; font-size: 15px; font-weight: 800; color: #e8eaf0; letter-spacing: -0.01em; opacity: 0; }
+  #classic { position: absolute; left: 540px; top: 351px; width: 680px; font-size: 11px; color: #9aa1b5; opacity: 0; }
+  #draftchip { left: 540px; top: 376px; color: #6fb1ff; border-color: rgba(111,177,255,0.7); }
+  #verifychip { left: 736px; top: 376px; color: var(--accent); border-color: rgba(47,214,176,0.7); }
+  #lossless { position: absolute; left: 540px; top: 404px; width: 680px; font-size: 11.5px; font-style: italic; color: var(--accent); opacity: 0; }
 
   /* ---- the economics (beat 3) ---- */
   #reframe { position: absolute; left: 470px; top: 426px; width: 740px; font-size: 13.5px; font-weight: 700; color: var(--accent); line-height: 1.4; opacity: 0; }
@@ -144,14 +146,15 @@
     background: var(--panel); border: 1.5px solid rgba(111,177,255,0.5); border-radius: 12px;
     padding: 10px 14px; opacity: 0; height: auto;
   }
-  #dsv3 .dw { font-size: 11.5px; color: #c7cce0; line-height: 1.4; }
+  #dsv3 .df { font-size: 12.5px; font-weight: 700; color: #6fb1ff; line-height: 1.4; opacity: 0; }
+  #dsv3 .dw { font-size: 11.5px; color: #c7cce0; line-height: 1.4; margin-top: 6px; opacity: 0; }
   #dsv3 .drow { display: flex; align-items: center; gap: 12px; margin-top: 8px; }
   #dsv3 .da {
     font: 700 10.5px ui-monospace, monospace; color: var(--accent);
     border: 1.5px solid rgba(47,214,176,0.7); border-radius: 999px; padding: 3px 10px;
     white-space: nowrap; opacity: 0;
   }
-  #dsv3 .dp { font-size: 12px; font-weight: 700; color: #6fb1ff; opacity: 0; }
+  #dsv3 .dp { font-size: 12px; font-weight: 700; color: var(--accent); opacity: 0; }
 
   .cv { position: absolute; left: 44px; width: 960px; font-size: 11px; color: #9aa1b5; opacity: 0; }
   #cv0 { top: 636px; } #cv1 { top: 662px; }
@@ -162,7 +165,7 @@
 <body>
 <div class="stage">
   <div class="slide-title">Multi-Token Prediction</div>
-  <div class="slide-sub">the last lever: make one weight read carry more than one token</div>
+  <div class="slide-sub">the last lever: speculative decoding — and the drafter that moves into the model</div>
 
   <div id="machine">
     <div id="pkg"><span class="pkglab">GPU PACKAGE</span></div>
@@ -181,12 +184,12 @@
   <div class="stok" id="st0" style="left:432px;top:270px">t&#8321;</div>
   <div class="stok" id="st1" style="left:432px;top:270px">t&#8322;</div>
   <div class="stok" id="st2" style="left:432px;top:270px">t&#8323;</div>
-  <div class="gtok" id="g0" style="left:404px;top:330px">t&#8324;</div>
-  <div class="gtok" id="g1" style="left:404px;top:330px">t&#8325;</div>
-  <div class="gtok" id="g2" style="left:404px;top:330px">t&#8326;</div>
-  <div class="gtok" id="g3" style="left:404px;top:330px">t&#8327;</div>
+  <div class="gtok" id="g0" style="left:482px;top:338px">t&#8324;</div>
+  <div class="gtok" id="g1" style="left:482px;top:338px">t&#8325;</div>
+  <div class="gtok" id="g2" style="left:482px;top:338px">t&#8326;</div>
+  <div class="gtok" id="g3" style="left:482px;top:338px">t&#8327;</div>
 
-  <div id="drafter"><span id="draflab">drafter</span></div>
+  <div id="drafter"><span id="draflab">draft<br>model</span></div>
 
   <div class="zflash" id="fl-cap"></div>
   <div class="zflash" id="fl-bw"></div>
@@ -198,6 +201,8 @@
   <div class="chip" id="balchip"></div>
   <div class="chip" id="tally"></div>
 
+  <div id="specname"></div>
+  <div id="classic"></div>
   <div class="chip" id="draftchip"></div>
   <div class="chip" id="verifychip"></div>
   <div id="lossless"></div>
@@ -217,6 +222,7 @@
   </div>
 
   <div id="dsv3">
+    <div class="df"></div>
     <div class="dw"></div>
     <div class="drow"><span class="da"></span><span class="dp"></span></div>
   </div>
@@ -225,16 +231,18 @@
 </div>
 
 <script src="../vendor/gsap.min.js"></script>
-<script src="shared/mtp.js?v=4"></script>
-<script src="shared/gpus.js?v=4"></script>
-<script src="shared/manifest.js?v=4"></script>
-<script src="shared/deck.js?v=4"></script>
+<script src="shared/mtp.js?v=5"></script>
+<script src="shared/gpus.js?v=5"></script>
+<script src="shared/manifest.js?v=5"></script>
+<script src="shared/deck.js?v=5"></script>
 <script>
   // ---- static content from shared data ----
   var h100 = GPUS.list.filter(function (g) { return g.key === "h100"; })[0];
   document.getElementById("serialcap").textContent = MTP.serial;
   document.getElementById("aichip").textContent = MTP.ai;
   document.getElementById("balchip").textContent = h100.name + " balance ≈ " + GPUS.balance(h100) + " FLOP/byte";
+  document.getElementById("specname").textContent = MTP.spec.name;
+  document.getElementById("classic").textContent = MTP.spec.classic;
   document.getElementById("draftchip").textContent = MTP.spec.draft;
   document.getElementById("verifychip").textContent = MTP.spec.verify;
   document.getElementById("lossless").textContent = MTP.spec.lossless;
@@ -242,6 +250,7 @@
   document.getElementById("unique").textContent = MTP.unique;
   document.getElementById("cap-b").textContent = MTP.econ;
   document.getElementById("divk").textContent = "÷ ~k";
+  document.querySelector("#dsv3 .df").textContent = MTP.dsv3.frame;
   document.querySelector("#dsv3 .dw").textContent = MTP.dsv3.what;
   document.querySelector("#dsv3 .da").textContent = MTP.dsv3.accept;
   document.querySelector("#dsv3 .dp").textContent = MTP.dsv3.point;
@@ -298,8 +307,10 @@
     .fromTo("#tally", { opacity: 0, scale: 0.7 }, { opacity: 1, scale: 1, duration: 0.35, ease: "back.out(2)" }, "b1+=3.35");
   DECK.markStep(tl);
 
-  // beat 2: the drafter bolts on — k ghosts on the belt, one pass stamps them all
-  tl.fromTo("#drafter", { opacity: 0, scale: 0.6 }, { opacity: 1, scale: 1, duration: 0.45, ease: "back.out(1.8)" })
+  // beat 2: SPECULATIVE DECODING, the classic form — a separate small draft model
+  tl.fromTo("#specname", { opacity: 0, y: 8 }, { opacity: 1, y: 0, duration: 0.45, ease: "power2.out" })
+    .fromTo("#classic", { opacity: 0, y: 6 }, { opacity: 1, y: 0, duration: 0.4 }, "<0.15")
+    .fromTo("#drafter", { opacity: 0, scale: 0.6 }, { opacity: 1, scale: 1, duration: 0.45, ease: "back.out(1.8)" })
     .fromTo("#draftchip", { opacity: 0, y: 6 }, { opacity: 1, y: 0, duration: 0.3 });
   ["#g0", "#g1", "#g2", "#g3"].forEach(function (sel, i) {
     tl.fromTo(sel, { opacity: 0 }, { opacity: 0.85, duration: 0.15 }, i ? "<0.14" : ">")
@@ -336,13 +347,18 @@
     .fromTo("#unique", { opacity: 0, y: 10 }, { opacity: 1, y: 0, duration: 0.45 });
   DECK.markStep(tl);
 
-  // beat 4: the drafter docks INTO the die (DeepSeek-V3 MTP head) + the fine print
-  tl.to("#drafter", { left: 330, top: 262, duration: 0.7, ease: "power2.inOut" })
+  // beat 4: the twist — the draft model is trained INTO the die (DeepSeek-V3 MTP head)
+  tl.to("#drafter", {
+      left: 330, top: 262, borderColor: "rgba(111,177,255,0.9)", color: "#6fb1ff",
+      duration: 0.7, ease: "power2.inOut"
+    })
     .to("#draftchip", { opacity: 0.35, duration: 0.4 }, "<")
     .call(function () { draflab.textContent = "MTP head"; })
     .fromTo("#drafter", { boxShadow: "0 0 0px rgba(111,177,255,0)" }, { boxShadow: "0 0 18px rgba(111,177,255,0.8)", duration: 0.3, yoyo: true, repeat: 1 })
     .fromTo("#fl-comp", { opacity: 0 }, { opacity: 1, duration: 0.09, yoyo: true, repeat: 3, immediateRender: false }, "<")
     .fromTo("#dsv3", { opacity: 0, y: 14 }, { opacity: 1, y: 0, duration: 0.45, ease: "power2.out" })
+    .fromTo("#dsv3 .df", { opacity: 0, y: 6 }, { opacity: 1, y: 0, duration: 0.4 }, "-=0.15")
+    .fromTo("#dsv3 .dw", { opacity: 0, y: 6 }, { opacity: 1, y: 0, duration: 0.4 })
     .fromTo("#dsv3 .da", { opacity: 0, scale: 0.7 }, { opacity: 1, scale: 1, duration: 0.35, ease: "back.out(2)" })
     .fromTo("#dsv3 .dp", { opacity: 0, y: 6 }, { opacity: 1, y: 0, duration: 0.4 }, "<0.15")
     .fromTo("#cv0", { opacity: 0, x: -10 }, { opacity: 1, x: 0, duration: 0.35 })
@@ -351,7 +367,7 @@
   DECK.register(tl, {
     reset: function () {
       dieHot(false);
-      draflab.textContent = "drafter";
+      draflab.innerHTML = "draft<br>model";
       tally.innerHTML = "";
     }
   });

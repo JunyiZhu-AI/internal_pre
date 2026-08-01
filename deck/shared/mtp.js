@@ -5,6 +5,8 @@ var MTP = {
   ai: "arithmetic intensity ≈ 1 FLOP/byte — the die idles",
 
   spec: {
+    name: "Speculative decoding",
+    classic: "the classic form: a separate small draft model guesses ahead — acceptance hinges on how well it mimics the target",
     draft: "draft k tokens cheaply",
     verify: "verify all k in ONE forward pass — one weight read, k tokens checked",
     lossless: "lossless — the output distribution is unchanged; speedup is capped by the acceptance rate",
@@ -20,6 +22,7 @@ var MTP = {
   ],
 
   dsv3: {
+    frame: "MTP is speculative decoding designed into the architecture — the drafter trained inside the model",
     what: "DeepSeek-V3's MTP: train an extra module to predict the next-NEXT token — then reuse it as the drafter at inference",
     accept: "~85–90% acceptance reported",
     point: "inference acceleration designed into the architecture",

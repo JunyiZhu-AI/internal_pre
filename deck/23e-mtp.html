@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Multi-Token Prediction</title>
-<link rel="stylesheet" href="shared/deck.css?v=4">
+<link rel="stylesheet" href="shared/deck.css?v=5">
 <style>
   .sc { font-family: ui-monospace, Menlo, monospace; text-transform: uppercase; letter-spacing: 0.14em; }
   .note { font: 500 9.5px/1.35 ui-monospace, Menlo, monospace; color: var(--ink-2); }
@@ -74,8 +74,10 @@
   #arr1 { position: absolute; left: 210px; top: 507px; font-size: 14px; color: #6b7284; opacity: 0; }
   #acc { position: absolute; left: 518px; top: 505px; border: 1px solid rgba(47, 214, 176, 0.65); border-radius: 999px;
     padding: 4px 11px; font: 700 10px ui-monospace, monospace; color: var(--accent); white-space: nowrap; opacity: 0; }
-  #caption { position: absolute; left: 44px; top: 556px; width: 650px; font: 500 10.5px/1.5 ui-monospace, monospace; color: var(--ink-2); opacity: 0; }
-  #motto { position: absolute; left: 44px; top: 602px; font-size: 12px; font-style: italic; color: var(--accent); opacity: 0; }
+  #frame { position: absolute; left: 44px; top: 552px; width: 660px; font: 700 11px ui-monospace, monospace; color: #e8eaf0; opacity: 0; }
+  #frame span { font-weight: 500; font-size: 10px; color: var(--ink-2); }
+  #caption { position: absolute; left: 44px; top: 576px; width: 650px; font: 500 10.5px/1.5 ui-monospace, monospace; color: var(--ink-2); opacity: 0; }
+  #motto { position: absolute; left: 44px; top: 614px; font-size: 12px; font-style: italic; color: var(--accent); opacity: 0; }
   #drtag { position: absolute; left: 44px; top: 426px; width: 130px; text-align: left; font-size: 8px; letter-spacing: 0.1em; color: rgba(111, 177, 255, 0.8); opacity: 0; }
 
   .cav { position: absolute; left: 740px; width: 496px; border-left: 2px solid rgba(224, 75, 56, 0.5);
@@ -94,7 +96,7 @@
 <body>
 <div class="stage">
   <div class="slide-title">Multi-Token Prediction</div>
-  <div class="slide-sub">the decode timeline, drawn to scale</div>
+  <div class="slide-sub">speculative decoding, then MTP &mdash; the decode timeline, drawn to scale</div>
 
   <!-- built by JS: bars, emits, drafts, traces, brackets -->
   <svg id="ov" width="1280" height="720"></svg>
@@ -111,6 +113,7 @@
   <div id="arr1">&rarr;</div>
   <div class="box" id="mtpbox"><span class="m1">MTP MODULE</span><span class="m2 sc">next-next token</span></div>
   <div id="acc"></div>
+  <div id="frame"></div>
   <div id="caption"></div>
   <div id="motto"></div>
   <div id="drtag" class="sc"></div>
@@ -123,10 +126,10 @@
 </div>
 
 <script src="../vendor/gsap.min.js"></script>
-<script src="shared/mtp.js?v=4"></script>
-<script src="shared/gpus.js?v=4"></script>
-<script src="shared/manifest.js?v=4"></script>
-<script src="shared/deck.js?v=4"></script>
+<script src="shared/mtp.js?v=5"></script>
+<script src="shared/gpus.js?v=5"></script>
+<script src="shared/manifest.js?v=5"></script>
+<script src="shared/deck.js?v=5"></script>
 <script>
   var stage = document.querySelector(".stage");
   var ov = document.getElementById("ov");
@@ -198,10 +201,12 @@
   brSlab.id = "brSlab";
 
   // ---------- SPECULATIVE row ----------
-  div("rowlab", "top:288px;", "SPECULATIVE");
-  div("rowsub sc", "top:304px;", "k = " + SPC.k).id = "ktag";
-  div("mnote note", "top:250px; width:580px;", MTP.spec.draft + " &middot; " + MTP.spec.verify).id = "spcnote";
-  div("mnote note", "top:264px; width:580px; color:rgba(47,214,176,0.85);", MTP.spec.lossless).id = "lossless";
+  var spclab = div("rowlab", "top:282px; text-transform:uppercase; line-height:1.18;");
+  spclab.textContent = MTP.spec.name;
+  div("rowsub sc", "top:316px;", "k = " + SPC.k).id = "ktag";
+  div("mnote note", "top:244px; width:700px;", MTP.spec.classic).id = "classic";
+  div("mnote note", "top:256px; width:580px;", MTP.spec.draft + " &middot; " + MTP.spec.verify).id = "spcnote";
+  div("mnote note", "top:268px; width:580px; color:rgba(47,214,176,0.85);", MTP.spec.lossless).id = "lossless";
 
   var spcaxis = div("axis", "left:" + X0 + "px; top:" + SPC.axisY + "px; width:978px;");
   var rounds = [], rejEl = null, rejX = 0;
@@ -230,8 +235,8 @@
     rx += SPC.dw + 4 + SPC.vw + 6 + slots * 14 - 2 + 14;
   });
   var vlab = div("inlab", "left:242px; top:291px; color:rgba(224,169,53,0.9);", "ONE READ");
-  div("blab sc", "left:168px; top:315px;", "draft").classList.add("b1");
-  div("blab sc", "left:246px; top:315px;", "verify").classList.add("b1");
+  div("blab sc", "left:166px; top:315px;", "draft model").classList.add("b1");
+  div("blab sc", "left:252px; top:315px;", "verify").classList.add("b1");
   div("blab sc", "left:348px; top:315px;", "emit").classList.add("b1");
   var r3x = X0 + 2 * 232;
   var redraw = div("sc", "left:" + r3x + "px; top:315px;", "redrawn");
@@ -276,6 +281,8 @@
   // ---------- beat 4 statics ----------
   document.getElementById("dshead").textContent = "DeepSeek-V3 · MTP head";
   document.getElementById("acc").textContent = MTP.dsv3.accept;
+  var frParts = MTP.dsv3.frame.split(" — ");
+  document.getElementById("frame").innerHTML = frParts[0] + " <span>&mdash; " + frParts[1] + "</span>";
   document.getElementById("caption").textContent = MTP.dsv3.what;
   document.getElementById("motto").textContent = MTP.dsv3.point;
   document.getElementById("drtag").textContent = "reused as the drafter";
@@ -285,14 +292,14 @@
   document.getElementById("pdlab").textContent = "P : D shifts";
 
   // drafter leader: MTP module -> round-1 draft block
-  var ldr = path("ldr", null, { d: "M364,494 C316,466 196,424 184,322" });
+  var ldr = path("ldr", null, { d: "M364,494 C240,470 120,420 160,306" });
   ldr.setAttribute("stroke", "rgba(111,177,255,0.55)");
   ldr.setAttribute("stroke-width", "1");
   ldr.setAttribute("stroke-dasharray", "4 3");
   ldr.setAttribute("fill", "none");
   ldr.style.opacity = "0";
   var ldot = document.createElementNS(SVGNS, "circle");
-  ldot.setAttribute("cx", "184"); ldot.setAttribute("cy", "320"); ldot.setAttribute("r", "3");
+  ldot.setAttribute("cx", "162"); ldot.setAttribute("cy", "303"); ldot.setAttribute("r", "2.5");
   ldot.setAttribute("fill", "#3987e5"); ldot.style.opacity = "0"; ldot.id = "ldot";
   ov.appendChild(ldot);
 
@@ -314,7 +321,8 @@
   // beat 2 — speculative decoding: draft, verify, accept / reject
   tl.fromTo(document.querySelectorAll(".rowlab")[1], { opacity: 0 }, { opacity: 1, duration: 0.3 })
     .fromTo("#ktag", { opacity: 0 }, { opacity: 1, duration: 0.3 }, "<0.08")
-    .fromTo("#spcnote", { opacity: 0, y: -4 }, { opacity: 1, y: 0, duration: 0.4 }, "<0.05")
+    .fromTo("#classic", { opacity: 0, y: -4 }, { opacity: 1, y: 0, duration: 0.4 }, "<0.05")
+    .fromTo("#spcnote", { opacity: 0, y: -4 }, { opacity: 1, y: 0, duration: 0.4 }, "<0.15")
     .fromTo(spcaxis, { opacity: 0, scaleX: 0 }, { opacity: 1, scaleX: 1, duration: 0.5, ease: "power2.out" });
   ROUNDS.forEach(function (rd, ri) {
     var R = rounds[ri], f = ri < 2 ? 1 : 0.55;
@@ -367,7 +375,8 @@
     .fromTo("#ldot", { opacity: 0 }, { opacity: 1, duration: 0.2 }, "-=0.15")
     .fromTo("#drtag", { opacity: 0 }, { opacity: 1, duration: 0.3 }, "<")
     .fromTo("#acc", { opacity: 0, scale: 0.6 }, { opacity: 1, scale: 1, duration: 0.4, ease: "back.out(2)" })
-    .fromTo("#caption", { opacity: 0, y: 6 }, { opacity: 1, y: 0, duration: 0.4 })
+    .fromTo("#frame", { opacity: 0, y: 6 }, { opacity: 1, y: 0, duration: 0.45 })
+    .fromTo("#caption", { opacity: 0, y: 6 }, { opacity: 1, y: 0, duration: 0.4 }, "<0.2")
     .fromTo("#motto", { opacity: 0, y: 6 }, { opacity: 1, y: 0, duration: 0.4 }, "<0.15")
     .fromTo("#cavhead", { opacity: 0 }, { opacity: 1, duration: 0.3 })
     .fromTo("#cav1", { opacity: 0, x: 10 }, { opacity: 1, x: 0, duration: 0.4, ease: "power2.out" }, "<0.1")
