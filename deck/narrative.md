@@ -639,6 +639,87 @@ head. Speak "reported" aloud for the 85–90% figure.*
 
 ---
 
+## Pages 24–25 — The closing (the map completed, the price tag reread)
+
+*The slide-02 board returns as the GPU-package machine of slides 16–23; the
+four bottleneck zones ARE the drop targets. Cards can be dragged to a bucket
+or simply clicked — a click flies the card to its correct home. Clicking
+through auto-plays the whole game; anything docked by hand is skipped.*
+
+### 24 — The Machine, Fully Upgraded
+
+1. "Here is the board from the start of the talk — but you've lived inside
+   this machine for an hour now. HBM for weights, HBM for KV, the pipe, the
+   die, the interconnect stubs — the four buckets. On the right, our
+   speedometer, with its launch-day ghost pinned at one-x. And the nine
+   names that meant nothing at nine-fifteen. You could sort these yourselves
+   now — so let's do it, fast."
+2. "The attention arc first, plus the quant dial. FlashAttention — bandwidth,
+   the IO of the score matrix. GQA, MLA, KDA — each one hits capacity AND
+   bandwidth, because KV bytes are both a footprint and a per-token read;
+   watch the KV block shrink three times. Quantization — the weight cells
+   themselves shrink. Five cards, and the meter is already pulling away from
+   the ghost."
+3. "Now the card with a plot twist. MoE docks in compute — FLOPs per token
+   drop, the die unzips into experts, the meter jumps. But watch: the
+   weights HBM floods amber and the interconnect flashes red. A discount at
+   one bucket, invoices at two others — you know this story. Expert
+   parallelism docks in the interconnect, the model drapes across the rack,
+   and the alerts clear. Capacity became communication, and communication
+   was tamed."
+4. "MTP — bandwidth. The drafter head bolts onto the die, the pipe traffic
+   thins by the acceptance factor, and notice the die heat up: this is the
+   only card on the board that spends compute to buy bandwidth. Those little
+   dashed tokens flickering by the meter are the rejected drafts — wasted
+   FLOPs that were free anyway."
+5. "And prefill–decode disaggregation splits the whole machine: a P pool
+   owning time-to-first-token, a D pool owning time-per-output-token, each
+   tuned alone. On screen we cap the meter at eight-x for legibility — the
+   corner caption keeps the honest arithmetic."
+6. "Pull back. The empty board from the opening, now filled: nine
+   techniques, the bottleneck each one attacks, the stage where it bites,
+   and whether it ships in K3. Every row is a targeted strike on one of four
+   buckets. That's the whole talk in one table."
+
+*(final click → next page)*
+
+### 25 — Read the Price Tag Again
+
+*The upgraded machine stays faintly running in the background — its curtain
+call. The slide-01 rate card returns in front.*
+
+1. "The machine keeps humming back there — we're done building it. Here is
+   the rate card from nine o'clock: three dollars in, thirty cents cached,
+   fifteen dollars out. On slide one these were marketing numbers. They
+   aren't anymore."
+2. "Flip each tag. Three dollars: prefill is compute-bound — you're paying
+   for FLOPs over uncached context. Thirty cents: a prefix-cache hit skips
+   prefill entirely — the KV already exists. Fifteen dollars: decode is
+   bandwidth-bound and serial, the hardest regime on the machine to scale.
+   Every price is a bottleneck with a dollar sign on it."
+3. "And the three questions I promised to answer. Why is output five-x input
+   for every vendor? Because decode pays bandwidth per token while prefill
+   amortises — that's the roofline, invoiced. Why is a cache hit ten-x
+   cheaper? PD serving plus prefix caching — a hit never touches the P
+   pool. Why does competing at these prices take 2.8T parameters, KDA, and
+   a million of context? Because no single trick gets you there."
+4. "That third answer is the pattern of the whole talk: the price sheet is
+   the physics, invoiced. Roll the credits on the machine behind me — KDA,
+   MLA, MoE, MXFP4, EP, PD — each name lights up the part of the machine it
+   was co-designed with. Architecture chosen to make systems cheap; systems
+   built to exploit architecture."
+5. "Three open questions to argue about over coffee: if pure-linear
+   attention wins, does the KV cache — half this talk — simply disappear?
+   If hardware rebalances the roofline, does the memory wall move, and
+   which of these nine cards get retired? And Jevons: cheaper tokens have
+   so far meant more tokens — does the bill ever actually go down? Thank
+   you — and if you want another go at the machine, the replay chip jumps
+   back to the bucket game. Do not scan the QR code; it's the map."
+
+*(end of deck)*
+
+---
+
 ## Template page — QKᵀ: where attention scores come from
 
 **Load:** title only; empty score grid awaits.
