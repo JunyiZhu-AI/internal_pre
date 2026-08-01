@@ -586,6 +586,59 @@ pools — landing back on the rate card's $0.30.*
 
 ---
 
+## Page 23 — Multi-Token Prediction
+
+*The machine one last time: the die drops tokens onto a conveyor out of the
+package; a separate draft model appears, then docks into the die as the MTP
+head. Speak "reported" aloud for the 85–90% figure.*
+
+1. "The machine one last time — and now watch what it makes. The die drops
+   finished tokens onto a conveyor running out of the package. Look at the
+   exchange rate: for every single token that rolls off, the whole amber
+   HBM block flashes and streams down the pipe — all active weights plus
+   KV, re-read from scratch, every step. Decode is serial: one step, one
+   token. That's arithmetic intensity of roughly one FLOP per byte on a
+   machine balanced at about 295 — the tally says it plainly: three reads,
+   three tokens. The die idles while the pipe does all the work."
+2. "The general technique has a name: speculative decoding. The classic
+   form: a completely separate small draft model — note it's its own
+   little box, not part of our die — guesses ahead, placing a few ghost
+   tokens on the belt. Then the big model runs one ordinary forward pass —
+   one weight read — and stamps all of them at once: the guesses it agrees
+   with solidify and roll away; the one it rejects drops off the belt, and
+   generation redraws from that point. The tally flips: one read, three
+   tokens. Two things to hold. It's lossless — verification keeps the
+   output distribution exactly unchanged, so the speedup is capped only by
+   the acceptance rate. And in the classic two-model form, that acceptance
+   hinges on how well a foreign little model mimics the target — remember
+   that weakness."
+3. "Reframe what you just saw: a verify pass is a mini-prefill. One weight
+   read amortised over k positions — the same amortisation prefill gets
+   for free, smuggled into the decode loop. Economically: bytes per token
+   divided by roughly k — the same bandwidth bill quantization pays, by
+   opposite means. And look at how it's paid: the amber bar shrinks while
+   the idle die tiles light up. This is the only technique in the talk
+   that spends idle compute to buy bandwidth — rejected drafts are wasted
+   FLOPs, and those FLOPs were free anyway."
+4. "Now the twist that makes it MTP. Fix the classic form's weakness at
+   the root: don't hire a foreign drafter — train one inside the model.
+   Watch the little box dock into the die and turn blue. MTP is
+   speculative decoding designed into the architecture — the drafter
+   trained inside the model. DeepSeek-V3 trains an extra module to predict
+   the next-NEXT token, then reuses it as the drafter at inference; because
+   it shares the trunk, it mimics the target superbly — reported acceptance
+   around 85 to 90 percent. Inference acceleration designed into the
+   architecture. Two lines of fine print before we close: this is a
+   decode-regime weapon — push batch high enough and decode turns
+   compute-bound, so the gain shrinks or inverts. And raising decode's
+   arithmetic intensity nudges the optimal P-to-D ratio — the two pools
+   from the last slide would shift. Every lever moves every other lever;
+   that's the note to end the section on."
+
+*(final click → next page)*
+
+---
+
 ## Template page — QKᵀ: where attention scores come from
 
 **Load:** title only; empty score grid awaits.
