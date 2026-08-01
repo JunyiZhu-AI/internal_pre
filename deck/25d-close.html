@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Read the Price Tag Again</title>
+<link rel="stylesheet" href="shared/deck.css?v=6">
+<link rel="stylesheet" href="shared/bottlenecks.css?v=6">
+<style>
+  /* ---- the upgraded machine, left running as a faint backdrop ---- */
+  #bk {
+    position: absolute; left: 0; top: 0; width: 800px; height: 420px;
+    transform: translate(350px, 300px) scale(0.68); transform-origin: 0 0;
+    opacity: 0; pointer-events: none;
+  }
+  #bk .pkg {
+    position: absolute; left: 0; top: 0; width: 580px; height: 402px;
+    border: 1.5px solid var(--line); border-radius: 18px; background: rgba(27,30,39,0.45);
+  }
+  #bk .hbm { position: absolute; left: 40px; width: 88px; height: 148px; border: 2px solid rgba(201,133,0,0.7); border-radius: 8px; }
+  #bk .hbmK { top: 224px; border-color: rgba(144,133,233,0.55); }
+  #bk .hbmW { top: 56px; }
+  #bk .cells { position: absolute; left: 8px; top: 8px; right: 8px; display: flex; flex-wrap: wrap; gap: 2px; align-content: flex-start; }
+  #bk .wcell { flex: none; width: 12px; height: 12px; border-radius: 2px; background: linear-gradient(rgba(201,133,0,0.45), rgba(201,133,0,0.85)); }
+  #bk .kcell { flex: none; width: 8px; height: 12px; border-radius: 2px; background: linear-gradient(rgba(144,133,233,0.4), rgba(144,133,233,0.8)); }
+  #bk .pipe { position: absolute; left: 134px; width: 116px; height: 16px; border: 2px solid rgba(47,214,176,0.3); border-radius: 8px; }
+  #bk .pipe i { position: absolute; top: 4px; width: 4px; height: 4px; border-radius: 50%; background: #2fd6b0; animation: bkFlow 2.6s linear infinite; opacity: 0.75; }
+  #bk .pipe i:nth-child(2) { animation-delay: 1.3s; }
+  @keyframes bkFlow { from { left: -6px; } to { left: 118px; } }
+  #bk .die {
+    position: absolute; left: 256px; top: 96px; width: 168px; height: 216px;
+    border: 2.5px solid #6fb1ff; border-radius: 10px; background: #0d1420;
+    box-shadow: 0 0 22px rgba(111,177,255,0.35);
+  }
+  #bk .exgrid { position: absolute; inset: 12px 12px 12px; display: grid; gap: 6px; grid-template-columns: 1fr 1fr; grid-template-rows: 1fr 1fr; }
+  #bk .ex {
+    border: 1.5px solid rgba(57,135,229,0.5); border-radius: 7px; background: rgba(57,135,229,0.07);
+    display: flex; align-items: center; justify-content: center; font: 700 10px ui-monospace, monospace; color: #9ec7f5; opacity: 0.4;
+  }
+  #bk .ex.on { opacity: 1; border-color: #6fb1ff; background: rgba(111,177,255,0.14); }
+  #bk .drafter {
+    position: absolute; left: 408px; top: 132px; width: 62px; height: 38px;
+    border: 1.5px solid #6fb1ff; border-radius: 8px; background: rgba(27,30,39,0.96);
+    display: flex; align-items: center; justify-content: center; font: 700 9px ui-monospace, monospace; color: #6fb1ff;
+  }
+  #bk .peer { position: absolute; left: 624px; width: 150px; height: 96px; border: 1.5px solid var(--line); border-radius: 12px; background: rgba(27,30,39,0.45); }
+  #bk .peer .pdie { position: absolute; left: 14px; top: 22px; width: 50px; height: 50px; border: 2px solid #9085e9; border-radius: 7px; background: #12101f; }
+  #bk .peer .echs { position: absolute; left: 78px; top: 24px; width: 58px; display: flex; flex-wrap: wrap; gap: 3px; }
+  #bk .peer .ech { flex: none; width: 26px; height: 11px; border-radius: 2px; background: linear-gradient(rgba(201,133,0,0.45), rgba(201,133,0,0.8)); }
+  #bk .wires { position: absolute; left: 0; top: 0; }
+  #bk .wires line { stroke: #9085e9; stroke-width: 2.5; stroke-dasharray: 9 7; opacity: 0.7; }
+  #bk .split { position: absolute; left: 250px; top: 6px; width: 3px; height: 390px; border-radius: 2px;
+    background: linear-gradient(rgba(47,214,176,0.1), #2fd6b0, rgba(47,214,176,0.1)); }
+  #bk .pool { position: absolute; top: 8px; font: 700 10px ui-monospace, monospace; border: 1.5px solid; border-radius: 999px; padding: 2px 9px; background: rgba(11,13,18,0.92); white-space: nowrap; }
+  #bk .poolD { left: 68px; color: var(--accent); border-color: rgba(47,214,176,0.7); }
+  #bk .poolP { left: 342px; color: #6fb1ff; border-color: rgba(111,177,255,0.7); }
+  .bkflash { position: absolute; opacity: 0; pointer-events: none; border-radius: 12px; border: 3px solid; }
+
+  /* ---- the rate card, slide-01 ledger language ---- */
+  #receipt {
+    position: absolute; left: 44px; top: 116px; width: 600px;
+    background: var(--panel); border: 1px solid var(--line); border-radius: 14px;
+    padding: 14px 16px 16px; opacity: 0;
+  }
+  #receipt h3 { margin: 0 0 10px; font-size: 15px; }
+  #receipt h3 .note { font-size: 11px; color: var(--ink-2); font-weight: 400; margin-left: 8px; }
+  .lrow { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; opacity: 0; }
+  .lrow .lab { width: 128px; flex: none; font-size: 12px; color: var(--ink-2); }
+  .lrow .price {
+    width: 96px; height: 38px; flex: none; display: flex; align-items: center; justify-content: center;
+    font-family: ui-monospace, monospace; font-size: 14.5px; font-weight: 700;
+    background: #232836; border-radius: 6px; color: #fff;
+  }
+  .lrow.flipped .price { color: var(--accent); box-shadow: 0 0 12px rgba(47,214,176,0.25); }
+  .lrow .mech { flex: 1; font-size: 10.5px; color: #c7cce0; line-height: 1.4; opacity: 0; }
+
+  /* the QR-mosaic gag: the completed map, miniaturised (decorative) */
+  #qr {
+    position: absolute; left: 538px; top: 268px; width: 88px; height: 88px;
+    background: #0b0d12; border: 1px solid var(--line); border-radius: 6px;
+    padding: 5px; transform: rotate(5deg); opacity: 0; z-index: 6;
+    display: grid; gap: 1px; grid-template-columns: repeat(11, 1fr); grid-template-rows: repeat(11, 1fr);
+  }
+  #qr i { border-radius: 1px; }
+  #qrlab { position: absolute; left: 508px; top: 360px; width: 150px; text-align: center; font-size: 8px; color: #6b7284; opacity: 0; z-index: 6; }
+
+  /* ---- the three questions, answered ---- */
+  .acard {
+    position: absolute; left: 676px; width: 560px;
+    background: var(--panel); border: 1px solid var(--line); border-left: 3px solid var(--accent);
+    border-radius: 10px; padding: 10px 14px; opacity: 0;
+  }
+  #a0 { top: 116px; } #a1 { top: 224px; } #a2 { top: 332px; }
+  .acard .aq { font-size: 10.5px; font-style: italic; color: var(--ink-2); }
+  .acard .aq b { color: var(--accent); font-style: normal; font-family: ui-monospace, monospace; margin-right: 6px; }
+  .acard .aa { margin-top: 5px; font-size: 12px; font-weight: 600; color: #e8eaf0; line-height: 1.45; }
+  .acard .aa::before { content: "✓ "; color: var(--accent); }
+
+  /* ---- the pattern + roll-call ---- */
+  #pattern {
+    position: absolute; left: 44px; top: 478px; width: 1192px; text-align: center;
+    font-size: 17px; font-weight: 700; font-style: italic; color: var(--accent); opacity: 0;
+  }
+  #roll { position: absolute; left: 44px; top: 516px; width: 1192px; display: flex; justify-content: center; gap: 10px; }
+  .rchip {
+    font: 700 11.5px ui-monospace, monospace; color: #c7cce0;
+    border: 1.5px solid var(--line); border-radius: 999px; padding: 3px 12px;
+    background: rgba(11,13,18,0.85); opacity: 0;
+  }
+
+  /* ---- finale ---- */
+  #openlab { position: absolute; left: 44px; top: 566px; font-size: 10px; letter-spacing: 0.09em; color: var(--ink-2); opacity: 0; }
+  .oq { position: absolute; left: 44px; width: 620px; font-size: 12px; color: #c7cce0; line-height: 1.4; opacity: 0; }
+  .oq i { display: inline-block; width: 7px; height: 7px; border-radius: 50%; margin-right: 8px; }
+  #oq0 { top: 586px; } #oq1 { top: 612px; } #oq2 { top: 638px; }
+  #thanks {
+    position: absolute; left: 700px; top: 580px; width: 400px;
+    font-size: 21px; font-weight: 800; color: #e8eaf0; opacity: 0;
+  }
+  #replay {
+    position: absolute; left: 700px; top: 626px; display: inline-block;
+    font: 700 12px ui-monospace, monospace; color: var(--accent); text-decoration: none;
+    border: 1.5px solid rgba(47,214,176,0.7); border-radius: 999px; padding: 6px 16px;
+    background: rgba(11,13,18,0.85); opacity: 0; visibility: hidden;
+  }
+  #replay:hover { background: rgba(47,214,176,0.12); box-shadow: 0 0 14px rgba(47,214,176,0.3); }
+</style>
+</head>
+<body>
+<div class="stage">
+  <div class="slide-title">Read the Price Tag Again</div>
+  <div class="slide-sub">three prices, three answers — the machine behind every number</div>
+
+  <div id="bk">
+    <div class="pkg"></div>
+    <div class="hbm hbmW"><div class="cells"></div></div>
+    <div class="hbm hbmK"><div class="cells"></div></div>
+    <div class="pipe" style="top:120px"><i></i><i></i></div>
+    <div class="pipe" style="top:288px"><i></i><i></i></div>
+    <div class="die"><div class="exgrid"></div></div>
+    <div class="drafter">MTP head</div>
+    <svg class="wires" width="800" height="420">
+      <line x1="424" y1="188" x2="626" y2="136"/>
+      <line x1="424" y1="228" x2="626" y2="332"/>
+    </svg>
+    <div class="peer" style="top:88px"><div class="pdie"></div><div class="echs"><i class="ech"></i><i class="ech"></i><i class="ech"></i><i class="ech"></i></div></div>
+    <div class="peer" style="top:284px"><div class="pdie"></div><div class="echs"><i class="ech"></i><i class="ech"></i><i class="ech"></i><i class="ech"></i></div></div>
+    <div class="split"></div>
+    <div class="pool poolD">D pool</div>
+    <div class="pool poolP">P pool</div>
+  </div>
+
+  <div class="ledger" id="receipt">
+    <h3>Rate card <span class="note">per 1M tokens — the promise, kept</span></h3>
+    <div id="rrows"></div>
+  </div>
+  <div id="qr"></div>
+  <div id="qrlab">the completed map — do not scan</div>
+
+  <div id="pattern"></div>
+  <div id="roll"></div>
+
+  <div id="openlab">OPEN QUESTIONS</div>
+  <div id="thanks"></div>
+  <a id="replay" data-no-advance></a>
+</div>
+
+<script src="../vendor/gsap.min.js"></script>
+<script src="shared/bottlenecks.js?v=6"></script>
+<script src="shared/closing.js?v=6"></script>
+<script src="shared/manifest.js?v=6"></script>
+<script src="shared/deck.js?v=6"></script>
+<script>
+  var stageEl = document.querySelector(".stage");
+
+  // ---- backdrop machine furniture ----
+  function fillCells(sel, cls, n) {
+    var host = document.querySelector(sel);
+    for (var i = 0; i < n; i++) { var c = document.createElement("i"); c.className = cls; host.appendChild(c); }
+  }
+  fillCells("#bk .hbmW .cells", "wcell", 12);
+  fillCells("#bk .hbmK .cells", "kcell", 12);
+  var exg = document.querySelector("#bk .exgrid");
+  for (var i = 0; i < 4; i++) {
+    var ex = document.createElement("div");
+    ex.className = "ex" + (i === 2 ? " on" : "");
+    ex.textContent = "E" + (i + 1);
+    exg.appendChild(ex);
+  }
+
+  // ---- the receipt: CL.receipt rows, prices that flip to mechanisms ----
+  var rrows = document.getElementById("rrows");
+  CL.receipt.forEach(function (r, i) {
+    var d = document.createElement("div");
+    d.className = "lrow"; d.id = "lr" + i;
+    d.innerHTML = '<span class="lab">' + r[0] + '</span><span class="price">' + r[1] +
+      '</span><span class="mech">' + r[2] + "</span>";
+    rrows.appendChild(d);
+  });
+
+  // ---- the three questions, answered (CL.answers) ----
+  CL.answers.forEach(function (a, i) {
+    var d = document.createElement("div");
+    d.className = "acard"; d.id = "a" + i;
+    d.innerHTML = '<div class="aq"><b>' + a[0] + "</b>" + a[1] + '</div><div class="aa">' + a[2] + "</div>";
+    stageEl.appendChild(d);
+  });
+
+  // ---- pattern + co-design roll-call (parsed out of the Q3 answer) ----
+  document.getElementById("pattern").textContent = CL.pattern;
+  var seg = CL.answers[2][2].split("—");
+  var roll = (seg[1] || "").trim().split("·").map(function (s) { return s.trim(); }).filter(Boolean);
+  var rollHost = document.getElementById("roll");
+  roll.forEach(function (name) {
+    var c = document.createElement("span");
+    c.className = "rchip";
+    c.textContent = name;
+    rollHost.appendChild(c);
+  });
+  // each roll-call name pulses its part of the faint machine
+  var BKZONE = {
+    "KDA": [30, 214, 108, 168, "#9085e9"],
+    "MLA": [30, 214, 108, 168, "#9085e9"],
+    "MoE": [246, 86, 188, 236, "#3987e5"],
+    "MXFP4": [30, 46, 108, 168, "#e0a935"],
+    "EP": [614, 78, 170, 312, "#9085e9"],
+    "PD": [-10, -10, 600, 422, "#2fd6b0"],
+  };
+  var bk = document.getElementById("bk");
+  var bkFlash = {};
+  roll.forEach(function (name) {
+    var z = BKZONE[name];
+    if (!z) return;
+    var f = document.createElement("div");
+    f.className = "bkflash";
+    f.style.cssText = "left:" + z[0] + "px; top:" + z[1] + "px; width:" + z[2] + "px; height:" + z[3] +
+      "px; border-color:" + z[4] + "; box-shadow:0 0 30px " + z[4] + "cc;";
+    bk.appendChild(f);
+    bkFlash[name] = f;
+  });
+
+  // ---- finale content ----
+  var OQC = ["#9085e9", "#2fd6b0", "#e04b38"];
+  CL.open.forEach(function (q, i) {
+    var d = document.createElement("div");
+    d.className = "oq"; d.id = "oq" + i;
+    d.innerHTML = "<i style='background:" + OQC[i] + "'></i>" + q;
+    stageEl.appendChild(d);
+  });
+  document.getElementById("thanks").textContent = CL.thanks;
+  var replay = document.getElementById("replay");
+  replay.textContent = CL.replay.label;
+  replay.href = CL.replay.href;
+
+  // the QR mosaic: deterministic pattern seeded from the nine abbreviations
+  var qr = document.getElementById("qr");
+  var QRC = ["#3987e5", "#2fd6b0", "#e0a935", "#9085e9"];
+  var seedStr = BN.techniques.map(function (t) { return t[1]; }).join("");
+  var seed = 0;
+  for (i = 0; i < seedStr.length; i++) seed = (seed * 31 + seedStr.charCodeAt(i)) % 9973;
+  for (i = 0; i < 121; i++) {
+    var cell = document.createElement("i");
+    var r = Math.floor(i / 11), c = i % 11;
+    var finder = (r < 3 && c < 3) || (r < 3 && c > 7) || (r > 7 && c < 3);
+    seed = (seed * 137 + 61) % 9973;
+    if (finder) cell.style.background = (r % 2 === 0 && c % 2 === 0) || (r === 1 && c === 1) ? "#e8eaf0" : "transparent";
+    else if (seed % 3 !== 0) cell.style.background = QRC[seed % 4];
+    qr.appendChild(cell);
+  }
+
+  // ---- timeline: 5 beats ----
+  var tl = gsap.timeline({ paused: true });
+
+  // beat 1: the machine dims to a backdrop; the opening rate card returns in front
+  tl.fromTo("#bk", { opacity: 0 }, { opacity: 0.11, duration: 0.8, ease: "power2.out" })
+    .fromTo("#receipt", { opacity: 0, y: 24 }, { opacity: 1, y: 0, duration: 0.5, ease: "power3.out" }, "-=0.35")
+    .fromTo(".lrow", { opacity: 0, x: -14 }, { opacity: 1, x: 0, duration: 0.32, stagger: 0.1 }, "-=0.2");
+  DECK.markStep(tl);
+
+  // beat 2: each price flips into its mechanism
+  CL.receipt.forEach(function (r, i) {
+    tl.to("#lr" + i + " .price", { rotationX: 360, duration: 0.55, ease: "power2.inOut" }, i ? "-=0.25" : "+=0")
+      .call(function () { document.getElementById("lr" + i).classList.add("flipped"); }, null, "-=0.28")
+      .to("#lr" + i + " .mech", { opacity: 1, duration: 0.35 }, "-=0.2");
+  });
+  DECK.markStep(tl);
+
+  // beat 3: the three opening questions come back — answered
+  for (i = 0; i < 3; i++) {
+    tl.fromTo("#a" + i, { opacity: 0, x: 26 }, { opacity: 1, x: 0, duration: 0.42, ease: "power2.out" }, i ? "-=0.18" : "+=0");
+  }
+  DECK.markStep(tl);
+
+  // beat 4: the pattern — and the co-design roll-call sweeps the machine
+  tl.fromTo("#pattern", { opacity: 0, y: 12 }, { opacity: 1, y: 0, duration: 0.5, ease: "power2.out" });
+  roll.forEach(function (name, n) {
+    tl.fromTo("#roll .rchip:nth-child(" + (n + 1) + ")", { opacity: 0, scale: 0.6 },
+      { opacity: 1, scale: 1, duration: 0.3, ease: "back.out(2.2)" }, n ? "-=0.12" : "+=0.05");
+    if (bkFlash[name]) {
+      tl.fromTo(bkFlash[name], { opacity: 0 }, { opacity: 0.85, duration: 0.14, yoyo: true, repeat: 1 }, "-=0.2");
+    }
+  });
+  DECK.markStep(tl);
+
+  // beat 5: open questions, thanks, the replay chip, and the map as a QR gag
+  tl.fromTo("#openlab", { opacity: 0 }, { opacity: 1, duration: 0.3 })
+    .fromTo(".oq", { opacity: 0, y: 10 }, { opacity: 1, y: 0, duration: 0.35, stagger: 0.14, ease: "power2.out" }, "-=0.1")
+    .fromTo("#thanks", { opacity: 0, y: 12 }, { opacity: 1, y: 0, duration: 0.45, ease: "power2.out" })
+    .fromTo("#replay", { autoAlpha: 0, y: 8 }, { autoAlpha: 1, y: 0, duration: 0.4 }, "-=0.15")
+    .fromTo("#qr", { opacity: 0, scale: 0.4, rotation: 25 }, { opacity: 1, scale: 1, rotation: 5, duration: 0.5, ease: "back.out(1.8)" }, "-=0.2")
+    .fromTo("#qrlab", { opacity: 0 }, { opacity: 1, duration: 0.3 });
+
+  DECK.register(tl, {
+    reset: function () {
+      document.querySelectorAll(".lrow").forEach(function (r) { r.classList.remove("flipped"); });
+    }
+  });
+</script>
+</body>
+</html>

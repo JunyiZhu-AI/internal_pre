@@ -25,4 +25,10 @@ window.DECK_PAGES = [
   "21-ep.html",
   "22-pd.html",
   "23-mtp.html",
+  // Closing variants (a–e) — one flow will be promoted, the rest deleted
+  "24a-map.html", "25a-close.html",
+  "24b-map.html", "25b-close.html",
+  "24c-map.html", "25c-close.html",
+  "24d-map.html", "25d-close.html",
+  "24e-map.html", "25e-close.html",
 ];

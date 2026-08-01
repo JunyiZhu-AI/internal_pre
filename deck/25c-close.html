@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Read the Price Tag Again</title>
+<link rel="stylesheet" href="shared/deck.css?v=6">
+<style>
+  /* ---- the rate card, back from slide 01 ---- */
+  #ledger {
+    position: absolute; left: 44px; top: 112px; width: 620px;
+    background: var(--panel); border: 1px solid var(--line); border-radius: 14px;
+    padding: 12px 16px 6px; opacity: 0;
+  }
+  #ledger h3 { margin: 0 0 4px; font-size: 15px; }
+  #ledger h3 .note { font-size: 11px; color: var(--ink-2); font-weight: 400; margin-left: 8px; }
+  .prow {
+    display: grid; grid-template-columns: 118px 92px 1fr; gap: 12px;
+    align-items: center; min-height: 58px; padding: 4px 0;
+    border-bottom: 1px solid rgba(42,46,59,0.6); opacity: 0;
+  }
+  .prow:last-child { border-bottom: none; }
+  .prow .plab { font-size: 12px; color: var(--ink-2); }
+  .prow .pval {
+    height: 36px; display: flex; align-items: center; justify-content: center;
+    font: 700 15px ui-monospace, monospace; color: #fff;
+    background: #232836; border-radius: 6px;
+  }
+  .prow .pslot { border-bottom: 1px dashed #3a4052; min-height: 34px; padding: 2px 0 4px; }
+  .pslot .val { font-size: 11.5px; color: #c7cce0; line-height: 1.35; display: block; }
+  .val { clip-path: inset(0 100% 0 0); }
+
+  /* ---- the three questions, answered ---- */
+  #qcol { position: absolute; left: 694px; top: 112px; width: 542px; display: flex; flex-direction: column; gap: 13px; }
+  .qb {
+    background: var(--panel); border: 1px solid var(--line); border-left: 3px solid var(--accent);
+    border-radius: 10px; padding: 9px 14px 11px; opacity: 0; position: relative;
+  }
+  .qb .qhead { display: flex; align-items: center; gap: 8px; }
+  .qb .qn { font: 700 11px ui-monospace, monospace; color: var(--accent); }
+  .qbadge { width: 16px; height: 16px; border-radius: 50%; position: relative; margin-left: auto; }
+  .qbadge span {
+    position: absolute; inset: 0; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 800; font-size: 10.5px;
+  }
+  .qbadge .qm { background: #3a4052; color: #c7cce0; }
+  .qbadge .qy { background: var(--accent); color: #0c1116; opacity: 0; transform: scale(0); }
+  .qb .qtext { font-size: 11.5px; font-style: italic; color: #9aa1b5; margin: 4px 0 6px; line-height: 1.35; }
+  .qb .aslot { border-top: 1px dashed #3a4052; padding-top: 6px; min-height: 22px; }
+  .qb .aval { font-size: 12px; color: #dfe4f2; line-height: 1.4; display: block; }
+
+  /* ---- the closing pattern line ---- */
+  #pattern { position: absolute; left: 0; top: 464px; width: 100%; text-align: center; }
+  #pattern .val { display: inline-block; font-size: 19px; font-style: italic; color: var(--accent); }
+
+  /* ---- finale ---- */
+  #openp {
+    position: absolute; left: 44px; top: 520px; width: 520px;
+    background: var(--panel); border: 1px solid var(--line); border-radius: 12px;
+    padding: 11px 16px 13px; opacity: 0;
+  }
+  #openp .oh { font: 700 9.5px ui-monospace, monospace; color: #6b7284; letter-spacing: 0.1em; text-transform: uppercase; }
+  .oline { display: flex; gap: 9px; margin-top: 8px; font-size: 12px; color: #c7cce0; line-height: 1.35; }
+  .oline .b { color: var(--accent); font-weight: 800; }
+
+  #qrwrap { position: absolute; left: 600px; top: 520px; width: 150px; opacity: 0; }
+  #qr { display: grid; grid-template-columns: repeat(15, 9px); grid-auto-rows: 9px; gap: 1px; }
+  #qr i { border-radius: 1px; display: block; }
+  #qrlab { margin-top: 6px; font-size: 8.5px; font-style: italic; color: #6b7284; text-align: center; }
+
+  #thanks { position: absolute; left: 796px; top: 532px; width: 440px; opacity: 0; }
+  #thanks .big { font-size: 26px; font-weight: 800; letter-spacing: -0.01em; }
+  #replay {
+    display: inline-flex; align-items: center; gap: 7px; margin-top: 18px;
+    font: 600 12.5px ui-monospace, monospace; color: var(--accent);
+    border: 1.5px solid rgba(47,214,176,0.65); border-radius: 999px;
+    padding: 8px 18px; text-decoration: none; background: rgba(47,214,176,0.06);
+    transition: background 0.2s, box-shadow 0.2s;
+  }
+  #replay:hover { background: rgba(47,214,176,0.14); box-shadow: 0 0 16px rgba(47,214,176,0.35); }
+</style>
+</head>
+<body>
+<div class="stage">
+  <div class="slide-title">Read the Price Tag Again</div>
+  <div class="slide-sub">the same three numbers — now with nothing left unexplained</div>
+
+  <div id="ledger">
+    <h3>Rate card <span class="note">official — per 1M tokens</span></h3>
+    <div id="prows"></div>
+  </div>
+
+  <div id="qcol"></div>
+
+  <div id="pattern"><span class="val"></span></div>
+
+  <div id="openp">
+    <div class="oh">open questions — for the discussion</div>
+    <div id="olines"></div>
+  </div>
+
+  <div id="qrwrap">
+    <div id="qr"></div>
+    <div id="qrlab">the map, miniaturised — decorative</div>
+  </div>
+
+  <div id="thanks">
+    <div class="big"></div>
+    <a id="replay" href="02-bottlenecks.html" data-no-advance></a>
+  </div>
+</div>
+
+<script src="../vendor/gsap.min.js"></script>
+<script src="shared/pricing.js?v=6"></script>
+<script src="shared/bottlenecks.js?v=6"></script>
+<script src="shared/closing.js?v=6"></script>
+<script src="shared/manifest.js?v=6"></script>
+<script src="shared/deck.js?v=6"></script>
+<script>
+  // ---- rate card rows: price + a blank annotation line ----------------
+  var prows = document.getElementById("prows");
+  CL.receipt.forEach(function (r) {
+    var d = document.createElement("div");
+    d.className = "prow";
+    d.innerHTML = '<span class="plab">' + r[0] + '</span>' +
+      '<span class="pval">' + r[1] + '</span>' +
+      '<span class="pslot"><span class="val">' + r[2] + "</span></span>";
+    prows.appendChild(d);
+  });
+
+  // ---- the three questions with blank answer lines --------------------
+  var qcol = document.getElementById("qcol");
+  CL.answers.forEach(function (a) {
+    var d = document.createElement("div");
+    d.className = "qb";
+    d.innerHTML = '<div class="qhead"><span class="qn">' + a[0] + '</span>' +
+      '<span class="qbadge"><span class="qm">?</span><span class="qy">✓</span></span></div>' +
+      '<div class="qtext">' + a[1] + '</div>' +
+      '<div class="aslot"><span class="aval val">' + a[2] + "</span></div>";
+    qcol.appendChild(d);
+  });
+
+  document.querySelector("#pattern .val").textContent = CL.pattern;
+
+  var olines = document.getElementById("olines");
+  CL.open.forEach(function (o) {
+    var d = document.createElement("div");
+    d.className = "oline";
+    d.innerHTML = '<span class="b">·</span><span class="val">' + o + "</span>";
+    olines.appendChild(d);
+  });
+
+  document.querySelector("#thanks .big").textContent = CL.thanks;
+  document.getElementById("replay").textContent = CL.replay.label;
+  document.getElementById("replay").setAttribute("href", CL.replay.href);
+
+  // ---- QR-ish mosaic: the completed map, miniaturised (decorative) ----
+  (function buildQR() {
+    var qr = document.getElementById("qr");
+    var colors = BN.list.map(function (b) { return b.color; });
+    var seed = 20260801;
+    function rnd() { seed = (seed * 1103515245 + 12345) % 2147483648; return seed / 2147483648; }
+    var N = 15;
+    function finder(r, c, x, y) { return x >= c && x < c + 3 && y >= r && y < r + 3; }
+    for (var y = 0; y < N; y++) {
+      for (var x = 0; x < N; x++) {
+        var i = document.createElement("i");
+        var col;
+        if (finder(0, 0, x, y) || finder(0, N - 3, x, y) || finder(N - 3, 0, x, y)) {
+          // corner "finder" blocks: bucket-coloured centres
+          var mid = (finder(0, 0, x, y) && x === 1 && y === 1) ||
+                    (finder(0, N - 3, x, y) && x === N - 2 && y === 1) ||
+                    (finder(N - 3, 0, x, y) && x === 1 && y === N - 2);
+          col = mid ? colors[(x + y) % 4] : "#2a2e3b";
+          rnd();
+        } else {
+          var v = rnd();
+          col = v < 0.52 ? "#10131b" : v < 0.64 ? "#2a2e3b" : colors[Math.floor(rnd() * 4)];
+        }
+        i.style.background = col;
+        qr.appendChild(i);
+      }
+    }
+  })();
+
+  // ---- timeline -------------------------------------------------------
+  var tl = gsap.timeline({ paused: true });
+
+  // beat 1: the rate card returns — prices with blank annotation lines,
+  // the three questions with blank answer lines
+  tl.fromTo("#ledger", { opacity: 0, y: 24 }, { opacity: 1, y: 0, duration: 0.5, ease: "power3.out" })
+    .fromTo(".prow", { opacity: 0, x: -14 }, { opacity: 1, x: 0, duration: 0.32, stagger: 0.1 }, "-=0.2")
+    .fromTo(".qb", { opacity: 0, x: 18 }, { opacity: 1, x: 0, duration: 0.38, stagger: 0.12, ease: "power2.out" }, "-=0.3");
+  DECK.markStep(tl);
+
+  // beat 2: each price writes its own mechanism
+  document.querySelectorAll(".prow").forEach(function (row, i) {
+    var t = i === 0 ? "+=0.05" : "+=0.25";
+    tl.fromTo(row.querySelector(".pval"), { rotationX: 75, transformPerspective: 420 },
+      { rotationX: 0, duration: 0.4, ease: "back.out(1.6)", immediateRender: false }, t)
+      .to(row.querySelector(".pslot .val"), { clipPath: "inset(0 0% 0 0)", duration: 0.85, ease: "power1.inOut" }, "-=0.15");
+  });
+  DECK.markStep(tl);
+
+  // beat 3: the three opening questions get their answers inked in
+  document.querySelectorAll(".qb").forEach(function (qb, i) {
+    var t = i === 0 ? "+=0.05" : "+=0.3";
+    tl.to(qb.querySelector(".qm"), { opacity: 0, scale: 0, duration: 0.25, ease: "power2.in" }, t)
+      .to(qb.querySelector(".qy"), { opacity: 1, scale: 1, duration: 0.35, ease: "back.out(2.5)" }, "-=0.1")
+      .to(qb.querySelector(".aval"), { clipPath: "inset(0 0% 0 0)", duration: 0.9, ease: "power1.inOut" }, "-=0.2");
+  });
+  DECK.markStep(tl);
+
+  // beat 4: the pattern, written across the page
+  tl.fromTo("#pattern .val", { clipPath: "inset(0 100% 0 0)" },
+    { clipPath: "inset(0 0% 0 0)", duration: 1.0, ease: "power1.inOut" });
+  DECK.markStep(tl);
+
+  // beat 5 (final): the fully written page — open questions, thanks,
+  // the replay link, the miniaturised map
+  tl.fromTo("#openp", { opacity: 0, y: 18 }, { opacity: 1, y: 0, duration: 0.45, ease: "power2.out" });
+  document.querySelectorAll(".oline .val").forEach(function (v) {
+    tl.to(v, { clipPath: "inset(0 0% 0 0)", duration: 0.55, ease: "power1.inOut" }, "-=0.2");
+  });
+  tl.fromTo("#thanks", { opacity: 0, y: 14 }, { opacity: 1, y: 0, duration: 0.5, ease: "power2.out" }, "-=0.5")
+    .fromTo("#qrwrap", { opacity: 0 }, { opacity: 1, duration: 0.3 }, "-=0.4")
+    .fromTo("#qr i", { opacity: 0, scale: 0 },
+      { opacity: 1, scale: 1, duration: 0.25, stagger: { each: 0.004, from: "random" } }, "-=0.2")
+    .fromTo("#replay", { opacity: 0, scale: 0.7 }, { opacity: 1, scale: 1, duration: 0.4, ease: "back.out(2)" }, "-=0.3");
+
+  DECK.register(tl, {});
+</script>
+</body>
+</html>

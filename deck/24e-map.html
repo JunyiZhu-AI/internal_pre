@@ -1,0 +1,585 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The Map, Completed</title>
+<link rel="stylesheet" href="shared/deck.css?v=6">
+<link rel="stylesheet" href="shared/bottlenecks.css?v=6">
+<style>
+  /* ---- the audit sheet: four account columns ---- */
+  #sheet {
+    position: absolute; left: 45px; top: 122px; width: 798px; height: 400px;
+    background: rgba(27,30,39,0.35); border: 1px solid var(--line); border-radius: 12px;
+    padding: 14px; display: flex; gap: 14px; opacity: 0;
+  }
+  .acol { width: 182px; display: flex; flex-direction: column; position: relative; }
+  .abar { height: 3px; border-radius: 2px; opacity: 0.45; margin-bottom: 8px; }
+  .ahead {
+    display: flex; align-items: baseline; justify-content: space-between;
+    padding: 0 2px 6px; border-bottom: 1px solid var(--line); white-space: nowrap;
+  }
+  .aname { font-variant-caps: all-small-caps; letter-spacing: 0.05em; font-size: 12.5px; font-weight: 650; }
+  .aunit { font-family: ui-monospace, monospace; font-size: 9.5px; color: #5b647c; }
+  .aslot {
+    flex: 1; margin-top: 8px; border: 1px dashed #232838; border-radius: 8px;
+    background: rgba(13,15,21,0.6); box-shadow: inset 0 2px 8px rgba(0,0,0,0.35);
+    padding: 7px; display: flex; flex-direction: column; gap: 4px; position: relative;
+  }
+  .aslot:empty::after {
+    content: "· · ·"; position: absolute; left: 0; right: 0; top: 46%;
+    text-align: center; color: #3a4052; font-size: 10px; letter-spacing: 0.2em;
+  }
+
+  /* ---- ledger entries that file into the columns ---- */
+  .entry {
+    display: flex; align-items: center; gap: 6px; height: 22px; padding: 0 6px;
+    border-bottom: 1px dotted #262b38; font-family: ui-monospace, monospace; font-size: 11px;
+    flex: none;
+  }
+  .entry .ebar { width: 3px; height: 12px; border-radius: 2px; background: var(--c); flex: none; }
+  .entry .eabbr { color: #c7cce0; font-weight: 700; white-space: nowrap; }
+  .entry .enote { color: #6b7284; font-size: 9px; white-space: nowrap; overflow: hidden; }
+  .entry .etick { margin-left: auto; color: var(--c); font-weight: 700; }
+  .entry.contra { border: 1px dashed rgba(224,75,56,0.45); border-radius: 6px; height: 24px; }
+  .entry.contra .ebar { background: #e04b38; }
+  .entry.contra .enote { color: rgba(224,75,56,0.8); }
+  .entry.contra .etick { color: #e04b38; }
+
+  /* ---- debit flags (MoE chain reaction) ---- */
+  .flagchip {
+    margin-top: 2px; align-self: stretch; text-align: center; flex: none;
+    font: 700 9.5px ui-monospace, monospace; letter-spacing: 0.06em; text-transform: uppercase;
+    color: #e04b38; border: 1px solid rgba(224,75,56,0.55); border-radius: 6px;
+    padding: 3px 4px; background: rgba(224,75,56,0.08);
+  }
+  .flagchip.ok { color: var(--accent); border-color: rgba(47,214,176,0.55); background: rgba(47,214,176,0.07); }
+
+  #trails { position: absolute; inset: 0; pointer-events: none; z-index: 30; }
+  #trails line { stroke-dasharray: 4 5; stroke-width: 1.5; }
+
+  /* ---- the inset meter (decode sim) + ghost baseline ---- */
+  /* the ghost baseline: a slim meter pinned at ×1.0 above the live one */
+  #simghost { left: 912px; top: 128px; width: 300px; height: 46px; opacity: 0; filter: grayscale(0.55); }
+  #simhost  { left: 912px; top: 184px; width: 300px; height: 186px; opacity: 0; }
+  #simpd {
+    position: absolute; left: 912px; top: 380px; width: 300px; height: 48px; opacity: 0;
+    background: #0d1018; border: 1px solid rgba(57,135,229,0.5); border-radius: 10px;
+    padding: 8px 12px; display: flex; align-items: center; gap: 10px;
+  }
+  .pdh { font: 600 11px ui-monospace, monospace; color: #9ec7f5; white-space: nowrap; }
+  .pdg { flex: 1; height: 8px; border: 1px solid rgba(57,135,229,0.5); border-radius: 5px; overflow: hidden; position: relative; }
+  .pdg i { position: absolute; left: 1px; top: 1px; bottom: 1px; width: 12%; background: #3987e5; border-radius: 4px; }
+  #simpd.on .pdg i { animation: pdSweep 1.3s ease-in-out infinite; }
+  @keyframes pdSweep { from { width: 8%; } to { width: 96%; } }
+  .pdc { font-size: 9px; color: #5b647c; white-space: nowrap; }
+  .sim-main .tpot {
+    margin-left: 6px; font-size: 9px; color: #9085e9;
+    border: 1px solid rgba(144,133,233,0.5); border-radius: 999px; padding: 1px 6px; flex: none;
+  }
+  .draftghost {
+    position: absolute; z-index: 40; font: 400 10.5px ui-monospace, monospace;
+    color: rgba(142,240,163,0.8); text-decoration: line-through;
+    text-decoration-color: rgba(224,75,56,0.9); pointer-events: none;
+  }
+
+  #score {
+    position: absolute; left: 912px; top: 442px; width: 320px; opacity: 0;
+    font: 600 12px ui-monospace, monospace; color: var(--accent);
+  }
+  #truecap {
+    position: absolute; left: 912px; top: 464px; width: 324px; opacity: 0;
+    font: 400 10px ui-monospace, monospace; color: #5b647c; line-height: 1.5;
+  }
+
+  /* ---- the card tray ---- */
+  #tray { position: absolute; left: 45px; top: 548px; width: 1190px; display: flex; gap: 8px; pointer-events: none; }
+  #tray .tcard { flex: 1; height: 58px; padding: 8px 9px; cursor: grab; touch-action: none; overflow: hidden; }
+  #tray .tcard.flying { z-index: 60; }
+  #tray .tcard.dragging { cursor: grabbing; z-index: 60; box-shadow: 0 14px 30px rgba(0,0,0,0.55); border-color: #4a5066; }
+  #tray .abbr { font-size: 11px; white-space: nowrap; padding-right: 18px; }
+  #tray .full { font-size: 8.5px; }
+  .dots { position: absolute; top: 6px; right: 7px; display: flex; gap: 3px; }
+  .dots i { width: 6px; height: 6px; border-radius: 2px; }
+
+  .gtoast {
+    position: absolute; z-index: 70; pointer-events: none; white-space: nowrap;
+    font: 700 13px ui-monospace, monospace; text-shadow: 0 2px 8px #000;
+    transform: translateX(-50%);
+  }
+
+  /* ---- the end state: the signed balance sheet ---- */
+  #finaltable {
+    position: absolute; left: 45px; top: 118px; width: 1190px; opacity: 0;
+    background: var(--panel); border: 1px solid var(--line); border-radius: 14px;
+    padding: 18px 22px 14px; pointer-events: none;
+  }
+  .trow {
+    display: grid; grid-template-columns: 300px 372px 188px 236px; gap: 0 12px;
+    align-items: center; padding: 8px 6px; border-bottom: 1px solid #232838;
+  }
+  .trow.thead {
+    font-variant-caps: all-small-caps; letter-spacing: 0.08em; color: #7c8499;
+    font-size: 13.5px; border-bottom: 2px solid #2a2e3b; padding-bottom: 6px;
+  }
+  .tname { display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 600; min-width: 0; }
+  .tname .tdots { display: flex; gap: 3px; flex: none; }
+  .tdots i { width: 7px; height: 7px; border-radius: 2px; }
+  .tname .tabbr { font: 700 10.5px ui-monospace, monospace; color: #6b7284; margin-left: auto; padding-right: 6px; white-space: nowrap; }
+  .tcell { font: 400 11.5px ui-monospace, monospace; color: #c7cce0; white-space: nowrap; }
+  .tcell.dim { color: #8a90a3; }
+  .tcell.k3y { color: var(--accent); }
+  .tcell.k3n { color: #8a90a3; }
+  #tfoot {
+    margin-top: 10px; padding-top: 9px; border-top: 3px double #2a2e3b; opacity: 0;
+    display: flex; align-items: baseline; gap: 20px;
+  }
+  #tfnote { font-style: italic; font-size: 13px; color: var(--accent); font-variant-caps: all-small-caps; letter-spacing: 0.05em; }
+  #tftrue { margin-left: auto; font: 400 10px ui-monospace, monospace; color: #5b647c; }
+  #tsign { font: 700 11px ui-monospace, monospace; color: var(--accent); white-space: nowrap; }
+</style>
+</head>
+<body>
+<div class="stage">
+  <div class="slide-title">The Map, Completed</div>
+  <div class="slide-sub">every technique, filed against the bill it pays</div>
+
+  <div id="sheet"></div>
+  <svg id="trails" width="1280" height="720"></svg>
+  <div id="simghost"></div>
+  <div id="simhost"></div>
+  <div id="simpd"><span class="pdh">prefill — TTFT</span><div class="pdg"><i></i></div><span class="pdc">tuned alone</span></div>
+  <div id="score"></div>
+  <div id="truecap"></div>
+  <div id="tray" data-no-advance></div>
+  <div id="finaltable"></div>
+</div>
+
+<script src="../vendor/gsap.min.js"></script>
+<script src="shared/bottlenecks.js?v=6"></script>
+<script src="shared/closing.js?v=6"></script>
+<script src="shared/manifest.js?v=6"></script>
+<script src="shared/deck.js?v=6"></script>
+<script>
+  var stageEl = document.querySelector(".stage");
+  var trayEl = document.getElementById("tray");
+  var scoreEl = document.getElementById("score");
+  var trailsEl = document.getElementById("trails");
+  document.getElementById("truecap").textContent = CL.trueFactors;
+
+  // text-bright variants (capacity's #c98500 is too dark for text)
+  var TXT = { compute: "#3987e5", bw: "#2fd6b0", cap: "#e0a935", comm: "#9085e9" };
+
+  // ---- build the audit sheet: one account column per bottleneck ----------
+  var colByKey = {};
+  var sheet = document.getElementById("sheet");
+  BN.list.forEach(function (b) {
+    var col = document.createElement("div");
+    col.className = "acol";
+    col.dataset.key = b.key;
+    col.setAttribute("data-no-advance", "");
+    col.innerHTML =
+      '<div class="abar" style="background:' + b.color + '"></div>' +
+      '<div class="ahead"><span class="aname" style="color:' + TXT[b.key] + '">' + b.name +
+      '</span><span class="aunit">' + b.unit + "</span></div>" +
+      '<div class="aslot"></div>';
+    sheet.appendChild(col);
+    colByKey[b.key] = col;
+  });
+
+  // ---- the nine technique cards (all unlocked) ---------------------------
+  var cards = {};
+  BN.techniques.forEach(function (t) {
+    var c = document.createElement("div");
+    c.className = "tcard";
+    c.dataset.abbr = t[1];
+    c.dataset.domains = JSON.stringify(t[2]);
+    c.innerHTML = '<div class="abbr">' + t[1] + '</div><div class="full">' + t[0] + "</div>" +
+      '<span class="dots">' + t[2].map(function (k) {
+        return '<i style="background:' + TXT[k] + '"></i>';
+      }).join("") + "</span>";
+    trayEl.appendChild(c);
+    cards[t[1]] = c;
+  });
+
+  // ---- the two meters: live sim + 1× ghost baseline ----------------------
+  var simG = BN.buildSim(document.getElementById("simghost"), {});
+  var sim = BN.buildSim(document.getElementById("simhost"), {});
+
+  // MoE weighs more on the meter (the jump); cap lands exactly at CL.speedCap
+  var WEIGHTS = { "MoE": 2.5 };
+  var WTOTAL = BN.techniques.reduce(function (s, t) { return s + (WEIGHTS[t[1]] || 1); }, 0);
+  var docked = 0, dockedW = 0;
+  function updateScoreText() {
+    scoreEl.textContent = "filed " + docked + " / " + BN.techniques.length;
+  }
+  function updateScore() {
+    updateScoreText();
+    sim.setSpeed(+(1 + (CL.speedCap - 1) * dockedW / WTOTAL).toFixed(2));
+  }
+  updateScoreText();
+
+  // ---- geometry helpers --------------------------------------------------
+  function stageScale() { return stageEl.getBoundingClientRect().width / 1280; }
+  function rectOf(el) {
+    var r = el.getBoundingClientRect(), sr = stageEl.getBoundingClientRect(), k = stageScale();
+    return { x: (r.left - sr.left) / k, y: (r.top - sr.top) / k, w: r.width / k, h: r.height / k };
+  }
+  function cardCenter(card) {
+    var r = rectOf(card);
+    return { x: r.x + r.w / 2, y: r.y + r.h / 2 };
+  }
+  function hitZone(pt) {
+    for (var k in colByKey) {
+      var r = rectOf(colByKey[k]);
+      if (pt.x >= r.x && pt.x <= r.x + r.w && pt.y >= r.y && pt.y <= r.y + r.h)
+        return { key: k, el: colByKey[k] };
+    }
+    return null;
+  }
+
+  // delayed side effects registered for cleanup on reset
+  var delays = [];
+  function delay(t, f) { var d = gsap.delayedCall(t, f); delays.push(d); return d; }
+
+  function toast(x, y, text, color) {
+    var t = document.createElement("div");
+    t.className = "gtoast";
+    t.style.left = x + "px"; t.style.top = y + "px"; t.style.color = color;
+    t.textContent = text;
+    stageEl.appendChild(t);
+    gsap.fromTo(t, { opacity: 0, y: 8 }, {
+      opacity: 1, y: -22, duration: 1.3, ease: "power1.out",
+      onComplete: function () { gsap.to(t, { opacity: 0, duration: 0.4, onComplete: function () { t.remove(); } }); }
+    });
+  }
+
+  // ---- posting entries ---------------------------------------------------
+  function flashCol(key) {
+    var bar = colByKey[key].querySelector(".abar");
+    gsap.fromTo(bar, { opacity: 1, boxShadow: "0 0 14px " + TXT[key] },
+      { opacity: 0.45, boxShadow: "0 0 0px rgba(0,0,0,0)", duration: 0.8, ease: "power2.out" });
+  }
+  function addEntry(key, abbr, note) {
+    var slot = colByKey[key].querySelector(".aslot");
+    var e = document.createElement("div");
+    e.className = "entry";
+    e.style.setProperty("--c", TXT[key]);
+    e.innerHTML = '<i class="ebar"></i><span class="eabbr">' + abbr + "</span>" +
+      (note ? '<span class="enote">' + note + "</span>" : "") + '<span class="etick">✓</span>';
+    slot.appendChild(e);
+    gsap.fromTo(e, { opacity: 0, y: -6, scale: 0.9 }, { opacity: 1, y: 0, scale: 1, duration: 0.35, ease: "back.out(1.8)" });
+    flashCol(key);
+  }
+  // paper-trail line between the two columns of a multi-bucket card
+  function trail(k1, k2) {
+    var r1 = rectOf(colByKey[k1].querySelector(".aslot"));
+    var r2 = rectOf(colByKey[k2].querySelector(".aslot"));
+    var ln = document.createElementNS("http://www.w3.org/2000/svg", "line");
+    ln.setAttribute("x1", r1.x + r1.w / 2); ln.setAttribute("y1", r1.y - 7);
+    ln.setAttribute("x2", r2.x + r2.w / 2); ln.setAttribute("y2", r2.y - 7);
+    ln.setAttribute("stroke", TXT[k2]);
+    trailsEl.appendChild(ln);
+    gsap.fromTo(ln, { opacity: 0 }, {
+      opacity: 0.8, duration: 0.3,
+      onComplete: function () { gsap.to(ln, { opacity: 0, duration: 0.6, delay: 0.8, onComplete: function () { ln.remove(); } }); }
+    });
+  }
+
+  // ---- special-card effects ----------------------------------------------
+  var epDocked = false, moeFlagged = false, reconciled = false, flags = [];
+  function addFlag(key, txt) {
+    var slot = colByKey[key].querySelector(".aslot");
+    var f = document.createElement("div");
+    f.className = "flagchip";
+    f.textContent = txt;
+    slot.appendChild(f);
+    gsap.fromTo(f, { opacity: 0, scale: 0.7 }, { opacity: 1, scale: 1, duration: 0.3, ease: "back.out(2)" });
+    return f;
+  }
+  function moeEffect() {
+    delay(0.55, function () {
+      if (moeFlagged) return;
+      moeFlagged = true;
+      gsap.to(colByKey.cap.querySelector(".aslot"), { backgroundColor: "rgba(201,133,0,0.12)", duration: 0.45 });
+      flags.push(addFlag("cap", "over capacity"));
+      delay(0.25, function () { flags.push(addFlag("comm", "all-to-all ↑")); });
+      if (epDocked) delay(1.0, reconcile);   // EP was filed first: it reconciles on sight
+    });
+  }
+  function epEffect() {
+    epDocked = true;
+    if (moeFlagged && !reconciled) delay(0.35, reconcile);
+  }
+  function reconcile() {
+    if (reconciled) return;
+    reconciled = true;
+    var capSlot = colByKey.cap.querySelector(".aslot");
+    gsap.to(capSlot, {
+      backgroundColor: "rgba(13,15,21,0.6)", duration: 0.6,
+      onComplete: function () { gsap.set(capSlot, { clearProps: "backgroundColor" }); }
+    });
+    flags.forEach(function (f) {
+      f.classList.add("ok");
+      f.textContent = "reconciled";
+      gsap.fromTo(f, { scale: 1.08 }, { scale: 1, duration: 0.25 });
+      gsap.to(f, { opacity: 0, duration: 0.4, delay: 1.2, onComplete: function () { f.remove(); } });
+    });
+    flags = [];
+  }
+  function mtpEffect() {
+    delay(0.4, function () {
+      // the only card that SPENDS a bill: a contra entry heats the compute account
+      var slot = colByKey.compute.querySelector(".aslot");
+      var e = document.createElement("div");
+      e.className = "entry contra";
+      e.innerHTML = '<i class="ebar"></i><span class="eabbr">MTP</span>' +
+        '<span class="enote">spends idle FLOPs</span><span class="etick">−</span>';
+      slot.appendChild(e);
+      gsap.fromTo(e, { opacity: 0, y: -6 }, { opacity: 1, y: 0, duration: 0.35, ease: "back.out(1.8)" });
+      var bar = colByKey.compute.querySelector(".abar");
+      gsap.fromTo(bar, { opacity: 1, backgroundColor: "#e04b38", boxShadow: "0 0 16px rgba(224,75,56,0.9)" },
+        { opacity: 0.45, backgroundColor: BN.list[0].color, boxShadow: "0 0 0px rgba(0,0,0,0)", duration: 1.5, ease: "power2.out" });
+      // rejected drafts flicker and vanish near the meter
+      [BN.simWords[2], BN.simWords[4], BN.simWords[6]].forEach(function (w, i) {
+        var d = document.createElement("div");
+        d.className = "draftghost";
+        d.textContent = w;
+        d.style.left = (940 + i * 88) + "px";
+        d.style.top = (382 + (i % 2) * 20) + "px";
+        stageEl.appendChild(d);
+        gsap.fromTo(d, { opacity: 0, y: 6 }, {
+          opacity: 0.9, y: -4, duration: 0.3, delay: 0.25 + i * 0.3,
+          onComplete: function () {
+            gsap.to(d, { opacity: 0, y: -14, duration: 0.5, delay: 0.3, onComplete: function () { d.remove(); } });
+          }
+        });
+      });
+    });
+  }
+  function pdEffect() {
+    // the meter splits: prefill bar (TTFT) + decode stream (TPOT)
+    gsap.to("#simghost", { opacity: 0, duration: 0.4 });
+    var pd = document.getElementById("simpd");
+    pd.classList.add("on");
+    gsap.fromTo(pd, { opacity: 0, y: -8 }, { opacity: 1, y: 0, duration: 0.45, ease: "power2.out" });
+    var head = document.querySelector("#simhost .sim-main .sim-head");
+    if (head && !head.querySelector(".tpot")) {
+      var s = document.createElement("span");
+      s.className = "tpot";
+      s.textContent = "TPOT";
+      head.appendChild(s);
+    }
+  }
+
+  // ---- docking (shared by drag, click-to-fly, and auto-play) -------------
+  function postDock(card) {
+    if (card._docked) return;
+    card._docked = true;
+    var abbr = card.dataset.abbr;
+    var domains = JSON.parse(card.dataset.domains);
+    domains.forEach(function (k, i) {
+      addEntry(k, abbr, abbr === "MTP" ? "÷k" : "");
+      if (i > 0) trail(domains[0], k);
+    });
+    docked++;
+    dockedW += WEIGHTS[abbr] || 1;
+    updateScore();
+    if (abbr === "MoE") moeEffect();
+    else if (abbr === "EP") epEffect();
+    else if (abbr === "MTP") mtpEffect();
+    else if (abbr === "PD") pdEffect();
+  }
+  function flyCard(card, prefKey) {
+    if (card._docked || card._flying) return;
+    card._flying = true;
+    card.classList.add("flying");
+    var domains = JSON.parse(card.dataset.domains);
+    var key = (prefKey && domains.indexOf(prefKey) >= 0) ? prefKey : domains[0];
+    var slot = colByKey[key].querySelector(".aslot");
+    var sr = rectOf(slot);
+    var n = slot.querySelectorAll(".entry").length;
+    var tx = sr.x + sr.w / 2, ty = sr.y + 12 + n * 26;
+    var c = cardCenter(card), p = card._pos || { x: 0, y: 0 };
+    gsap.to(card, {
+      x: p.x + (tx - c.x), y: p.y + (ty - c.y), scale: 0.22, opacity: 0,
+      duration: 0.55, ease: "power2.inOut",
+      onComplete: function () { card._flying = false; card.classList.remove("flying"); postDock(card); }
+    });
+  }
+  function autoFly(abbr) {
+    var card = cards[abbr];
+    if (card) flyCard(card, null);
+  }
+  function reject(card, hit) {
+    var slot = hit.el.querySelector(".aslot");
+    gsap.fromTo(slot, { boxShadow: "inset 0 0 0 2px rgba(224,75,56,0.85)" }, {
+      boxShadow: "inset 0 0 0 2px rgba(224,75,56,0)", duration: 0.7, ease: "power2.out",
+      onComplete: function () { gsap.set(slot, { clearProps: "boxShadow" }); }
+    });
+    var c = cardCenter(card);
+    toast(c.x, c.y - 44, "✗ wrong account", "#e04b38");
+    gsap.timeline()
+      .to(card, { x: "+=9", duration: 0.05, yoyo: true, repeat: 5 })
+      .to(card, { x: 0, y: 0, scale: 1, duration: 0.5, ease: "power3.inOut", onStart: function () { card._pos = null; } });
+  }
+
+  // drag OR click: a plain click on a card auto-flies it to its column
+  function enableCard(card) {
+    card.addEventListener("pointerdown", function (e) {
+      if (card._docked || card._flying) return;
+      e.preventDefault();
+      var s = stageScale(), sx = e.clientX, sy = e.clientY, moved = 0;
+      var base = card._pos || { x: 0, y: 0 };
+      card.setPointerCapture(e.pointerId);
+      function mv(ev) {
+        moved = Math.max(moved, Math.abs(ev.clientX - sx) + Math.abs(ev.clientY - sy));
+        if (moved > 4) card.classList.add("dragging");
+        card._pos = { x: base.x + (ev.clientX - sx) / s, y: base.y + (ev.clientY - sy) / s };
+        card.style.transform = "translate(" + card._pos.x + "px," + card._pos.y + "px) scale(1.06)";
+      }
+      function up() {
+        card.classList.remove("dragging");
+        card.removeEventListener("pointermove", mv);
+        card.removeEventListener("pointerup", up);
+        if (moved <= 5) {          // click, not drag → fly home
+          card._pos = null;
+          flyCard(card, null);
+          return;
+        }
+        var hit = hitZone(cardCenter(card));
+        if (!hit) {
+          card._pos = null;
+          gsap.to(card, { x: 0, y: 0, scale: 1, duration: 0.55, ease: "elastic.out(1, 0.6)" });
+        } else {
+          var domains = JSON.parse(card.dataset.domains);
+          if (domains.indexOf(hit.key) >= 0) flyCard(card, hit.key);
+          else reject(card, hit);
+        }
+      }
+      card.addEventListener("pointermove", mv);
+      card.addEventListener("pointerup", up);
+    });
+  }
+  document.querySelectorAll("#tray .tcard").forEach(enableCard);
+
+  // ---- the end state: the signed balance sheet ---------------------------
+  var ft = document.getElementById("finaltable");
+  var hd = document.createElement("div");
+  hd.className = "trow thead";
+  hd.innerHTML = "<span>technique</span><span>bottleneck attacked</span><span>stage</span><span>in K3?</span>";
+  ft.appendChild(hd);
+  BN.techniques.forEach(function (t) {
+    var m = CL.map[t[1]];
+    var r = document.createElement("div");
+    r.className = "trow";
+    var k3cls = m[2].charAt(0) === "✓" ? "k3y" : "k3n";
+    r.innerHTML =
+      '<span class="tname"><span class="tdots">' + t[2].map(function (k) {
+        return '<i style="background:' + TXT[k] + '"></i>';
+      }).join("") + "</span>" + t[0] + '<span class="tabbr">' + t[1] + "</span></span>" +
+      '<span class="tcell">' + m[0] + "</span>" +
+      '<span class="tcell dim">' + m[1] + "</span>" +
+      '<span class="tcell ' + k3cls + '">' + m[2] + "</span>";
+    ft.appendChild(r);
+  });
+  var foot = document.createElement("div");
+  foot.id = "tfoot";
+  foot.innerHTML = '<span id="tfnote">' + CL.tableNote + "</span>" +
+    '<span id="tftrue">' + CL.trueFactors + "</span>" +
+    '<span id="tsign">' + BN.techniques.length + " / " + BN.techniques.length + " ✓</span>";
+  ft.appendChild(foot);
+
+  // ---- reset -------------------------------------------------------------
+  function resetAll() {
+    delays.forEach(function (d) { d.kill(); });
+    delays = [];
+    sim.stop(); sim.setSpeed(1);
+    simG.stop(); simG.setSpeed(1);
+    docked = 0; dockedW = 0;
+    epDocked = false; moeFlagged = false; reconciled = false; flags = [];
+    document.querySelectorAll(".entry, .flagchip, .gtoast, .draftghost").forEach(function (el) {
+      gsap.killTweensOf(el); el.remove();
+    });
+    trailsEl.innerHTML = "";
+    Object.keys(colByKey).forEach(function (k) {
+      var slot = colByKey[k].querySelector(".aslot");
+      var bar = colByKey[k].querySelector(".abar");
+      gsap.killTweensOf([slot, bar]);
+      gsap.set(slot, { clearProps: "backgroundColor,boxShadow" });
+      gsap.set(bar, { clearProps: "opacity,boxShadow,backgroundColor" });
+    });
+    document.querySelectorAll("#tray .tcard").forEach(function (c) {
+      gsap.killTweensOf(c);
+      c._docked = false; c._flying = false; c._pos = null;
+      c.classList.remove("dragging", "flying");
+      gsap.set(c, { clearProps: "transform,opacity" });
+    });
+    trayEl.style.pointerEvents = "none";
+    var pd = document.getElementById("simpd");
+    pd.classList.remove("on");
+    gsap.killTweensOf(pd);
+    gsap.set(pd, { clearProps: "opacity,transform" });
+    var tp = document.querySelector("#simhost .tpot");
+    if (tp) tp.remove();
+    gsap.killTweensOf("#simghost");
+    gsap.set("#sheet, #tray, #simhost, #simghost, #simpd, #score, #truecap, #trails, #finaltable",
+      { clearProps: "opacity,transform" });
+    updateScoreText();
+  }
+
+  // ---- timeline ----------------------------------------------------------
+  var tl = gsap.timeline({ paused: true });
+
+  // beat 1 — the board returns: sheet, meters, nine unlocked cards
+  tl.fromTo("#sheet", { opacity: 0, y: 16 }, { opacity: 1, y: 0, duration: 0.5, ease: "power2.out" })
+    .fromTo(".acol", { opacity: 0, y: 12 }, { opacity: 1, y: 0, duration: 0.35, stagger: 0.09, ease: "power2.out" }, "-=0.25")
+    .fromTo("#simghost", { opacity: 0 }, { opacity: 0.55, duration: 0.35 }, "-=0.2")
+    .fromTo("#simhost", { opacity: 0, scale: 0.96 }, { opacity: 1, scale: 1, duration: 0.4 }, "-=0.15")
+    .fromTo("#score, #truecap", { opacity: 0 }, { opacity: 1, duration: 0.3 }, "-=0.15")
+    .fromTo("#tray .tcard", { opacity: 0, y: 22 }, { opacity: 1, y: 0, duration: 0.35, stagger: 0.045, ease: "power2.out" }, "-=0.2")
+    .call(function () {
+      simG.start(); sim.start();
+      trayEl.style.pointerEvents = "auto";
+    });
+  DECK.markStep(tl);
+
+  // beat 2 — phase 1, the clean fits (skips anything already filed by hand)
+  ["FA", "GQA", "MLA", "KDA", "FP8 / INT4"].forEach(function (a) {
+    tl.call(autoFly, [a]);
+    tl.to({}, { duration: 1.05 });
+  });
+  DECK.markStep(tl);
+
+  // beat 3 — the chain reaction: MoE floods two accounts, EP reconciles
+  tl.call(autoFly, ["MoE"]);
+  tl.to({}, { duration: 2.4 });
+  tl.call(autoFly, ["EP"]);
+  tl.to({}, { duration: 1.8 });
+  DECK.markStep(tl);
+
+  // beat 4 — MTP, the card that spends a bill
+  tl.call(autoFly, ["MTP"]);
+  tl.to({}, { duration: 2.0 });
+  DECK.markStep(tl);
+
+  // beat 5 — PD splits the meter, then the books close: the balance sheet
+  tl.call(autoFly, ["PD"]);
+  tl.to({}, { duration: 2.2 });
+  tl.call(function () {
+    trayEl.style.pointerEvents = "none";
+    sim.stop(); simG.stop();
+    // #simpd fades via an independent tween: it has no earlier fromTo in the
+    // timeline, so a timeline .to would re-apply its captured "visible" state
+    // when the page is reset to t=0.
+    gsap.to("#simpd", { opacity: 0, duration: 0.4 });
+  });
+  tl.to("#sheet, #tray, #simghost, #simhost, #score, #truecap, #trails", { opacity: 0, duration: 0.5 });
+  tl.fromTo("#finaltable", { opacity: 0, y: 14 }, { opacity: 1, y: 0, duration: 0.45, ease: "power2.out" }, "-=0.1");
+  tl.fromTo("#finaltable .trow", { opacity: 0, y: 8 }, { opacity: 1, y: 0, duration: 0.28, stagger: 0.05, ease: "power2.out" }, "-=0.15");
+  tl.fromTo("#tfoot", { opacity: 0 }, { opacity: 1, duration: 0.45 });
+
+  DECK.register(tl, { reset: resetAll });
+</script>
+</body>
+</html>

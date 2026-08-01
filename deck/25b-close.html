@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Read the Price Tag Again</title>
+<link rel="stylesheet" href="shared/deck.css?v=6">
+<style>
+  /* ---- the receipt (slide-01 ledger language, till edition) ---- */
+  #receipt {
+    position: absolute; left: 44px; top: 112px; width: 480px; height: 498px;
+    background: var(--panel); border: 1px solid var(--line); border-radius: 4px;
+    padding: 18px 22px; opacity: 0;
+    font-family: ui-monospace, "SF Mono", Menlo, monospace;
+  }
+  #receipt::before, #receipt::after {
+    content: ""; position: absolute; left: 0; right: 0; height: 0;
+    border-top: 2px dashed #2a2e3b;
+  }
+  #receipt::before { top: 6px; } #receipt::after { bottom: 6px; }
+  #receipt .rhead { text-align: center; margin-bottom: 4px; }
+  #receipt .rhead .nm { font-size: 17px; font-weight: 800; letter-spacing: 0.14em; color: #e8eaf0; }
+  #receipt .rhead .sub { font-size: 10px; color: var(--ink-2); letter-spacing: 0.1em; margin-top: 3px; }
+  #receipt .div { border-top: 1px dashed #3a3f4e; margin: 12px 0; }
+  .prow { opacity: 0; }
+  .prow .pline { display: flex; align-items: baseline; }
+  .prow .plab { font-size: 13px; color: #c7cce0; }
+  .prow .dots { flex: 1; margin: 0 8px; border-bottom: 1px dotted #3a3f4e; transform: translateY(-3px); }
+  .prow .pval { font-size: 17px; font-weight: 800; color: #fff; display: inline-block; }
+  .prow .mech { font-size: 10.5px; line-height: 1.5; margin: 5px 0 13px; opacity: 0; }
+
+  /* the QR mosaic — the completed map as the receipt's barcode (decorative) */
+  #qr {
+    display: grid; grid-template-columns: repeat(15, 8px); grid-template-rows: repeat(15, 8px);
+    gap: 1px; margin: 16px auto 0; width: max-content; opacity: 0; visibility: hidden;
+  }
+  #qr i { border-radius: 1px; background: #232836; }
+  #qrcap { text-align: center; font-size: 9px; color: #4d5468; margin-top: 6px; opacity: 0; visibility: hidden; }
+
+  /* ---- the three questions, answered ---- */
+  .achip {
+    position: absolute; left: 572px; width: 664px; height: 94px;
+    background: var(--panel); border: 1px solid var(--line); border-left: 3px solid var(--accent);
+    border-radius: 10px; padding: 11px 118px 11px 16px; opacity: 0;
+  }
+  .achip .qn { font: 700 12px ui-monospace, monospace; color: var(--accent); margin-right: 8px; }
+  .achip .qq { font-size: 13px; color: #e8eaf0; }
+  .achip .aa { font-size: 12px; color: #9aa1b5; margin-top: 7px; line-height: 1.45; }
+  .achip .aa .roll b { font: 700 11.5px ui-monospace, monospace; color: #c7cce0; display: inline-block; }
+  .stamp {
+    position: absolute; right: 14px; top: 26px; transform: rotate(-7deg);
+    font: 800 13px ui-monospace, monospace; letter-spacing: 0.08em;
+    border: 2.5px solid var(--accent); color: var(--accent);
+    padding: 3px 9px; border-radius: 5px; background: rgba(11,13,18,0.55);
+    opacity: 0; box-shadow: 0 4px 14px rgba(0,0,0,0.4);
+  }
+
+  /* ---- pattern + finale ---- */
+  #pattern {
+    position: absolute; left: 572px; top: 452px; width: 664px;
+    font-size: 17px; font-style: italic; color: var(--accent); font-weight: 600; opacity: 0;
+  }
+  #bonus {
+    position: absolute; left: 572px; top: 508px; width: 664px;
+    background: rgba(27,30,39,0.55); border: 1px solid var(--line); border-radius: 10px;
+    padding: 10px 16px 12px; opacity: 0; visibility: hidden;
+  }
+  #bonus .bh { font: 700 9.5px ui-monospace, monospace; letter-spacing: 0.2em; color: #e0a935; margin-bottom: 7px; }
+  #bonus .brow { display: flex; gap: 10px; font-size: 12px; color: #c7cce0; margin-top: 5px; opacity: 0; }
+  #bonus .brow .bn { font: 700 10.5px ui-monospace, monospace; color: #e0a935; padding-top: 1px; }
+  #thanks {
+    position: absolute; left: 572px; top: 624px; font-size: 22px; font-weight: 750;
+    color: #e8eaf0; opacity: 0; visibility: hidden;
+  }
+  #replay {
+    position: absolute; left: 848px; top: 628px; display: inline-block;
+    font: 600 12px ui-monospace, monospace; color: var(--accent); text-decoration: none;
+    border: 1.5px solid var(--accent); border-radius: 999px; padding: 5px 14px;
+    background: rgba(47,214,176,0.07); opacity: 0; visibility: hidden;
+    animation: rpGlow 2.2s ease-in-out infinite;
+  }
+  #replay:hover { background: rgba(47,214,176,0.18); }
+  @keyframes rpGlow { 50% { box-shadow: 0 0 14px rgba(47,214,176,0.35); } }
+</style>
+</head>
+<body>
+<div class="stage">
+  <div class="slide-title">Read the Price Tag Again</div>
+  <div class="slide-sub">the same three numbers — nothing left unexplained</div>
+
+  <div id="receipt">
+    <div class="rhead"><div class="nm"></div><div class="sub">RATE CARD · PER 1M TOKENS</div></div>
+    <div class="div"></div>
+    <div id="prows"></div>
+    <div class="div"></div>
+    <div id="qr"></div>
+    <div id="qrcap">the map, miniaturised</div>
+  </div>
+
+  <div id="achips"></div>
+  <div id="pattern"></div>
+  <div id="bonus"><div class="bh">BONUS ROUNDS — OPEN QUESTIONS</div><div id="brows"></div></div>
+  <div id="thanks"></div>
+  <a id="replay" data-no-advance></a>
+</div>
+
+<script src="../vendor/gsap.min.js"></script>
+<script src="shared/pricing.js?v=6"></script>
+<script src="shared/closing.js?v=6"></script>
+<script src="shared/manifest.js?v=6"></script>
+<script src="shared/deck.js?v=6"></script>
+<script>
+  document.querySelector("#receipt .nm").textContent = PRICING.models[0].name.toUpperCase();
+
+  // mechanism colors: prefill compute blue / prefix-cache KV purple / decode bandwidth teal
+  var MECHC = ["#3987e5", "#9085e9", "#2fd6b0"];
+  var prows = document.getElementById("prows");
+  CL.receipt.forEach(function (r, i) {
+    var d = document.createElement("div");
+    d.className = "prow"; d.id = "pr" + i;
+    d.innerHTML = '<div class="pline"><span class="plab">' + r[0] + '</span><span class="dots"></span>' +
+      '<span class="pval">' + r[1] + '</span></div>' +
+      '<div class="mech" id="mech' + i + '" style="color:' + MECHC[i] + '">' + r[2] + "</div>";
+    prows.appendChild(d);
+  });
+
+  var achips = document.getElementById("achips");
+  CL.answers.forEach(function (a, i) {
+    var d = document.createElement("div");
+    d.className = "achip"; d.id = "ac" + i;
+    d.style.top = (112 + i * 110) + "px";
+    var ans = a[2];
+    // wrap the co-design roll-call (the " — X · Y · Z — " middle of Q3's answer) for the beat-4 glow
+    var parts = ans.split(" — ");
+    if (parts.length === 3) {
+      ans = parts[0] + ' — <span class="roll">' +
+        parts[1].split(" · ").map(function (n) { return "<b>" + n + "</b>"; }).join(" · ") +
+        "</span> — " + parts[2];
+    }
+    d.innerHTML = '<div><span class="qn">' + a[0] + '</span><span class="qq">' + a[1] + "</span></div>" +
+      '<div class="aa">' + ans + "</div>" +
+      '<div class="stamp" id="st' + i + '">ANSWERED</div>';
+    achips.appendChild(d);
+  });
+
+  document.getElementById("pattern").textContent = CL.pattern;
+  var brows = document.getElementById("brows");
+  CL.open.forEach(function (o, i) {
+    brows.innerHTML += '<div class="brow"><span class="bn">' + (i + 1) + "</span><span>" + o + "</span></div>";
+  });
+  document.getElementById("thanks").textContent = CL.thanks;
+  var rp = document.getElementById("replay");
+  rp.textContent = CL.replay.label;
+  rp.href = CL.replay.href;
+
+  // ---- QR mosaic: deterministic pseudo-random cells tinted with the four bucket colors
+  var qr = document.getElementById("qr");
+  var QC = ["#3987e5", "#2fd6b0", "#c98500", "#9085e9"];
+  var seed = 41;
+  function rnd() { seed = (seed * 1103515245 + 12345) % 2147483648; return seed / 2147483648; }
+  function finder(r, c) {
+    var fr = [[0, 0], [0, 8], [8, 0]];
+    for (var k = 0; k < fr.length; k++) {
+      var dr = r - fr[k][0], dc = c - fr[k][1];
+      if (dr >= 0 && dr < 7 && dc >= 0 && dc < 7) {
+        var ring = Math.min(dr, dc, 6 - dr, 6 - dc);
+        return ring === 1 ? "off" : "on";
+      }
+    }
+    return null;
+  }
+  for (var r = 0; r < 15; r++) {
+    for (var c = 0; c < 15; c++) {
+      var cell = document.createElement("i");
+      var f = finder(r, c);
+      if (f === "on") cell.style.background = "#c7cce0";
+      else if (f === null && rnd() > 0.48) cell.style.background = QC[Math.floor(rnd() * 4)];
+      qr.appendChild(cell);
+    }
+  }
+
+  // ---- timeline -------------------------------------------------------
+  var tl = gsap.timeline({ paused: true });
+
+  // beat 1: the till rings up — the receipt feeds in, each price punches
+  tl.fromTo("#receipt", { opacity: 0, y: -26 }, { opacity: 1, y: 0, duration: 0.5, ease: "power3.out" });
+  CL.receipt.forEach(function (r, i) {
+    tl.fromTo("#pr" + i, { opacity: 0 }, { opacity: 1, duration: 0.2 }, "+=" + (i ? 0.28 : 0.1))
+      .fromTo("#pr" + i + " .pval", { scale: 2.1, color: "#ffffff" },
+        { scale: 1, color: "#ffffff", duration: 0.32, ease: "power3.in" }, "<")
+      .fromTo("#pr" + i + " .pval", { color: "#fff" }, { color: "#e8eaf0", duration: 0.25 });
+  });
+  DECK.markStep(tl);
+
+  // beat 2: each price flips to its mechanism
+  CL.receipt.forEach(function (r, i) {
+    tl.fromTo("#mech" + i, { opacity: 0, rotationX: 80, transformOrigin: "50% 0%" },
+      { opacity: 1, rotationX: 0, duration: 0.45, ease: "power2.out" }, i ? "+=0.18" : undefined);
+  });
+  DECK.markStep(tl);
+
+  // beat 3: the three opening questions come back — stamped ANSWERED
+  CL.answers.forEach(function (a, i) {
+    tl.fromTo("#ac" + i, { opacity: 0, x: 26 }, { opacity: 1, x: 0, duration: 0.4, ease: "power2.out" }, i ? "-=0.15" : undefined);
+  });
+  CL.answers.forEach(function (a, i) {
+    tl.fromTo("#st" + i, { opacity: 0, scale: 2.4, rotate: -7 },
+      { opacity: 1, scale: 1, duration: 0.3, ease: "power3.in" }, "+=" + (i ? 0.22 : 0.1))
+      .fromTo("#ac" + i, { y: 0 }, { y: 3, duration: 0.06, yoyo: true, repeat: 1 }, "<0.25");
+  });
+  DECK.markStep(tl);
+
+  // beat 4: the pattern — and the co-design roll-call glows through Q3's answer
+  tl.fromTo("#pattern", { opacity: 0, y: 12 }, { opacity: 1, y: 0, duration: 0.5, ease: "power2.out" })
+    .fromTo("#ac2", { borderColor: "#2a2e3b" }, { borderColor: "#2fd6b0", duration: 0.4 }, "-=0.2")
+    .fromTo("#ac2 .roll b", { color: "#c7cce0" },
+      { color: "#ffffff", scale: 1.18, duration: 0.22, stagger: 0.13, yoyo: true, repeat: 1 }, "-=0.1");
+  DECK.markStep(tl);
+
+  // beat 5: cash-out — bonus rounds, the thank-you, the replay chip, the barcode
+  tl.fromTo("#bonus", { autoAlpha: 0, y: 14 }, { autoAlpha: 1, y: 0, duration: 0.4, ease: "power2.out" })
+    .fromTo("#bonus .brow", { opacity: 0, x: -10 }, { opacity: 1, x: 0, duration: 0.3, stagger: 0.12 }, "-=0.1")
+    .fromTo("#qr", { autoAlpha: 0 }, { autoAlpha: 1, duration: 0.2 }, "-=0.2")
+    .fromTo("#qr i", { opacity: 0 }, { opacity: 1, duration: 0.25, stagger: { each: 0.0035, from: "random" } }, "<")
+    .fromTo("#qrcap", { autoAlpha: 0 }, { autoAlpha: 1, duration: 0.3 }, "-=0.2")
+    .fromTo("#thanks", { autoAlpha: 0, scale: 0.9 }, { autoAlpha: 1, scale: 1, duration: 0.45, ease: "back.out(2)" }, "-=0.3")
+    .fromTo("#replay", { autoAlpha: 0, x: -12 }, { autoAlpha: 1, x: 0, duration: 0.4, ease: "power2.out" }, "-=0.2");
+
+  DECK.register(tl, {
+    reset: function () {
+      gsap.killTweensOf("#ac2 .roll b");
+      gsap.set("#ac2 .roll b", { clearProps: "color,transform" });
+    }
+  });
+</script>
+</body>
+</html>

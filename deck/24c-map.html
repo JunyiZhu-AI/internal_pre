@@ -1,0 +1,490 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The Map, Completed</title>
+<link rel="stylesheet" href="shared/deck.css?v=6">
+<link rel="stylesheet" href="shared/bottlenecks.css?v=6">
+<style>
+  /* ---- compact board: four buckets ---- */
+  .bucket {
+    position: absolute; border: 1.5px solid var(--line); border-radius: 14px;
+    background: rgba(27,30,39,0.45); opacity: 0;
+  }
+  .bucket .bhead { display: flex; align-items: center; gap: 14px; padding: 10px 14px 0; }
+  .bucket .bhead .bn-icon { flex: 0 0 84px; }
+  .bucket .bname { font-size: 14.5px; font-weight: 700; }
+  .bucket .bunit { font: 600 10px ui-monospace, monospace; opacity: 0.8; margin-top: 1px; }
+  .bucket .bdom { font-size: 9px; font-style: italic; color: #6b7284; margin-top: 2px; }
+  .bucket .dock {
+    position: absolute; left: 12px; right: 12px; bottom: 9px; min-height: 16px;
+    display: flex; flex-wrap: wrap; gap: 4px; align-content: flex-end;
+  }
+  .zchip {
+    font: 700 8.5px ui-monospace, monospace; border: 1px solid; border-radius: 4px;
+    padding: 1px 5px; background: rgba(11,13,18,0.9); white-space: nowrap;
+  }
+  .bflash { position: absolute; inset: -3px; border: 3px solid; border-radius: 16px; opacity: 0; pointer-events: none; }
+
+  /* MoE chain-reaction alerts */
+  .bucket.flood { border-color: #e0a935; }
+  .bucket.flood { animation: floodBg 0.8s ease-in-out infinite; }
+  @keyframes floodBg { 50% { background: rgba(201,133,0,0.30); box-shadow: 0 0 22px rgba(201,133,0,0.35); } }
+  .bucket.alarm { border-color: #e04b38; }
+  .bucket.alarm .bni-nodes line { stroke: #e04b38; animation-duration: 0.45s; }
+  .bucket.alarm .bni-nodes circle { stroke: #e04b38; }
+  /* MTP: the compute chip heats */
+  .bucket .bni-chip.hot {
+    border-color: #e04b38; animation: none;
+    box-shadow: 0 0 20px rgba(224,75,56,0.75);
+    background:
+      repeating-linear-gradient(0deg, rgba(224,75,56,0.16) 0 5px, transparent 5px 10px),
+      repeating-linear-gradient(90deg, rgba(224,75,56,0.16) 0 5px, transparent 5px 10px);
+  }
+
+  /* ---- speedometer: live sim over a 1× ghost ---- */
+  #simwrap { position: absolute; inset: 0; opacity: 0; pointer-events: none; }
+  #simg { left: 44px; top: 434px; width: 322px; height: 146px; opacity: 0.42; filter: grayscale(0.65); }
+  #simmain { left: 56px; top: 458px; width: 310px; height: 140px; }
+  #truefac {
+    position: absolute; left: 44px; top: 606px; width: 700px;
+    font-size: 9.5px; font-style: italic; color: #6b7284;
+  }
+  .draft {
+    position: absolute; font: 700 9.5px ui-monospace, monospace; color: #e04b38;
+    border: 1px solid rgba(224,75,56,0.6); border-radius: 4px; padding: 1px 6px;
+    background: rgba(11,13,18,0.9); opacity: 0; white-space: nowrap;
+  }
+
+  /* PD: the sim splits into two independent meters */
+  #split {
+    position: absolute; left: 36px; top: 426px; width: 338px; height: 180px;
+    display: flex; gap: 7px; opacity: 0; z-index: 6;
+    background: var(--surface); border-radius: 12px; padding: 5px;
+  }
+  #split .sp { flex: 1; background: #0d1420; border: 1.5px solid; border-radius: 10px; padding: 9px 11px; position: relative; }
+  #split .sp.pre { border-color: rgba(111,177,255,0.6); }
+  #split .sp.dec { border-color: rgba(47,214,176,0.6); }
+  #split h4 { margin: 0; font: 700 10px ui-monospace, monospace; display: flex; align-items: center; }
+  #split .sbadge {
+    margin-left: auto; font: 600 8.5px ui-monospace, monospace; color: #e0a935;
+    border: 1px solid rgba(201,133,0,0.5); border-radius: 999px; padding: 0 6px;
+  }
+  #split .pre h4 { color: #6fb1ff; } #split .dec h4 { color: var(--accent); }
+  #split .gt { margin-top: 12px; height: 10px; border: 1px solid var(--line); border-radius: 5px; overflow: hidden; background: rgba(11,13,18,0.6); }
+  #split .gf { height: 100%; transform-origin: left; }
+  #split.on .pre .gf { background: linear-gradient(90deg, rgba(57,135,229,0.4), #3987e5); animation: cg1 2.2s ease-in-out infinite; }
+  #split.on .dec .gf { background: linear-gradient(90deg, rgba(47,214,176,0.4), #2fd6b0); animation: cg2 1.3s ease-in-out infinite; }
+  @keyframes cg1 { 0%, 100% { transform: scaleX(0.5); } 50% { transform: scaleX(0.78); } }
+  @keyframes cg2 { 0%, 100% { transform: scaleX(0.6); } 50% { transform: scaleX(0.86); } }
+  #split .spipe {
+    margin-top: 14px; height: 16px; border-radius: 8px; overflow: hidden; position: relative;
+    border: 1.5px solid rgba(47,214,176,0.45);
+  }
+  #split .pre .spipe { border-color: rgba(111,177,255,0.45); }
+  #split .spipe i { position: absolute; top: 4px; width: 6px; height: 6px; border-radius: 50%; }
+  #split .pre .spipe i { background: #6fb1ff; }
+  #split .dec .spipe i { background: #2fd6b0; }
+  #split.on .spipe i { animation: cFlow 1.15s linear infinite; }
+  #split.on .pre .spipe i { animation-duration: 1.7s; }
+  @keyframes cFlow { from { left: -8px; } to { left: 150px; } }
+  #split .spipe i:nth-child(2) { animation-delay: 0.38s; }
+  #split .spipe i:nth-child(3) { animation-delay: 0.76s; }
+  #split .gd { position: absolute; left: 11px; bottom: 7px; font: 600 8.5px ui-monospace, monospace; color: #6b7284; }
+
+  /* ---- the scoreboard table (on stage from the start) ---- */
+  #tablewrap {
+    position: absolute; left: 718px; top: 104px; width: 518px;
+    background: var(--panel); border: 1px solid var(--line); border-radius: 14px;
+    padding: 8px 12px 6px; opacity: 0; z-index: 5;
+    transform-origin: top left;
+  }
+  .trow {
+    display: grid; grid-template-columns: 76px 202px 110px 92px; gap: 6px;
+    align-items: center; min-height: 40px; padding: 1px 0;
+    border-bottom: 1px solid rgba(42,46,59,0.6);
+  }
+  .trow:last-child { border-bottom: none; }
+  .trow.head { min-height: 24px; font: 700 9px ui-monospace, monospace; color: #6b7284; letter-spacing: 0.09em; text-transform: uppercase; }
+  .trow .c1 { font: 700 11px ui-monospace, monospace; color: #8a91a5; line-height: 1.2; }
+  .trow .c1 .fn { display: block; font: 400 7.5px ui-monospace, monospace; color: #565d70; margin-top: 1px; }
+  .trow.done .c1 { color: #e8eaf0; }
+  .trow .c2 { font-size: 10px; color: #b9c0d4; line-height: 1.25; }
+  .trow .c2 .dts { display: inline-flex; gap: 3px; margin-right: 5px; vertical-align: 1px; }
+  .trow .c2 .dts i { width: 6px; height: 6px; border-radius: 50%; display: inline-block; }
+  .trow .c3 { font-size: 9.5px; color: #9aa1b5; line-height: 1.25; }
+  .trow .c4 { font: 600 9.5px ui-monospace, monospace; line-height: 1.25; }
+  .trow .c4.yes { color: var(--accent); }
+  .trow .c4.lin { color: #9085e9; }
+  .trow .val { clip-path: inset(0 100% 0 0); display: block; }
+  .trow.done { background: rgba(47,214,176,0.03); }
+  #kicker {
+    position: absolute; left: 0; top: 652px; width: 100%; text-align: center;
+    font-size: 15px; font-style: italic; color: var(--accent); opacity: 0;
+  }
+
+  /* ---- the card tray ---- */
+  #tray {
+    position: absolute; left: 44px; top: 628px; width: 940px;
+    display: flex; gap: 8px; pointer-events: none;
+  }
+  #tray .tcard { flex: 1; padding: 6px 8px; min-height: 54px; cursor: grab; touch-action: none; }
+  #tray .tcard.dragging {
+    cursor: grabbing; z-index: 40;
+    box-shadow: 0 14px 30px rgba(0,0,0,0.55); border-color: #4a5066;
+  }
+  #tray .abbr { font-size: 10.5px; white-space: nowrap; }
+  #tray .full { font-size: 7.5px; }
+
+  .ztoast { position: absolute; font: 700 12px ui-monospace, monospace; z-index: 25; pointer-events: none; white-space: nowrap; text-shadow: 0 2px 8px #000; }
+</style>
+</head>
+<body>
+<div class="stage">
+  <div class="slide-title">The Map, Completed</div>
+  <div class="slide-sub">the game from the opening, played for real — the scoreboard fills line by line</div>
+
+  <div id="bwrap" data-no-advance></div>
+
+  <div id="simwrap">
+    <div id="simg" class="sim"></div>
+    <div id="simmain" class="sim"></div>
+    <div id="split">
+      <div class="sp pre"><h4>prefill — TTFT</h4><div class="gt"><div class="gf"></div></div><div class="spipe"><i></i><i></i><i></i></div><span class="gd">tuned alone</span></div>
+      <div class="sp dec"><h4>decode — TPOT<span class="sbadge" id="sbadge"></span></h4><div class="gt"><div class="gf"></div></div><div class="spipe"><i></i><i></i><i></i></div><span class="gd">tuned alone</span></div>
+    </div>
+  </div>
+  <div id="truefac"></div>
+
+  <div id="tablewrap">
+    <div class="trow head"><span>technique</span><span>bottleneck attacked</span><span>stage</span><span>in K3?</span></div>
+    <div id="trows"></div>
+  </div>
+  <div id="kicker"><span class="val" style="clip-path:inset(0 100% 0 0); display:inline-block"></span></div>
+
+  <div id="tray" data-no-advance></div>
+</div>
+
+<script src="../vendor/gsap.min.js"></script>
+<script src="shared/bottlenecks.js?v=6"></script>
+<script src="shared/closing.js?v=6"></script>
+<script src="shared/manifest.js?v=6"></script>
+<script src="shared/deck.js?v=6"></script>
+<script>
+  var stageEl = document.querySelector(".stage");
+  document.getElementById("truefac").textContent =
+    CL.trueFactors + " · display capped at ×" + CL.speedCap + " for legibility";
+  document.querySelector("#kicker .val").textContent = CL.tableNote;
+
+  // ---- buckets --------------------------------------------------------
+  var RECTS = { compute: [44, 104, 280, 158], bw: [334, 104, 280, 158], cap: [44, 272, 280, 158], comm: [334, 272, 280, 158] };
+  var BUCKETS = {};
+  var bwrap = document.getElementById("bwrap");
+  BN.list.forEach(function (b) {
+    var r = RECTS[b.key];
+    var el = document.createElement("div");
+    el.className = "bucket";
+    el.style.cssText = "left:" + r[0] + "px; top:" + r[1] + "px; width:" + r[2] + "px; height:" + r[3] + "px;";
+    el.innerHTML = '<div class="bhead">' + BN.iconHTML(b.key) +
+      '<div><div class="bname" style="color:' + b.color + '">' + b.name + "</div>" +
+      '<div class="bunit" style="color:' + b.color + '">' + b.unit + "</div>" +
+      '<div class="bdom">' + b.dom + "</div></div></div>" +
+      '<div class="dock"></div><div class="bflash" style="border-color:' + b.color + '; box-shadow:0 0 26px ' + b.color + 'cc"></div>';
+    bwrap.appendChild(el);
+    BUCKETS[b.key] = { el: el, rect: r, color: b.color, dock: el.querySelector(".dock"), flash: el.querySelector(".bflash") };
+  });
+
+  // ---- scoreboard rows (technique names visible, columns blank) -------
+  var trows = document.getElementById("trows");
+  var rowByAbbr = {};
+  BN.techniques.forEach(function (t) {
+    var m = CL.map[t[1]];
+    var row = document.createElement("div");
+    row.className = "trow";
+    var dots = t[2].map(function (d) { return '<i style="background:' + BUCKETS[d].color + '"></i>'; }).join("");
+    var k3cls = m[2].indexOf("✓") === 0 ? "yes" : "lin";
+    row.innerHTML = '<span class="c1">' + t[1] + '<span class="fn">' + t[0] + "</span></span>" +
+      '<span class="c2"><span class="val"><span class="dts">' + dots + "</span>" + m[0] + "</span></span>" +
+      '<span class="c3"><span class="val">' + m[1] + "</span></span>" +
+      '<span class="c4 ' + k3cls + '"><span class="val">' + m[2] + "</span></span>";
+    trows.appendChild(row);
+    rowByAbbr[t[1]] = row;
+  });
+
+  // ---- card tray ------------------------------------------------------
+  var tray = document.getElementById("tray");
+  var cardByAbbr = {};
+  BN.techniques.forEach(function (t) {
+    var c = document.createElement("div");
+    c.className = "tcard";
+    c.dataset.abbr = t[1];
+    c.dataset.domains = JSON.stringify(t[2]);
+    c.innerHTML = '<div class="abbr">' + t[1] + '</div><div class="full">' + t[0] + "</div>";
+    tray.appendChild(c);
+    cardByAbbr[t[1]] = c;
+  });
+
+  // ---- sims: live meter + 1× ghost ------------------------------------
+  var simGhost = BN.buildSim(document.getElementById("simg"), {});
+  var simMain = BN.buildSim(document.getElementById("simmain"), {});
+
+  // ---- helpers --------------------------------------------------------
+  function stageScale() { return stageEl.getBoundingClientRect().width / 1280; }
+  function cardCenter(card) {
+    var r = card.getBoundingClientRect(), sr = stageEl.getBoundingClientRect(), s = stageScale();
+    return { x: (r.left + r.width / 2 - sr.left) / s, y: (r.top + r.height / 2 - sr.top) / s };
+  }
+  function hitZone(pt) {
+    for (var k in RECTS) {
+      var r = RECTS[k];
+      if (pt.x >= r[0] && pt.x <= r[0] + r[2] && pt.y >= r[1] && pt.y <= r[1] + r[3]) return k;
+    }
+    return null;
+  }
+  function toast(x, y, text, color) {
+    var t = document.createElement("div");
+    t.className = "ztoast";
+    t.style.cssText = "left:" + x + "px; top:" + y + "px; transform:translateX(-50%); color:" + color + ";";
+    t.textContent = text;
+    stageEl.appendChild(t);
+    gsap.fromTo(t, { opacity: 0, y: 8 }, {
+      opacity: 1, y: -24, duration: 1.4, ease: "power1.out",
+      onComplete: function () { gsap.to(t, { opacity: 0, duration: 0.4, onComplete: function () { t.remove(); } }); }
+    });
+  }
+  function bucketFlash(key) {
+    gsap.fromTo(BUCKETS[key].flash, { opacity: 0 }, { opacity: 1, duration: 0.09, yoyo: true, repeat: 3 });
+  }
+  function dockChip(key, abbr) {
+    var b = BUCKETS[key];
+    var chip = document.createElement("div");
+    chip.className = "zchip";
+    chip.style.color = b.color;
+    chip.style.borderColor = b.color + "88";
+    chip.textContent = abbr.length > 7 ? abbr.slice(0, 6) + "…" : abbr;
+    b.dock.appendChild(chip);
+    gsap.fromTo(chip, { scale: 0, opacity: 0 }, { scale: 1, opacity: 1, duration: 0.3, ease: "back.out(2.5)" });
+  }
+
+  // ---- game state -----------------------------------------------------
+  var dockCount = 0;
+  var curMult = 1;
+  var pending = [];   // delayed calls to kill on reset
+  var SPEEDS = [1, 1.5, 2.0, 2.6, 3.2, 3.8, 5.0, 5.6, 6.4, CL.speedCap];
+  function setMult(m) {
+    curMult = m;
+    simMain.setSpeed(m);
+    if (document.getElementById("split").classList.contains("on"))
+      document.getElementById("sbadge").textContent = "×" + m.toFixed(2);
+  }
+  function later(delay, fn) { pending.push(gsap.delayedCall(delay, fn)); }
+
+  function writeRow(abbr) {
+    var row = rowByAbbr[abbr];
+    row.classList.add("done");
+    row.querySelectorAll(".val").forEach(function (v, i) {
+      gsap.to(v, { clipPath: "inset(0 0% 0 0)", duration: 0.5, delay: 0.16 * i, ease: "power1.inOut" });
+    });
+  }
+
+  // MoE chain reaction: capacity floods, interconnect screams
+  function alertOn() {
+    BUCKETS.cap.el.classList.add("flood");
+    BUCKETS.comm.el.classList.add("alarm");
+    if (cardByAbbr["EP"].dataset.docked) later(1.2, alertClear);   // EP already placed: self-heals
+  }
+  function alertClear() {
+    later(0.35, function () { BUCKETS.cap.el.classList.remove("flood"); bucketFlash("cap"); });
+    later(0.9, function () { BUCKETS.comm.el.classList.remove("alarm"); bucketFlash("comm"); });
+  }
+  // MTP: pipe thins ÷k, the compute chip heats, rejected drafts vanish
+  function mtpFx() {
+    var dots = BUCKETS.bw.el.querySelectorAll(".bni-pipe i");
+    dots.forEach(function (d, i) {
+      d.style.animationDuration = "2.4s";
+      if (i === 1 || i === 3) gsap.to(d, { opacity: 0.12, duration: 0.5 });
+    });
+    BUCKETS.compute.el.querySelector(".bni-chip").classList.add("hot");
+    for (var i = 0; i < 3; i++) {
+      (function (i) {
+        var d = document.createElement("div");
+        d.className = "draft";
+        d.textContent = "draft ✗";
+        d.style.left = (400 + i * 66) + "px";
+        d.style.top = (492 + (i % 2) * 30) + "px";
+        document.getElementById("simwrap").appendChild(d);
+        gsap.timeline({ delay: 0.25 * i })
+          .fromTo(d, { opacity: 0, y: 8 }, { opacity: 1, y: 0, duration: 0.25 })
+          .to(d, { opacity: 0.15, duration: 0.09, yoyo: true, repeat: 5 })
+          .to(d, { opacity: 0, y: 14, duration: 0.4, onComplete: function () { d.remove(); } });
+      })(i);
+    }
+  }
+  // PD: the speedometer splits into two independent meters
+  function pdSplit() {
+    var sp = document.getElementById("split");
+    sp.classList.add("on");
+    document.getElementById("sbadge").textContent = "×" + curMult.toFixed(2);
+    gsap.to(sp, { opacity: 1, duration: 0.5 });
+  }
+
+  function dockCard(card, zoneKey) {
+    if (card.dataset.docked) return;
+    card.dataset.docked = "1";
+    var abbr = card.dataset.abbr;
+    var domains = JSON.parse(card.dataset.domains);
+    var target = (zoneKey && domains.indexOf(zoneKey) >= 0) ? zoneKey : domains[0];
+    var r = BUCKETS[target].rect;
+    var c = cardCenter(card);
+    var p = card._pos || { x: 0, y: 0 };
+    gsap.to(card, {
+      x: p.x + (r[0] + r[2] / 2 - c.x),
+      y: p.y + (r[1] + r[3] - 34 - c.y),
+      scale: 0.12, opacity: 0, duration: 0.5, ease: "power2.in",
+      onComplete: function () {
+        domains.forEach(function (d) { bucketFlash(d); dockChip(d, abbr); });
+        dockCount++;
+        setMult(SPEEDS[Math.min(dockCount, SPEEDS.length - 1)]);
+        writeRow(abbr);
+        if (abbr === "MoE") later(0.4, alertOn);
+        if (abbr === "EP") alertClear();
+        if (abbr === "MTP") mtpFx();
+        if (abbr === "PD") pdSplit();
+      }
+    });
+  }
+  function dockByAbbr(abbr) { dockCard(cardByAbbr[abbr], null); }
+
+  function rejectCard(card, zoneKey) {
+    var r = BUCKETS[zoneKey].rect;
+    toast(r[0] + r[2] / 2, r[1] - 10, "✗ not this bottleneck", "#e04b38");
+    gsap.timeline()
+      .to(card, { x: "+=9", duration: 0.05, yoyo: true, repeat: 5 })
+      .to(card, { x: 0, y: 0, scale: 1, duration: 0.5, ease: "power3.inOut", onStart: function () { card._pos = null; } });
+  }
+
+  // drag to a bucket, or click to auto-fly
+  function enableDrag(card) {
+    card.addEventListener("pointerdown", function (e) {
+      if (card.dataset.docked) return;
+      e.preventDefault();
+      var s = stageScale();
+      var startX = e.clientX, startY = e.clientY, moved = 0;
+      var base = card._pos || { x: 0, y: 0 };
+      card.setPointerCapture(e.pointerId);
+      function mv(ev) {
+        moved = Math.max(moved, Math.abs(ev.clientX - startX) + Math.abs(ev.clientY - startY));
+        if (moved > 6) {
+          card.classList.add("dragging");
+          card._pos = { x: base.x + (ev.clientX - startX) / s, y: base.y + (ev.clientY - startY) / s };
+          card.style.transform = "translate(" + card._pos.x + "px," + card._pos.y + "px) scale(1.07)";
+        }
+      }
+      function up() {
+        card.classList.remove("dragging");
+        card.removeEventListener("pointermove", mv);
+        card.removeEventListener("pointerup", up);
+        if (moved <= 6) { dockCard(card, null); return; }   // a click: auto-fly home
+        var zoneKey = hitZone(cardCenter(card));
+        if (!zoneKey) {
+          card._pos = null;
+          gsap.to(card, { x: 0, y: 0, scale: 1, duration: 0.55, ease: "elastic.out(1, 0.6)" });
+        } else if (JSON.parse(card.dataset.domains).indexOf(zoneKey) >= 0) {
+          dockCard(card, zoneKey);
+        } else {
+          rejectCard(card, zoneKey);
+        }
+      }
+      card.addEventListener("pointermove", mv);
+      card.addEventListener("pointerup", up);
+    });
+  }
+  document.querySelectorAll("#tray .tcard").forEach(enableDrag);
+
+  // ---- full reset -----------------------------------------------------
+  function resetAll() {
+    simMain.stop(); simGhost.stop(); simMain.setSpeed(1);
+    pending.forEach(function (d) { d.kill(); });
+    pending = [];
+    dockCount = 0;
+    curMult = 1;
+    document.getElementById("sbadge").textContent = "";
+    tray.style.pointerEvents = "none";
+    document.querySelectorAll(".zchip, .ztoast, .draft").forEach(function (el) { el.remove(); });
+    for (var k in BUCKETS) {
+      BUCKETS[k].el.classList.remove("flood", "alarm");
+      gsap.killTweensOf(BUCKETS[k].flash);
+      gsap.set(BUCKETS[k].flash, { clearProps: "opacity" });
+    }
+    BUCKETS.bw.el.querySelectorAll(".bni-pipe i").forEach(function (d) {
+      gsap.killTweensOf(d);
+      d.style.animationDuration = "";
+      gsap.set(d, { clearProps: "opacity" });
+    });
+    BUCKETS.compute.el.querySelector(".bni-chip").classList.remove("hot");
+    var sp = document.getElementById("split");
+    sp.classList.remove("on");
+    gsap.killTweensOf(sp);
+    gsap.set(sp, { clearProps: "opacity" });
+    document.querySelectorAll("#tray .tcard").forEach(function (c) {
+      gsap.killTweensOf(c);
+      delete c.dataset.docked;
+      c._pos = null;
+      gsap.set(c, { clearProps: "transform,opacity,visibility" });
+    });
+    document.querySelectorAll("#trows .trow").forEach(function (row) { row.classList.remove("done"); });
+    document.querySelectorAll("#trows .val").forEach(function (v) {
+      gsap.killTweensOf(v);
+      gsap.set(v, { clearProps: "clipPath" });
+    });
+    gsap.set("#tablewrap", { clearProps: "transform,opacity" });
+    gsap.set("#bwrap, #simwrap, #truefac, #tray, #kicker", { clearProps: "opacity" });
+  }
+
+  // ---- timeline -------------------------------------------------------
+  var tl = gsap.timeline({ paused: true });
+
+  // beat 1: the board returns — buckets + speedometer + empty scoreboard + the nine cards
+  tl.fromTo(".bucket", { opacity: 0, y: 24 }, { opacity: 1, y: 0, duration: 0.45, stagger: 0.1, ease: "power2.out" })
+    .fromTo("#tablewrap", { opacity: 0, x: 26 }, { opacity: 1, x: 0, duration: 0.5, ease: "power3.out" }, "-=0.25")
+    .fromTo("#simwrap", { opacity: 0 }, { opacity: 1, duration: 0.4 }, "-=0.2")
+    .fromTo("#truefac", { opacity: 0 }, { opacity: 1, duration: 0.3 }, "<")
+    .fromTo("#tray .tcard", { opacity: 0, y: 26 }, { opacity: 1, y: 0, duration: 0.35, stagger: 0.05, ease: "power2.out" }, "-=0.2")
+    .call(function () {
+      simGhost.start();
+      simMain.start();
+      tray.style.pointerEvents = "auto";
+    });
+  DECK.markStep(tl);
+
+  // beat 2: phase 1 — the attention arc + quantization fly home
+  ["FA", "GQA", "MLA", "KDA", "FP8 / INT4"].forEach(function (a) {
+    tl.call(dockByAbbr, [a]).to({}, { duration: 0.85 });
+  });
+  DECK.markStep(tl);
+
+  // beat 3: the chain reaction — MoE floods capacity + interconnect, EP clears it
+  tl.call(dockByAbbr, ["MoE"]).to({}, { duration: 1.7 })
+    .call(dockByAbbr, ["EP"]).to({}, { duration: 1.5 });
+  DECK.markStep(tl);
+
+  // beat 4: MTP — the only card that spends compute to buy bandwidth
+  tl.call(dockByAbbr, ["MTP"]).to({}, { duration: 1.7 });
+  DECK.markStep(tl);
+
+  // beat 5: PD — the speedometer itself splits in two
+  tl.call(dockByAbbr, ["PD"]).to({}, { duration: 1.6 });
+  DECK.markStep(tl);
+
+  // beat 6 (final): the scoreboard was the summary all along — enlarge it
+  tl.call(function () { tray.style.pointerEvents = "none"; })
+    .to("#bwrap, #tray, #simwrap, #truefac", { opacity: 0.08, duration: 0.6 })
+    .to("#tablewrap", { x: -420, y: -19, scale: 1.32, duration: 0.9, ease: "power3.inOut" }, "-=0.3")
+    .fromTo("#kicker", { opacity: 0 }, { opacity: 1, duration: 0.25 })
+    .fromTo("#kicker .val", { clipPath: "inset(0 100% 0 0)" }, { clipPath: "inset(0 0% 0 0)", duration: 0.7, ease: "power1.inOut" });
+
+  DECK.register(tl, { reset: resetAll });
+</script>
+</body>
+</html>
