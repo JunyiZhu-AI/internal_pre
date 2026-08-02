@@ -684,38 +684,18 @@ through auto-plays the whole game; anything docked by hand is skipped.*
 
 *(final click → next page)*
 
-### 25 — Read the Price Tag Again
+### 25 — Thank You
 
-*The upgraded machine stays faintly running in the background — its curtain
-call. The slide-01 rate card returns in front.*
+*A minimal end card: the upgraded machine keeps faintly running behind a
+centered thank-you and the replay chip (which jumps back to slide 02's
+bucket game). Closing remarks — the answered questions, the co-design
+pattern, any open questions — are spoken over this page, on the wrap-up
+of slide 24's table.*
 
-1. "The machine keeps humming back there — we're done building it. Here is
-   the rate card from nine o'clock: three dollars in, thirty cents cached,
-   fifteen dollars out. On slide one these were marketing numbers. They
-   aren't anymore."
-2. "Flip each tag. Three dollars: prefill is compute-bound — you're paying
-   for FLOPs over uncached context. Thirty cents: a prefix-cache hit skips
-   prefill entirely — the KV already exists. Fifteen dollars: decode is
-   bandwidth-bound and serial, the hardest regime on the machine to scale.
-   Every price is a bottleneck with a dollar sign on it."
-3. "And the three questions I promised to answer. Why is output five-x input
-   for every vendor? Because decode pays bandwidth per token while prefill
-   amortises — that's the roofline, invoiced. Why is a cache hit ten-x
-   cheaper? PD serving plus prefix caching — a hit never touches the P
-   pool. Why does competing at these prices take 2.8T parameters, KDA, and
-   a million of context? Because no single trick gets you there."
-4. "That third answer is the pattern of the whole talk: the price sheet is
-   the physics, invoiced. Roll the credits on the machine behind me — KDA,
-   MLA, MoE, MXFP4, EP, PD — each name lights up the part of the machine it
-   was co-designed with. Architecture chosen to make systems cheap; systems
-   built to exploit architecture."
-5. "Three open questions to argue about over coffee: if pure-linear
-   attention wins, does the KV cache — half this talk — simply disappear?
-   If hardware rebalances the roofline, does the memory wall move, and
-   which of these nine cards get retired? And Jevons: cheaper tokens have
-   so far meant more tokens — does the bill ever actually go down? Thank
-   you — and if you want another go at the machine, the replay chip jumps
-   back to the bucket game. Do not scan the QR code; it's the map."
+1. "That's the talk. The machine keeps humming back there — everything we
+   built this evening, still running. Thank you — questions? And if anyone
+   wants another go at sorting the cards, this button jumps straight back
+   to the bucket game."
 
 *(end of deck)*
 
