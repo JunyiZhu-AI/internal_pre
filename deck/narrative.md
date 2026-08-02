@@ -481,20 +481,17 @@ pools — landing back on the rate card's $0.30.*
    the part we haven't touched all talk: the FFN. Dense, it's roughly
    two-thirds of the parameters, and every token pays for all of it."
 2. "The trick: unzip the FFN into N parallel experts and put a router in
-   front. Each token activates only the top-k — here two of eight; Switch
-   Transformer pushed it all the way to k = 1. The experts a token doesn't
-   route to simply don't run."
-3. "That one move decouples two numbers that used to be the same. FLOPs per
-   token follow the ACTIVE parameters. Capability — roughly — follows the
-   TOTAL. MoE is the arbitrage between the two."
-4. "And you can cash the arbitrage two ways. The researcher's framing:
-   iso-FLOP — about seven times the parameters at equal compute; Switch,
-   GLaM. The operator's framing — the one this talk bills in: iso-quality.
-   Mixtral 8×7B matched Llama-2-70B-class quality on 13 billion active;
-   the dense ghost next to it burns roughly five times the FLOPs per token
-   for the same answers. Careful phrasing: never 'same parameters' — total
-   parameters go UP."
-5. "So why is every frontier open model MoE now? Because capability is
+   front. Watch the tokens come through — each one activates only the
+   top-k, here two of eight, and every token picks a different pair;
+   Switch Transformer pushed it all the way to k = 1. The experts a token
+   doesn't route to simply don't run. Keep watching — this never stops."
+3. "That one move decouples two numbers that used to be the same. FLOPs
+   per token follow the ACTIVE parameters — the flat blue bar. Capability
+   — roughly — follows the TOTAL, the amber bar that just soared. That
+   arbitrage is the whole story: it's how a Mixtral with 13 billion
+   active matched a 70-billion dense model at a fraction of the FLOPs
+   per token."
+4. "So why is every frontier open model MoE now? Because capability is
    marketed in total params, and the bill — training and decode alike — is
    computed in active FLOPs. But hold both numbers: decode still reads the
    active parameters from HBM every token — and HBM has to store ALL of

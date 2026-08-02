@@ -136,34 +136,9 @@
   #mf-f { background: linear-gradient(90deg, rgba(57,135,229,0.4), #3987e5); transform: scaleX(0.26); animation: fHold 2.2s ease-in-out infinite; }
   @keyframes fHold { 50% { opacity: 0.7; } }
   .mrow .mcap { margin-top: 3px; font-size: 10px; color: #9aa1b5; }
-  #arb { position: absolute; left: 44px; top: 504px; width: 560px; font: 700 12.5px ui-monospace, monospace; color: var(--accent); opacity: 0; }
-
-  /* ---- the two dual framings ---- */
-  #isoflop {
-    position: absolute; left: 640px; top: 452px; width: 170px; height: 140px;
-    background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 9px 11px; opacity: 0;
-  }
-  #isoflop .t { font: 700 10.5px ui-monospace, monospace; color: #9aa1b5; line-height: 1.3; }
-  #isoflop .b { margin-top: 6px; font-size: 10.5px; color: #c7cce0; line-height: 1.35; }
-  #isoflop .e { margin-top: 5px; font-size: 9px; color: #6b7284; line-height: 1.3; }
-  #isoq {
-    position: absolute; left: 822px; top: 452px; width: 414px; height: 140px;
-    background: var(--panel); border: 1.5px solid var(--accent); border-radius: 10px; padding: 9px 12px;
-    box-shadow: 0 0 16px rgba(47,214,176,0.18); opacity: 0;
-  }
-  #isoq .t { font: 700 11px ui-monospace, monospace; color: var(--accent); }
-  .drow { display: flex; align-items: center; gap: 8px; margin-top: 9px; height: 16px; }
-  .drow .dl { width: 158px; flex: none; font: 600 10px ui-monospace, monospace; color: #6fb1ff; text-align: right; }
-  .drow .dl.ghost { color: #8a91a5; }
-  .drow .dbar { height: 11px; border-radius: 3px; transform-origin: left; background: linear-gradient(90deg, rgba(57,135,229,0.4), #3987e5); }
-  .drow .dbar.ghost { background: repeating-linear-gradient(45deg, rgba(138,145,165,0.55) 0 5px, rgba(138,145,165,0.2) 5px 10px); }
-  #dxtag { font: 700 10px ui-monospace, monospace; color: #e04b38; white-space: nowrap; }
-  #isoq .b { margin-top: 9px; font-size: 10px; color: #c7cce0; }
-  #never { position: absolute; left: 640px; top: 600px; width: 596px; font: 600 10.5px ui-monospace, monospace; color: #e04b38; opacity: 0; }
-
   /* ---- closing lines ---- */
-  #why { position: absolute; left: 44px; top: 630px; width: 1192px; font-size: 15px; font-weight: 700; color: #e0a935; opacity: 0; }
-  #keep { position: absolute; left: 44px; top: 666px; width: 1192px; font-size: 12.5px; font-weight: 600; color: var(--accent); opacity: 0; }
+  #why { position: absolute; left: 44px; top: 566px; width: 1192px; font-size: 15px; font-weight: 700; color: #e0a935; opacity: 0; }
+  #keep { position: absolute; left: 44px; top: 602px; width: 1192px; font-size: 12.5px; font-weight: 600; color: var(--accent); opacity: 0; }
 </style>
 </head>
 <body>
@@ -220,21 +195,6 @@
       <div class="mcap" id="cap-f"></div>
     </div>
   </div>
-  <div id="arb"></div>
-
-  <div id="isoflop">
-    <div class="t"></div>
-    <div class="b"></div>
-    <div class="e"></div>
-  </div>
-  <div id="isoq">
-    <div class="t"></div>
-    <div class="drow"><span class="dl" id="dl-moe"></span><div class="dbar" id="db-moe" style="width:37px"></div></div>
-    <div class="drow"><span class="dl ghost" id="dl-dense"></span><div class="dbar ghost" id="db-dense" style="width:200px"></div><span id="dxtag"></span></div>
-    <div class="b"></div>
-  </div>
-  <div id="never"></div>
-
   <div id="why"></div>
   <div id="keep"></div>
 </div>
@@ -248,16 +208,6 @@
   document.getElementById("mech").textContent = MOE.mech;
   document.getElementById("cap-t").textContent = MOE.decouple.quality;
   document.getElementById("cap-f").textContent = MOE.decouple.flops;
-  document.getElementById("arb").textContent = MOE.decouple.arb;
-  document.querySelector("#isoflop .t").textContent = MOE.dual.isoFlop[0];
-  document.querySelector("#isoflop .b").textContent = MOE.dual.isoFlop[1];
-  document.querySelector("#isoflop .e").textContent = MOE.dual.isoFlop[2];
-  document.querySelector("#isoq .t").textContent = MOE.dual.isoQuality[0];
-  document.querySelector("#isoq .b").textContent = MOE.dual.isoQuality[2];
-  document.getElementById("dl-moe").textContent = "Mixtral 8×7B · " + MOE.mixtral.active + "B active";
-  document.getElementById("dl-dense").textContent = "Llama-2-" + MOE.mixtral.dense + "B dense · ghost";
-  document.getElementById("dxtag").textContent = MOE.mixtral.ratio + " FLOPs/token";
-  document.getElementById("never").textContent = MOE.dual.never;
   document.getElementById("why").textContent = MOE.whyEveryone;
   document.getElementById("keep").textContent = MOE.keepBoth;
 
@@ -272,7 +222,7 @@
   // experts + routing lines inside the die view
   var dv = document.getElementById("dv");
   var rl = document.getElementById("rl");
-  var ACTIVE = [2, 5];
+  var PATTERNS = [[2, 5], [1, 6], [3, 4]];
   for (i = 0; i < 8; i++) {
     var ex = document.createElement("div");
     ex.className = "ex"; ex.id = "ex" + i;
@@ -287,10 +237,10 @@
   }
 
   // ---- DOM mutators (via .call, restored in reset) ----
-  function routeOn() {
+  function routeOn(pat) {
     for (var j = 0; j < 8; j++) {
       var e = document.getElementById("ex" + j), l = document.getElementById("rln" + j);
-      if (ACTIVE.indexOf(j) >= 0) { e.classList.add("on"); l.classList.add("hot"); }
+      if (pat.indexOf(j) >= 0) { e.classList.add("on"); l.classList.add("hot"); }
       else { e.classList.add("off"); }
     }
   }
@@ -300,10 +250,33 @@
       document.getElementById("rln" + j).classList.remove("hot");
     }
   }
+
+  // ---- the routing loop: token -> router -> two experts, three patterns,
+  //      running continuously through the following clicks ----
+  var loopTl = null;
+  function startLoop() {
+    if (loopTl) { loopTl.play(0); return; }
+    loopTl = gsap.timeline({ repeat: -1 });
+    PATTERNS.forEach(function (p) {
+      loopTl.call(routeOff)
+        .set("#tok", { left: 196, top: 228, opacity: 0 })
+        .to("#tok", { opacity: 1, duration: 0.2 })
+        .to("#tok", { left: 848, top: 152, duration: 0.8, ease: "power1.inOut" })
+        .fromTo("#router", { scale: 1.12 }, { scale: 1, duration: 0.25, ease: "power2.out" })
+        .to("#tok", { opacity: 0, duration: 0.12 }, "<")
+        .set("#ta", { left: 848, top: 152, opacity: 1 })
+        .set("#tb", { left: 848, top: 152, opacity: 1 })
+        .to("#ta", { left: 533 + p[0] * 90, top: 231, duration: 0.5, ease: "power1.in" })
+        .to("#tb", { left: 533 + p[1] * 90, top: 231, duration: 0.5, ease: "power1.in" }, "<")
+        .call(function () { routeOn(p); })
+        .to("#ta, #tb", { opacity: 0, duration: 0.3 })
+        .to({}, { duration: 1.1 });
+    });
+  }
   var hbm = document.getElementById("hbm");
   function hbmAll(on) { hbm.classList.toggle("all", on); }
 
-  // ---- timeline: 5 beats ----
+  // ---- timeline: 4 beats ----
   var tl = gsap.timeline({ paused: true });
 
   // beat 1: the machine wakes; we zoom into the die — the dense FFN we know
@@ -313,25 +286,17 @@
     .fromTo("#dense", { opacity: 0, scale: 0.85 }, { opacity: 1, scale: 1, duration: 0.5, ease: "back.out(1.6)" });
   DECK.markStep(tl);
 
-  // beat 2: the unzip — experts + router; one token runs top-2 of 8
+  // beat 2: the unzip — experts + router; the routing loop starts and keeps
+  //         running through the following clicks (three patterns cycling)
   tl.to("#dense", { scaleY: 0.05, opacity: 0, duration: 0.55, ease: "power2.in" })
     .fromTo("#router", { opacity: 0, y: -14 }, { opacity: 1, y: 0, duration: 0.4, ease: "power2.out" }, "-=0.1")
     .fromTo(".ex", { opacity: 0, y: 16 }, { opacity: 1, y: 0, duration: 0.4, stagger: 0.06, ease: "power2.out" }, "-=0.15")
     .fromTo("#rl", { opacity: 0 }, { opacity: 1, duration: 0.35 })
     .fromTo("#mech", { opacity: 0 }, { opacity: 1, duration: 0.35 }, "<")
-    .fromTo("#tok", { opacity: 0 }, { opacity: 1, duration: 0.2 })
-    .to("#tok", { left: 848, top: 152, duration: 0.8, ease: "power1.inOut" })
-    .fromTo("#router", { scale: 1.15 }, { scale: 1, duration: 0.3, ease: "power2.out" })
-    .to("#tok", { opacity: 0, duration: 0.15 }, "<")
-    .fromTo("#ta", { opacity: 0 }, { opacity: 1, duration: 0.1 }, "<")
-    .fromTo("#tb", { opacity: 0 }, { opacity: 1, duration: 0.1 }, "<")
-    .to("#ta", { left: 713, top: 231, duration: 0.5, ease: "power1.in" }, "<")
-    .to("#tb", { left: 983, top: 231, duration: 0.5, ease: "power1.in" }, "<")
-    .call(routeOn)
-    .to("#ta", { opacity: 0, duration: 0.3 })
-    .to("#tb", { opacity: 0, duration: 0.3 }, "<")
-    .fromTo("#kchip", { opacity: 0, scale: 0.6 }, { opacity: 1, scale: 1, duration: 0.35, ease: "back.out(2)" }, "-=0.1")
-    .fromTo("#swchip", { opacity: 0 }, { opacity: 1, duration: 0.3 }, "<0.15");
+    .fromTo("#kchip", { opacity: 0, scale: 0.6 }, { opacity: 1, scale: 1, duration: 0.35, ease: "back.out(2)" })
+    .fromTo("#swchip", { opacity: 0 }, { opacity: 1, duration: 0.3 }, "<0.15")
+    .call(startLoop)
+    .to({}, { duration: 2.4 });
   DECK.markStep(tl);
 
   // beat 3: the decoupling — TOTAL spikes, FLOPs/token stays flat
@@ -339,20 +304,10 @@
     .fromTo("#mf-t", { scaleX: 0.22 }, { scaleX: 0.96, duration: 0.9, ease: "power2.inOut" })
     .fromTo("#fl-cap", { opacity: 0 }, { opacity: 1, duration: 0.09, yoyo: true, repeat: 3 }, "-=0.3")
     .fromTo("#mrow-f", { opacity: 0, y: 10 }, { opacity: 1, y: 0, duration: 0.4, ease: "power2.out" })
-    .fromTo("#fl-comp", { opacity: 0 }, { opacity: 1, duration: 0.09, yoyo: true, repeat: 3 })
-    .fromTo("#arb", { opacity: 0, y: 8 }, { opacity: 1, y: 0, duration: 0.45 });
+    .fromTo("#fl-comp", { opacity: 0 }, { opacity: 1, duration: 0.09, yoyo: true, repeat: 3 });
   DECK.markStep(tl);
 
-  // beat 4: the two framings — iso-quality is the hero, with the dense ghost
-  tl.fromTo("#isoflop", { opacity: 0, y: 14 }, { opacity: 0.75, y: 0, duration: 0.4, ease: "power2.out" })
-    .fromTo("#isoq", { opacity: 0, y: 14 }, { opacity: 1, y: 0, duration: 0.45, ease: "power2.out" }, "<0.15")
-    .fromTo("#db-moe", { scaleX: 0 }, { scaleX: 1, duration: 0.4, ease: "power2.out" })
-    .fromTo("#db-dense", { scaleX: 0 }, { scaleX: 1, duration: 0.8, ease: "power2.inOut" })
-    .fromTo("#dxtag", { opacity: 0, scale: 0.6 }, { opacity: 1, scale: 1, duration: 0.35, ease: "back.out(2)" })
-    .fromTo("#never", { opacity: 0 }, { opacity: 1, duration: 0.4 });
-  DECK.markStep(tl);
-
-  // beat 5: why everyone went MoE — and the caution that sets up the bill
+  // beat 4: why everyone went MoE — and the caution that sets up the bill
   tl.fromTo("#why", { opacity: 0, y: 10 }, { opacity: 1, y: 0, duration: 0.5, ease: "power2.out" })
     .call(function () { hbmAll(true); })
     .fromTo("#fl-cap", { opacity: 0 }, { opacity: 1, duration: 0.09, yoyo: true, repeat: 3 })
@@ -361,7 +316,9 @@
 
   DECK.register(tl, {
     reset: function () {
+      if (loopTl) loopTl.pause(0);
       routeOff();
+      gsap.set("#tok, #ta, #tb", { opacity: 0 });
       hbmAll(false);
     }
   });
