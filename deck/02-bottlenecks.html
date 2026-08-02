@@ -50,6 +50,10 @@
   }
   @keyframes hbmGlow { 50% { opacity: 0.45; } }
   .hbm .hlab { position: absolute; bottom: 4px; width: 100%; text-align: center; font-size: 10.5px; color: #e0a935; font-weight: 700; }
+  /* the two HBM roles, as on the closing board: weights amber, KV purple */
+  #hbmK { border-color: rgba(144,133,233,0.6); }
+  #hbmK .layer { background: linear-gradient(rgba(144,133,233,0.35), rgba(144,133,233,0.75)); }
+  #hbmK .hlab { color: #9085e9; }
 
   .pipe {
     position: absolute; left: 178px; width: 120px; height: 16px;
@@ -104,15 +108,19 @@
   .tcard .prog i { width: 6px; height: 6px; border-radius: 50%; border: 1px solid #5b647c; }
   .tcard .prog i.done { background: var(--accent); border-color: var(--accent); }
   #score {
-    position: absolute; left: 960px; top: 452px; width: 276px;
+    position: absolute; left: 960px; top: 486px; width: 276px;
     font: 600 12px ui-monospace, monospace; color: var(--accent); opacity: 0;
   }
   #tray .abbr { font-size: 10.5px; padding-right: 14px; white-space: nowrap; }
   #tray .full { font-size: 8.5px; }
   #tray .lock { font-size: 9px; top: 5px; right: 6px; }
   #teaser { position: absolute; left: 60px; top: 585px; font-size: 12.5px; color: var(--ink-2); font-style: italic; opacity: 0; }
-  #simhost { left: 960px; top: 150px; width: 276px; height: 270px; opacity: 0; }
-  #simlab { position: absolute; left: 960px; top: 428px; width: 276px; font-size: 11.5px; color: var(--ink-2); opacity: 0; }
+  #simhost { left: 960px; top: 150px; width: 276px; height: 176px; opacity: 0; }
+  #simlab { position: absolute; left: 960px; top: 334px; width: 276px; font-size: 11.5px; color: var(--ink-2); opacity: 0; }
+  /* the launch-day ghost window, as on the closing board */
+  #ghostcap { position: absolute; left: 960px; top: 366px; width: 276px; font: 600 9.5px ui-monospace, monospace; color: #6b7284; opacity: 0; }
+  #ghosthost { left: 960px; top: 382px; width: 276px; height: 92px; opacity: 0; filter: grayscale(0.75); }
+  #ghosthost .sim-main { opacity: 0.5; }
 </style>
 </head>
 <body>
@@ -124,8 +132,8 @@
   <div id="pkg"><span class="pkglab">GPU PACKAGE</span></div>
 
   <div class="grp dim" id="g-cap">
-    <div class="hbm" style="top:225px"><div class="layer" style="top:8px"></div><div class="layer" style="top:30px; animation-delay:0.4s"></div><div class="layer" style="top:52px; animation-delay:0.8s"></div><div class="hlab">HBM</div></div>
-    <div class="hbm" style="top:365px"><div class="layer" style="top:8px; animation-delay:0.2s"></div><div class="layer" style="top:30px; animation-delay:0.6s"></div><div class="layer" style="top:52px; animation-delay:1s"></div><div class="hlab">HBM</div></div>
+    <div class="hbm" id="hbmW" style="top:225px"><div class="layer" style="top:8px"></div><div class="layer" style="top:30px; animation-delay:0.4s"></div><div class="layer" style="top:52px; animation-delay:0.8s"></div><div class="hlab">W · HBM</div></div>
+    <div class="hbm" id="hbmK" style="top:365px"><div class="layer" style="top:8px; animation-delay:0.2s"></div><div class="layer" style="top:30px; animation-delay:0.6s"></div><div class="layer" style="top:52px; animation-delay:1s"></div><div class="hlab">KV · HBM</div></div>
   </div>
   <div class="grp dim" id="g-bw">
     <div class="pipe" style="top:268px"><i></i><i></i><i></i><i></i><i></i></div>
@@ -162,6 +170,8 @@
   <div id="simlab">our speedometer for the whole talk — watch it accelerate</div>
   <div id="score"></div>
   <div id="simhost" class="sim"></div>
+  <div id="ghostcap">launch speed — the ghost stays at ×1</div>
+  <div id="ghosthost" class="sim"></div>
 </div>
 
 <script src="../vendor/gsap.min.js"></script>
@@ -419,6 +429,7 @@
   }
 
   var sim = BN.buildSim(document.getElementById("simhost"), {});
+  var ghost = BN.buildSim(document.getElementById("ghosthost"), {});
 
   var tl = gsap.timeline({ paused: true });
 
@@ -443,14 +454,15 @@
   // step 7: speedometer on
   tl.fromTo("#simhost", { opacity: 0, scale: 0.94 }, { opacity: 1, scale: 1, duration: 0.45, ease: "power2.out" })
     .fromTo("#simlab", { opacity: 0 }, { opacity: 1, duration: 0.3 }, "-=0.2")
+    .fromTo("#ghostcap, #ghosthost", { opacity: 0 }, { opacity: 1, duration: 0.35 }, "<")
     .fromTo("#score", { opacity: 0 }, { opacity: 1, duration: 0.3 }, "<")
     .call(function () {
-      sim.start();
+      sim.start(); ghost.start();
       document.getElementById("score").textContent =
         "correctly applied: " + correctCount + " / " + TOTAL_APPS + "  →  ×" + (1 + 0.25 * correctCount).toFixed(2);
     });
 
-  DECK.register(tl, { reset: function () { sim.stop(); resetCards(); } });
+  DECK.register(tl, { reset: function () { sim.stop(); ghost.stop(); resetCards(); } });
 </script>
 </body>
 </html>

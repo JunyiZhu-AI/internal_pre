@@ -93,8 +93,9 @@ advances the slide.)
 
 7. **[decode simulator powers on]** "One more thing before we start: this
    screen. It's a decode stream running at K3's launch-day speed — our
-   speedometer. Keep an eye on it; every section that follows will make it
-   faster."
+   speedometer. The small gray window beneath it is a ghost pinned at that
+   launch speed, so you can always see how far we've come. Keep an eye on
+   them; every section that follows widens the gap."
 
 *(final click → next page)*
 
