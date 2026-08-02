@@ -8,6 +8,7 @@
      click / Space / ArrowRight / PageDown : next step (at end: next page)
      ArrowLeft / PageUp                    : previous step (instant, no motion)
      on-screen arrow icons                 : previous / next page
+     page counter: click, type a page number, Enter to jump there
      loop button : play all steps continuously, looping
      reset button: back to the page's initial state (also turns loop off)
      F           : fullscreen
@@ -57,16 +58,56 @@ var DECK = (function () {
     ui.next.onclick = nextPage;
     ui.reset.onclick = function () { reset(false); };
     ui.loop.onclick = toggleLoop;
+    ui.page.onclick = startJump;
+    ui.page.title = "click to jump to a page";
     ui.prev.disabled = idx <= 0;
     ui.next.disabled = idx < 0 || idx >= pages.length - 1;
     updateUI();
   }
 
   function updateUI() {
-    if (!ui.page) return;
+    if (!ui.page || editing) return;
     ui.page.textContent = (idx >= 0 ? idx + 1 : "?") + " / " + (pages.length || "?");
     var atEnd = tl && tl.progress() >= 1 && !looping;
     ui.page.classList.toggle("atend", !!atEnd);
+  }
+
+  // ---- jump-to-page: click the counter, type a number, Enter ----
+  var editing = false;
+  function startJump() {
+    if (editing || !ui.page) return;
+    editing = true;
+    ui.page.classList.add("editing");
+    ui.page.innerHTML =
+      '<input id="dk-jump" type="text" inputmode="numeric" maxlength="3" autocomplete="off">' +
+      '<span class="dtotal">/ ' + (pages.length || "?") + "</span>";
+    var inp = ui.page.querySelector("#dk-jump");
+    inp.value = idx >= 0 ? idx + 1 : "";
+    inp.focus();
+    inp.select();
+    inp.addEventListener("keydown", function (e) {
+      e.stopPropagation();
+      if (e.key === "Enter") {
+        var n = parseInt(inp.value, 10);
+        endJump();
+        if (!isNaN(n)) jumpTo(n);
+      } else if (e.key === "Escape") {
+        endJump();
+      }
+    });
+    inp.addEventListener("blur", endJump);
+  }
+  function endJump() {
+    if (!editing) return;
+    editing = false;
+    ui.page.classList.remove("editing");
+    updateUI();
+  }
+  function jumpTo(n) {
+    if (n < 1) n = 1;
+    if (pages.length && n > pages.length) n = pages.length;
+    if (idx >= 0 && n === idx + 1) return;
+    if (pages[n - 1]) location.href = pages[n - 1];
   }
 
   // ---- step machinery ----
@@ -174,6 +215,7 @@ var DECK = (function () {
     advance();
   });
   document.addEventListener("keydown", function (e) {
+    if (e.target && (e.target.tagName === "INPUT" || e.target.tagName === "TEXTAREA")) return;
     if (e.key === " " || e.key === "ArrowRight" || e.key === "PageDown") {
       e.preventDefault(); advance();
     } else if (e.key === "ArrowLeft" || e.key === "PageUp") {

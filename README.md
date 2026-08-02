@@ -20,6 +20,7 @@ Controls:
 | click / Space / `→` / PageDown | next motion step (after the last step: next page) |
 | `←` / PageUp | back one step (instant) |
 | on-screen `❮` `❯` icons | previous / next page |
+| page counter (e.g. `7 / 25`) | click it, type a page number, Enter to jump |
 | ↺ icon | restart current page |
 | ⟳ icon | auto-play all steps, looping (rehearsal mode) |
 | `F` | fullscreen |

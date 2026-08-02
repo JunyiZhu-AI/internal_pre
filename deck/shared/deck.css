@@ -98,8 +98,18 @@ html, body {
 #deck-controls .dsep { width: 1px; height: 22px; background: var(--line); margin: 0 4px; }
 #deck-controls .dpage {
   font-family: ui-monospace, monospace; font-size: 12px; color: var(--ink-2);
-  min-width: 44px; text-align: center;
+  min-width: 44px; text-align: center; cursor: pointer; border-radius: 6px;
+  padding: 2px 4px;
 }
+#deck-controls .dpage:hover { color: var(--ink); background: rgba(255, 255, 255, 0.06); }
+#deck-controls .dpage.editing { cursor: default; background: none; }
+#deck-controls .dpage #dk-jump {
+  width: 30px; padding: 1px 3px; margin-right: 4px;
+  font: inherit; color: var(--accent); text-align: center;
+  background: rgba(11, 13, 18, 0.9); border: 1px solid var(--accent);
+  border-radius: 5px; outline: none; caret-color: var(--accent);
+}
+#deck-controls .dpage .dtotal { color: var(--ink-2); }
 #deck-controls .dbtn svg { width: 17px; height: 17px; display: block; }
 
 /* subtle end-of-page hint: page counter pulses when the next click changes page */
