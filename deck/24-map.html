@@ -7,177 +7,131 @@
 <link rel="stylesheet" href="shared/deck.css?v=8">
 <link rel="stylesheet" href="shared/bottlenecks.css?v=8">
 <style>
-  /* ---- the machine world (slides 02/16-23 language). Children are in stage
-     coordinates; the wrapper passes clicks through its gaps but its parts
-     never advance the deck. ---- */
-  #boardwrap { position: absolute; inset: 0; opacity: 0.13; filter: grayscale(0.9); pointer-events: none; }
-  #boardwrap .blk { pointer-events: auto; }
-  #boardwrap.off .blk { pointer-events: none; }
-
+  /* ==== the slide-02 board, reproduced exactly ==== */
   #pkg {
-    position: absolute; left: 44px; top: 112px; width: 580px; height: 402px;
+    position: absolute; left: 60px; top: 150px; width: 600px; height: 410px;
     border: 1.5px solid var(--line); border-radius: 18px; background: rgba(27,30,39,0.45);
   }
-  #pkg .pkglab { position: absolute; left: 16px; top: 10px; font-size: 10.5px; color: var(--ink-2); letter-spacing: 0.08em; }
+  #pkg .pkglab { position: absolute; left: 16px; top: 10px; font-size: 11px; color: var(--ink-2); letter-spacing: 0.08em; }
+  .grp { transition: none; }
+  .dim { opacity: 0.16; filter: grayscale(0.85); }
+
+  #die {
+    position: absolute; left: 300px; top: 250px; width: 170px; height: 200px;
+    border: 2.5px solid #3987e5; border-radius: 10px;
+    background: #0d1420;
+    animation: bnChipPulse 1.8s ease-in-out infinite;
+  }
+  #die .dlab { position: absolute; bottom: 6px; width: 100%; text-align: center; font-size: 12px; color: #9ec7f5; font-weight: 600; }
+  .tiles {
+    position: absolute; display: grid; gap: 3px;
+  }
+  #die .tiles { inset: 10px 10px 28px; grid-template-columns: repeat(6, 1fr); grid-template-rows: repeat(7, 1fr); }
+  .tiles i {
+    background: rgba(57, 135, 229, 0.22); border-radius: 2px;
+    animation: smTwinkle 2.6s ease-in-out infinite;
+  }
+  .tiles i:nth-child(3n) { animation-delay: 0.5s; }
+  .tiles i:nth-child(4n) { animation-delay: 1.1s; }
+  .tiles i:nth-child(5n) { animation-delay: 1.7s; background: rgba(57, 135, 229, 0.34); }
+  @keyframes smTwinkle { 50% { background: rgba(111, 177, 255, 0.6); } }
+  /* MTP: the die spends its idle compute — it heats up */
+  #die.hot { border-color: #e0a935; box-shadow: 0 0 26px rgba(224,169,53,0.55); animation: none; }
+  #die.hot .tiles i { background: rgba(224,169,53,0.35); animation-duration: 1.2s; }
 
   .hbm {
-    position: absolute; left: 84px; width: 88px; height: 148px;
-    border: 2px solid rgba(201,133,0,0.7); border-radius: 8px;
+    position: absolute; left: 92px; width: 84px; height: 110px;
+    border: 2px solid rgba(201,133,0,0.7); border-radius: 8px; overflow: hidden;
   }
-  #hbmW { top: 168px; }
-  #hbmK { top: 336px; border-color: rgba(144,133,233,0.55); }
-  .hbm .hlab { position: absolute; bottom: 3px; width: 100%; text-align: center; font-size: 9.5px; font-weight: 700; }
-  #hbmW .hlab { color: #e0a935; }
+  .hbm .layer {
+    position: absolute; left: 6px; right: 6px; height: 16px; border-radius: 3px;
+    background: linear-gradient(rgba(201,133,0,0.4), rgba(201,133,0,0.8));
+    animation: hbmGlow 2.6s ease-in-out infinite;
+  }
+  @keyframes hbmGlow { 50% { opacity: 0.45; } }
+  .hbm .hlab { position: absolute; bottom: 4px; width: 100%; text-align: center; font-size: 10.5px; color: #e0a935; font-weight: 700; }
+  #hbmK { border-color: rgba(144,133,233,0.6); }
+  #hbmK .layer { background: linear-gradient(rgba(144,133,233,0.35), rgba(144,133,233,0.75)); }
   #hbmK .hlab { color: #9085e9; }
-  .cells { position: absolute; left: 8px; top: 8px; right: 8px; bottom: 18px; overflow: hidden; display: flex; flex-wrap: wrap; gap: 2px; align-content: flex-start; }
-  .wcell {
-    flex: none; width: 32px; height: 12px; border-radius: 2px;
-    background: linear-gradient(rgba(201,133,0,0.45), rgba(201,133,0,0.85));
-    animation: wGlow 2.6s ease-in-out infinite;
-  }
-  .wcell:nth-child(3n) { animation-delay: 0.6s; }
-  .wcell:nth-child(4n) { animation-delay: 1.3s; }
-  @keyframes wGlow { 50% { opacity: 0.55; } }
-  .kcell {
-    flex: none; width: 32px; height: 12px; border-radius: 2px;
-    background: linear-gradient(rgba(144,133,233,0.4), rgba(144,133,233,0.8));
-    animation: wGlow 2.6s ease-in-out infinite;
-  }
-  .kcell:nth-child(2n) { animation-delay: 0.9s; }
-  #hbmW.flood .wcell {
-    animation: none; opacity: 1;
-    background: linear-gradient(rgba(224,169,53,0.75), #e0a935);
-    box-shadow: 0 0 8px rgba(224,169,53,0.5);
-  }
 
   .pipe {
-    position: absolute; left: 178px; width: 116px; height: 16px;
+    position: absolute; left: 178px; width: 120px; height: 16px;
     border: 2px solid rgba(47,214,176,0.55); border-radius: 8px; overflow: hidden;
   }
   .pipe i {
     position: absolute; top: 3px; width: 6px; height: 6px; border-radius: 50%;
-    background: #2fd6b0; animation: dFlow 1.1s linear infinite;
+    background: #2fd6b0; animation: bnFlow 1.1s linear infinite;
   }
   .pipe i:nth-child(2) { animation-delay: 0.22s; }
   .pipe i:nth-child(3) { animation-delay: 0.44s; }
   .pipe i:nth-child(4) { animation-delay: 0.66s; }
   .pipe i:nth-child(5) { animation-delay: 0.88s; }
-  @keyframes dFlow { from { left: -8px; } to { left: 122px; } }
+  /* MTP: one weight read carries k tokens — traffic per token thins */
   .pipe.thin { border-color: rgba(47,214,176,0.3); }
   .pipe.thin i { width: 4px; height: 4px; top: 4px; animation-duration: 2.6s; opacity: 0.75; }
   .pipe.thin i:nth-child(4), .pipe.thin i:nth-child(5) { display: none; }
 
-  #die {
-    position: absolute; left: 300px; top: 208px; width: 168px; height: 216px;
-    border: 2.5px solid #3987e5; border-radius: 10px; background: #0d1420;
-    animation: bnChipPulse 1.8s ease-in-out infinite;
-  }
-  #die .dlab { position: absolute; bottom: 5px; width: 100%; text-align: center; font-size: 11px; color: #9ec7f5; font-weight: 600; }
-  .tiles {
-    position: absolute; inset: 10px 10px 26px; display: grid; gap: 3px;
-    grid-template-columns: repeat(6, 1fr); grid-template-rows: repeat(7, 1fr);
-  }
-  .tiles i { background: rgba(57,135,229,0.22); border-radius: 2px; animation: smTwinkle 2.6s ease-in-out infinite; }
-  .tiles i:nth-child(3n) { animation-delay: 0.5s; }
-  .tiles i:nth-child(4n) { animation-delay: 1.1s; }
-  .tiles i:nth-child(5n) { animation-delay: 1.7s; background: rgba(57,135,229,0.34); }
-  @keyframes smTwinkle { 50% { background: rgba(111,177,255,0.6); } }
-  #die.hot { animation: none; border-color: #6fb1ff; box-shadow: 0 0 22px rgba(111,177,255,0.55); }
-
-  /* MoE: the die unzips into experts */
-  #exgrid {
-    position: absolute; inset: 32px 12px 28px; display: grid; gap: 6px;
-    grid-template-columns: 1fr 1fr; grid-template-rows: 1fr 1fr; opacity: 0;
-  }
-  .ex {
-    position: relative; border: 1.5px solid rgba(57,135,229,0.5); border-radius: 7px;
-    background: rgba(57,135,229,0.07);
-    display: flex; align-items: center; justify-content: center;
-    font: 700 10px ui-monospace, monospace; color: #9ec7f5;
-  }
-  .ex.on {
-    border-color: #6fb1ff; background: rgba(111,177,255,0.14);
-    box-shadow: 0 0 14px rgba(111,177,255,0.45);
-    animation: exWork 0.9s ease-in-out infinite;
-  }
-  @keyframes exWork { 50% { opacity: 0.55; } }
-  .ex:not(.on) { opacity: 0.4; }
-  #routerpill {
-    position: absolute; left: 334px; top: 214px; width: 100px; text-align: center;
-    font: 700 9.5px ui-monospace, monospace; color: #9085e9;
-    border: 1.5px solid rgba(144,133,233,0.8); border-radius: 999px; padding: 2px 0;
-    background: rgba(11,13,18,0.92); opacity: 0; z-index: 9;
-  }
-
-  /* MTP: the drafter head bolts onto the die */
-  #drafter {
-    position: absolute; left: 508px; top: 118px; width: 62px; height: 38px;
-    border: 1.5px solid rgba(154,161,181,0.75); border-radius: 8px;
-    background: rgba(27,30,39,0.96); z-index: 11; opacity: 0;
-    display: flex; align-items: center; justify-content: center;
-    font: 700 9px ui-monospace, monospace; color: #c7cce0; text-align: center; line-height: 1.3;
-  }
-  #drafter.docked { border-color: #6fb1ff; color: #6fb1ff; box-shadow: 0 0 14px rgba(111,177,255,0.45); }
-
-  /* interconnect stubs */
   .peer {
-    position: absolute; left: 668px; width: 150px; height: 96px;
+    position: absolute; left: 790px; width: 150px; height: 96px;
     border: 1.5px solid var(--line); border-radius: 12px; background: rgba(27,30,39,0.45);
   }
   .peer .pdie {
-    position: absolute; left: 14px; top: 20px; width: 50px; height: 50px;
-    border: 2px solid #9085e9; border-radius: 7px; background: #12101f;
+    position: absolute; left: 50px; top: 18px; width: 50px; height: 50px;
+    border: 2px solid #9085e9; border-radius: 7px;
+    background: #12101f;
   }
-  .peer .ptiles { position: absolute; inset: 5px; display: grid; gap: 2px; grid-template-columns: repeat(3, 1fr); grid-template-rows: repeat(3, 1fr); }
-  .peer .ptiles i { background: rgba(144,133,233,0.3); border-radius: 1.5px; }
-  .peer .plab { position: absolute; bottom: 5px; width: 100%; text-align: center; font-size: 9.5px; color: var(--ink-2); }
-  .peer .echs { position: absolute; left: 78px; top: 22px; width: 58px; display: flex; flex-wrap: wrap; gap: 3px; }
-  .peer .ech {
-    flex: none; width: 26px; height: 11px; border-radius: 2px; opacity: 0;
-    background: linear-gradient(rgba(201,133,0,0.45), rgba(201,133,0,0.8));
-  }
+  .peer .tiles { inset: 5px; grid-template-columns: repeat(3, 1fr); grid-template-rows: repeat(3, 1fr); gap: 2px; }
+  .peer .tiles i { background: rgba(144, 133, 233, 0.3); animation: none; }
+  .peer .plab { position: absolute; bottom: 5px; width: 100%; text-align: center; font-size: 10px; color: var(--ink-2); }
   #wires { position: absolute; inset: 0; pointer-events: none; }
   #wires line { stroke: #9085e9; stroke-width: 2.5; stroke-dasharray: 9 7; animation: commDash 0.9s linear infinite; }
-  #wires line.alert { stroke: #e04b38; animation-duration: 0.35s; }
   @keyframes commDash { to { stroke-dashoffset: -32; } }
 
-  /* bucket tags (from BN.list) */
-  .ztag {
-    position: absolute; font-size: 10.5px; line-height: 1.35;
-    background: rgba(11,13,18,0.88); border: 1.5px solid; border-radius: 8px;
-    padding: 4px 8px; z-index: 8; opacity: 0;
+  .tag {
+    position: absolute; font-size: 11.5px; line-height: 1.45;
+    background: rgba(11,13,18,0.88); border: 1.5px solid; border-radius: 9px;
+    padding: 7px 11px; opacity: 0; z-index: 8; width: 168px;
   }
-  .ztag b { display: block; font-size: 11px; }
-  .ztag .u { font-family: ui-monospace, monospace; font-size: 9px; }
+  .tag b { font-size: 13px; display: block; }
+  .tag .u { font-family: ui-monospace, monospace; font-size: 10.5px; }
+  .tag .d { color: var(--ink-2); font-size: 10.5px; }
 
-  /* zone flashes + persistent alert rings */
-  .zflash, .alring { position: absolute; opacity: 0; pointer-events: none; z-index: 20; border-radius: 12px; }
-  .alring { border: 3px solid #e04b38; box-shadow: 0 0 26px rgba(224,75,56,0.8); z-index: 19; }
-  #al-cap { left: 76px; top: 160px; width: 104px; height: 164px; border-color: #e0a935; box-shadow: 0 0 26px rgba(224,169,53,0.85); }
+  /* ==== the tray — demonstration only: no locks, no dragging ==== */
+  #tray {
+    position: absolute; left: 60px; top: 610px; width: 880px;
+    display: flex; gap: 9px;
+    pointer-events: none;
+  }
+  #tray .tcard { flex: 1; padding: 7px 8px; }
+  .tcard .prog { position: absolute; bottom: 5px; right: 7px; display: flex; gap: 3px; }
+  .tcard .prog i { width: 6px; height: 6px; border-radius: 50%; border: 1px solid #5b647c; }
+  .tcard .prog i.done { background: var(--accent); border-color: var(--accent); }
+  #score {
+    position: absolute; left: 960px; top: 486px; width: 276px;
+    font: 600 12px ui-monospace, monospace; color: var(--accent); opacity: 0;
+  }
+  #tray .abbr { font-size: 10.5px; padding-right: 14px; white-space: nowrap; }
+  #tray .full { font-size: 8.5px; }
+  #simhost { left: 960px; top: 150px; width: 276px; height: 176px; opacity: 0; }
+  #ghostcap { position: absolute; left: 960px; top: 366px; width: 276px; font: 600 9.5px ui-monospace, monospace; color: #6b7284; opacity: 0; }
+  #ghosthost { left: 960px; top: 382px; width: 276px; height: 92px; opacity: 0; filter: grayscale(0.75); }
+  #ghosthost .sim-main { opacity: 0.5; }
+  #simlab { position: absolute; left: 960px; top: 334px; width: 276px; font-size: 11.5px; color: var(--ink-2); opacity: 0; }
 
-  /* PD: the machine splits into two pools */
-  #splitline {
-    position: absolute; left: 294px; top: 118px; width: 3px; height: 390px;
-    background: linear-gradient(rgba(47,214,176,0.1), #2fd6b0, rgba(47,214,176,0.1));
-    border-radius: 2px; opacity: 0; transform-origin: 50% 0; z-index: 9;
+  /* MoE's chain reaction: red alert rings until EP clears them */
+  .alring {
+    position: absolute; border: 3px solid var(--red); border-radius: 12px;
+    box-shadow: 0 0 26px rgba(224,75,56,0.75); opacity: 0; pointer-events: none; z-index: 20;
   }
-  .poolchip {
-    position: absolute; top: 120px; font: 700 10px ui-monospace, monospace;
-    border: 1.5px solid; border-radius: 999px; padding: 2px 9px;
-    background: rgba(11,13,18,0.92); opacity: 0; z-index: 9; white-space: nowrap;
+  /* MTP: rejected drafts flicker and vanish beside the speedometer */
+  .rej {
+    position: absolute; width: 18px; height: 16px; border-radius: 4px; z-index: 12;
+    border: 1.5px dashed rgba(47,214,176,0.6); background: rgba(47,214,176,0.07); opacity: 0;
   }
-  #poolD { left: 172px; color: var(--accent); border-color: rgba(47,214,176,0.7); }
-  #poolP { left: 386px; color: #6fb1ff; border-color: rgba(111,177,255,0.7); }
-
-  /* ---- right column: the speedometer, one last time ---- */
-  #simcol { position: absolute; left: 960px; top: 112px; width: 276px; height: 500px; }
-  #pdpanel {
-    position: absolute; left: 0; top: 0; width: 276px; height: 48px; visibility: hidden; opacity: 0;
-    background: #0a0f0c; border: 1px solid #1d2a22; border-radius: 10px; padding: 7px 10px;
-    display: flex; gap: 10px;
-  }
-  .pgauge { flex: 1; }
-  .pgauge .pgl { font: 700 9px ui-monospace, monospace; margin-bottom: 4px; }
+  /* PD: the serving screen splits — per-phase gauges */
+  #pdpanel { position: absolute; left: 960px; top: 514px; width: 276px; opacity: 0; visibility: hidden; }
+  .pgauge { margin-bottom: 8px; }
+  .pgauge .pgl { font: 700 9px ui-monospace, monospace; margin-bottom: 3px; }
   .pgauge.p .pgl { color: #6fb1ff; }
   .pgauge.d .pgl { color: var(--accent); }
   .pgt { height: 9px; border: 1px solid #1d2a22; border-radius: 5px; overflow: hidden; background: rgba(11,13,18,0.7); }
@@ -187,34 +141,9 @@
   @keyframes gP { 0%, 100% { transform: scaleX(0.35); } 50% { transform: scaleX(0.9); } }
   @keyframes gD { 0%, 100% { transform: scaleX(0.55); } 50% { transform: scaleX(0.82); } }
 
-  #simhost { left: 0; top: 58px; width: 276px; height: 170px; opacity: 0; }
-  #ghostcap { position: absolute; left: 0; top: 238px; font: 600 9.5px ui-monospace, monospace; color: #6b7284; opacity: 0; }
-  #ghosthost { left: 0; top: 254px; width: 276px; height: 92px; opacity: 0; filter: grayscale(0.75); }
-  #ghosthost .sim-main { opacity: 0.5; }
-  #score { position: absolute; left: 0; top: 358px; width: 276px; font: 600 11.5px ui-monospace, monospace; color: var(--accent); opacity: 0; }
-  .rej {
-    position: absolute; width: 18px; height: 16px; border-radius: 4px; z-index: 12;
-    border: 1.5px dashed rgba(47,214,176,0.6); background: rgba(47,214,176,0.07); opacity: 0;
-  }
+  #truefactors { position: absolute; left: 60px; top: 692px; width: 880px; font-size: 9.5px; color: #6b7284; opacity: 0; }
 
-  #truefactors { position: absolute; left: 44px; top: 692px; width: 860px; font-size: 9.5px; color: #6b7284; opacity: 0; }
-
-  /* ---- the tray ---- */
-  #tray {
-    position: absolute; left: 44px; top: 616px; width: 900px;
-    display: flex; gap: 8px; pointer-events: none;
-  }
-  #tray .tcard { flex: 1; padding: 7px 7px; cursor: grab; touch-action: none; }
-  #tray .tcard .abbr { font-size: 10.5px; white-space: nowrap; color: #c7cce0; }
-  #tray .tcard .full { font-size: 8.5px; }
-  #tray .tcard.dragging {
-    cursor: grabbing; z-index: 40;
-    box-shadow: 0 14px 30px rgba(0,0,0,0.55); border-color: #4a5066;
-  }
-  .tcard .doms { position: absolute; top: 6px; right: 7px; display: flex; gap: 3px; }
-  .tcard .doms i { width: 6px; height: 6px; border-radius: 50%; }
-
-  /* ---- the end state: the filled summary table ---- */
+  /* ==== the end state: the filled summary table ==== */
   #summary {
     position: absolute; left: 44px; top: 108px; width: 1192px; opacity: 0;
     pointer-events: none; z-index: 30;
@@ -246,45 +175,61 @@
 <body>
 <div class="stage">
   <div class="slide-title">The Machine, Fully Upgraded</div>
-  <div class="slide-sub">the bucket game, played for real — dock all nine into the machine</div>
+  <div class="slide-sub">the bucket game from the opening, played for real — every card, one strike each</div>
 
-  <div id="boardwrap" data-no-advance>
-    <div id="pkg" class="blk"><span class="pkglab">GPU PACKAGE</span></div>
-    <div class="hbm blk" id="hbmW"><div class="cells"></div><div class="hlab">W · HBM</div></div>
-    <div class="hbm blk" id="hbmK"><div class="cells"></div><div class="hlab">KV · HBM</div></div>
-    <div class="pipe blk" style="top:232px"><i></i><i></i><i></i><i></i><i></i></div>
-    <div class="pipe blk" style="top:400px"><i></i><i></i><i></i><i></i><i></i></div>
-    <div id="die" class="blk"><div class="dlab">Processor</div><div id="exgrid"></div></div>
-    <div id="routerpill" class="blk">router</div>
-    <div id="drafter" class="blk">MTP head</div>
-    <svg id="wires" width="1280" height="720">
-      <line x1="468" y1="300" x2="670" y2="248"/>
-      <line x1="468" y1="340" x2="670" y2="444"/>
-    </svg>
-    <div class="peer blk" style="top:200px"><div class="pdie"><div class="ptiles"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div></div><div class="echs"><i class="ech"></i><i class="ech"></i><i class="ech"></i><i class="ech"></i></div><div class="plab">GPU 1</div></div>
-    <div class="peer blk" style="top:396px"><div class="pdie"><div class="ptiles"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div></div><div class="echs"><i class="ech"></i><i class="ech"></i><i class="ech"></i><i class="ech"></i></div><div class="plab">GPU n</div></div>
-    <div class="alring" id="al-cap"></div>
-    <div id="splitline"></div>
-    <div class="poolchip blk" id="poolD">D pool · decode</div>
-    <div class="poolchip blk" id="poolP">P pool · prefill</div>
-  </div>
+  <div id="board">
+    <div id="pkg"><span class="pkglab">GPU PACKAGE</span></div>
 
-  <div id="simcol">
-    <div id="pdpanel">
-      <div class="pgauge p"><div class="pgl">P · TTFT</div><div class="pgt"><div class="pgf"></div></div></div>
-      <div class="pgauge d"><div class="pgl">D · TPOT</div><div class="pgt"><div class="pgf"></div></div></div>
+    <div class="grp dim" id="g-cap">
+      <div class="hbm" id="hbmW" style="top:225px"><div class="layer" style="top:8px"></div><div class="layer" style="top:30px; animation-delay:0.4s"></div><div class="layer" style="top:52px; animation-delay:0.8s"></div><div class="hlab">W · HBM</div></div>
+      <div class="hbm" id="hbmK" style="top:365px"><div class="layer" style="top:8px; animation-delay:0.2s"></div><div class="layer" style="top:30px; animation-delay:0.6s"></div><div class="layer" style="top:52px; animation-delay:1s"></div><div class="hlab">KV · HBM</div></div>
     </div>
-    <div id="simhost" class="sim"></div>
-    <div id="ghostcap">launch speed — the ghost stays at ×1</div>
-    <div id="ghosthost" class="sim"></div>
-    <div id="score"></div>
+    <div class="grp dim" id="g-bw">
+      <div class="pipe" style="top:268px"><i></i><i></i><i></i><i></i><i></i></div>
+      <div class="pipe" style="top:412px"><i></i><i></i><i></i><i></i><i></i></div>
+    </div>
+    <div class="grp dim" id="g-compute">
+      <div id="die"><div class="dlab">Processor</div></div>
+    </div>
+    <div class="grp dim" id="g-comm">
+      <svg id="wires" width="1280" height="720">
+        <line x1="470" y1="320" x2="792" y2="240"/>
+        <line x1="470" y1="390" x2="792" y2="480"/>
+      </svg>
+      <div class="peer" style="top:196px"><div class="pdie"></div><div class="plab">GPU 1</div></div>
+      <div class="peer" style="top:436px"><div class="pdie"></div><div class="plab">GPU n</div></div>
+    </div>
+
+    <div class="tag" id="tag-compute" style="left:475px; top:198px; border-color:#3987e5">
+      <b style="color:#3987e5">Compute</b><span class="u" style="color:#3987e5">FLOP/s</span>
+    </div>
+    <div class="tag" id="tag-bw" style="left:150px; top:328px; border-color:#2fd6b0">
+      <b style="color:#2fd6b0">Memory bandwidth</b><span class="u" style="color:#2fd6b0">bytes/s</span>
+    </div>
+    <div class="tag" id="tag-cap" style="left:64px; top:516px; border-color:#c98500">
+      <b style="color:#e0a935">Memory capacity</b><span class="u" style="color:#e0a935">GB</span>
+    </div>
+    <div class="tag" id="tag-comm" style="left:680px; top:330px; border-color:#9085e9">
+      <b style="color:#9085e9">Interconnect</b><span class="u" style="color:#9085e9">link GB/s</span>
+      <div class="d">multi-GPU serving</div>
+    </div>
   </div>
-  <div class="rej" style="left:932px;top:186px"></div>
-  <div class="rej" style="left:926px;top:224px"></div>
-  <div class="rej" style="left:936px;top:262px"></div>
+
+  <div id="tray"></div>
+  <div id="simlab">the speedometer from the opening — one last acceleration</div>
+  <div id="score"></div>
+  <div id="simhost" class="sim"></div>
+  <div id="ghostcap">launch speed — the ghost stays at ×1</div>
+  <div id="ghosthost" class="sim"></div>
+  <div id="pdpanel">
+    <div class="pgauge p"><div class="pgl">P POOL · prefill — TTFT</div><div class="pgt"><div class="pgf"></div></div></div>
+    <div class="pgauge d"><div class="pgl">D POOL · decode — TPOT</div><div class="pgt"><div class="pgf"></div></div></div>
+  </div>
+  <div class="rej" style="left:922px;top:180px"></div>
+  <div class="rej" style="left:916px;top:218px"></div>
+  <div class="rej" style="left:926px;top:256px"></div>
 
   <div id="truefactors"></div>
-  <div id="tray" data-no-advance></div>
 
   <div id="summary"></div>
   <div id="tnote"></div>
@@ -297,94 +242,18 @@
 <script src="shared/deck.js?v=8"></script>
 <script>
   var stageEl = document.querySelector(".stage");
-  var boardwrap = document.getElementById("boardwrap");
-  var COLOR = {};
-  BN.list.forEach(function (b) { COLOR[b.key] = b.color; });
 
-  // ---- machine furniture ----
-  function fill(sel, cls, n) {
-    var host = document.querySelector(sel);
-    for (var i = 0; i < n; i++) { var c = document.createElement("i"); c.className = cls; host.appendChild(c); }
-  }
-  fill("#hbmW .cells", "wcell", 12);
-  fill("#hbmK .cells", "kcell", 12);
-  var die = document.getElementById("die");
-  var tiles = document.createElement("div"); tiles.className = "tiles";
-  for (var i = 0; i < 42; i++) tiles.appendChild(document.createElement("i"));
-  die.insertBefore(tiles, die.firstChild);
-  var exgrid = document.getElementById("exgrid");
-  for (i = 0; i < 4; i++) {
-    var ex = document.createElement("div");
-    ex.className = "ex" + (i === 2 ? " on" : "");
-    ex.textContent = "E" + (i + 1);
-    exgrid.appendChild(ex);
-  }
-
-  // bucket tags from BN.list (single source of truth)
-  var TAGPOS = { cap: [84, 140], bw: [180, 312], compute: [310, 176], comm: [668, 314] };
-  BN.list.forEach(function (b) {
+  // die shots: grid of SM tiles on the main die and the peer GPUs (as slide 02)
+  function addTiles(host, n) {
     var t = document.createElement("div");
-    t.className = "ztag blk";
-    t.style.left = TAGPOS[b.key][0] + "px";
-    t.style.top = TAGPOS[b.key][1] + "px";
-    t.style.borderColor = b.color;
-    t.innerHTML = "<b style='color:" + b.color + "'>" + b.name + "</b><span class='u' style='color:" + b.color + "'>" + b.unit + "</span>";
-    boardwrap.appendChild(t);
-  });
-
-  // ---- zones: the machine's bottleneck areas ARE the drop targets ----
-  var ZONES = {
-    compute: { key: "compute", rects: [[300, 208, 168, 216]], chipBase: [302, 432], perRow: 3 },
-    bw:      { key: "bw",      rects: [[178, 226, 116, 196]], chipBase: [178, 424], perRow: 2 },
-    cap:     { key: "cap",     rects: [[84, 168, 88, 316]],  chipBase: [84, 490],  perRow: 2 },
-    comm:    { key: "comm",    rects: [[668, 200, 150, 96], [668, 396, 150, 96]], chipBase: [668, 348], perRow: 3 },
-  };
-  Object.keys(ZONES).forEach(function (k) {
-    var z = ZONES[k];
-    z.color = COLOR[k]; z.chips = 0;
-    z.flashEls = z.rects.map(function (r) {
-      var f = document.createElement("div");
-      f.className = "zflash";
-      f.style.cssText = "left:" + (r[0] - 6) + "px; top:" + (r[1] - 6) + "px; width:" + (r[2] + 12) +
-        "px; height:" + (r[3] + 12) + "px; border:3px solid " + z.color + "; box-shadow:0 0 26px " + z.color + "cc;";
-      boardwrap.appendChild(f);
-      return f;
-    });
-  });
-  // red alert rings on the interconnect stubs (MoE's second invoice)
-  var commAlrings = ZONES.comm.rects.map(function (r) {
-    var f = document.createElement("div");
-    f.className = "alring al-comm";
-    f.style.cssText = "left:" + (r[0] - 6) + "px; top:" + (r[1] - 6) + "px; width:" + (r[2] + 12) + "px; height:" + (r[3] + 12) + "px;";
-    boardwrap.appendChild(f);
-    return f;
-  });
-
-  function flashZone(key) {
-    ZONES[key].flashEls.forEach(function (f) {
-      gsap.fromTo(f, { opacity: 0 }, { opacity: 1, duration: 0.09, yoyo: true, repeat: 3 });
-    });
+    t.className = "tiles";
+    for (var i = 0; i < n; i++) t.appendChild(document.createElement("i"));
+    host.appendChild(t);
   }
-  // per-zone toast spawn offsets so floats never cross the bucket tags
-  var TOASTDY = { cap: 52, compute: 74, bw: -12, comm: -12 };
-  function toastZone(key, text) {
-    var r = ZONES[key].rects[0];
-    var t = document.createElement("div");
-    t.className = "ztoast";
-    t.style.cssText = "position:absolute; left:" + (r[0] + r[2] / 2) + "px; top:" + (r[1] + TOASTDY[key]) +
-      "px; transform:translateX(-50%); font:700 12.5px ui-monospace,monospace; color:" + ZONES[key].color +
-      "; z-index:25; pointer-events:none; white-space:nowrap; text-shadow:0 2px 8px #000;";
-    t.textContent = text;
-    boardwrap.appendChild(t);
-    gsap.fromTo(t, { opacity: 0, y: 8 }, {
-      opacity: 1, y: -26, duration: 1.5, ease: "power1.out",
-      onComplete: function () { gsap.to(t, { opacity: 0, duration: 0.5, onComplete: function () { t.remove(); } }); }
-    });
-  }
+  addTiles(document.getElementById("die"), 42);
+  document.querySelectorAll(".peer .pdie").forEach(function (p) { addTiles(p, 9); });
 
-  // ---- the nine cards (BN.techniques, all unlocked) ----
-  var FLYTO = { "FA": "bw", "GQA": "cap", "MLA": "cap", "KDA": "cap", "FP8 / INT4": "cap",
-                "MoE": "compute", "EP": "comm", "PD": "compute", "MTP": "bw" };
+  // the nine cards — unlocked, demonstration-only (no drag on this page)
   var tray = document.getElementById("tray");
   var cardByAbbr = {};
   BN.techniques.forEach(function (t) {
@@ -392,11 +261,41 @@
     c.className = "tcard";
     c.dataset.abbr = t[1];
     c.dataset.domains = JSON.stringify(t[2]);
-    c.dataset.fly = FLYTO[t[1]];
+    c._applied = [];
     c.innerHTML = '<div class="abbr">' + t[1] + '</div><div class="full">' + t[0] + "</div>" +
-      '<span class="doms">' + t[2].map(function (d) { return "<i style='background:" + COLOR[d] + "'></i>"; }).join("") + "</span>";
+      '<span class="prog">' + t[2].map(function () { return "<i></i>"; }).join("") + "</span>";
     tray.appendChild(c);
     cardByAbbr[t[1]] = c;
+  });
+
+  // ---- zones: same rects and absorb machinery as slide 02 ----------------
+  var ZONES = [
+    { key: "compute", color: "#3987e5", rects: [[300, 250, 170, 200]] },
+    { key: "bw", color: "#2fd6b0", rects: [[170, 255, 136, 180]] },
+    { key: "cap", color: "#c98500", rects: [[92, 225, 84, 250]] },
+    { key: "comm", color: "#9085e9", rects: [[790, 196, 150, 96], [790, 436, 150, 96]] },
+  ];
+  var zoneByKey = {};
+  ZONES.forEach(function (z) {
+    zoneByKey[z.key] = z;
+    z.flashEls = z.rects.map(function (r) {
+      var f = document.createElement("div");
+      f.style.cssText = "position:absolute; left:" + r[0] + "px; top:" + r[1] + "px; width:" + r[2] +
+        "px; height:" + r[3] + "px; border:3px solid " + z.color + "; border-radius:12px;" +
+        "box-shadow:0 0 26px " + z.color + "cc; opacity:0; pointer-events:none; z-index:20;";
+      stageEl.appendChild(f);
+      return f;
+    });
+    z.chips = 0;
+  });
+  // red alert rings for MoE's chain reaction (capacity + interconnect)
+  var alertRects = [[92, 225, 84, 250], [790, 196, 150, 96], [790, 436, 150, 96]];
+  var alrings = alertRects.map(function (r) {
+    var f = document.createElement("div");
+    f.className = "alring";
+    f.style.cssText += "left:" + (r[0] - 5) + "px; top:" + (r[1] - 5) + "px; width:" + (r[2] + 10) + "px; height:" + (r[3] + 10) + "px;";
+    stageEl.appendChild(f);
+    return f;
   });
 
   function stageScale() { return stageEl.getBoundingClientRect().width / 1280; }
@@ -404,208 +303,151 @@
     var r = card.getBoundingClientRect(), sr = stageEl.getBoundingClientRect(), s = stageScale();
     return { x: (r.left + r.width / 2 - sr.left) / s, y: (r.top + r.height / 2 - sr.top) / s };
   }
-  function hitZone(pt) {
-    var keys = Object.keys(ZONES);
-    for (var i = 0; i < keys.length; i++) {
-      var z = ZONES[keys[i]];
-      for (var j = 0; j < z.rects.length; j++) {
-        var r = z.rects[j];
-        if (pt.x >= r[0] && pt.x <= r[0] + r[2] && pt.y >= r[1] && pt.y <= r[1] + r[3]) return z;
-      }
-    }
-    return null;
-  }
 
-  // ---- score + speed (capped on screen; CL.trueFactors carries the truth) ----
-  var apps = 0, dockedCount = 0;
-  var TOTAL = BN.techniques.length;
-  function speedNow() { return Math.min(CL.speedCap, 1 + 0.5 * apps); }
+  var correctCount = 0;
+  var TOTAL_APPS = BN.techniques.reduce(function (s, t) { return s + t[2].length; }, 0);
+
   function updateScore() {
     document.getElementById("score").textContent =
-      "docked: " + dockedCount + " / " + TOTAL + "  →  ×" + speedNow().toFixed(2);
-    sim.setSpeed(speedNow());
+      "correctly applied: " + correctCount + " / " + TOTAL_APPS +
+      "  →  ×" + (1 + 0.25 * correctCount).toFixed(2);
+    sim.setSpeed(1 + 0.25 * correctCount);
   }
 
-  function dockChip(card, zkey) {
-    var z = ZONES[zkey];
+  function dockChip(card, hit) {
+    var abbr = card.querySelector(".abbr").textContent;
     var chip = document.createElement("div");
-    chip.className = "zchip blk";
-    chip.style.cssText = "position:absolute; left:" + (z.chipBase[0] + (z.chips % z.perRow) * 46) +
-      "px; top:" + (z.chipBase[1] + Math.floor(z.chips / z.perRow) * 17) + "px;" +
-      "font:700 9px ui-monospace,monospace; color:" + z.color + "; border:1px solid " +
-      z.color + "88; border-radius:5px; padding:1px 5px; background:rgba(11,13,18,0.9); z-index:15;";
-    var abbr = card.dataset.abbr;
+    chip.className = "zchip";
+    chip.style.cssText = "position:absolute; left:" + (hit.rect[0] + 2 + (hit.zone.chips % 4) * 40) +
+      "px; top:" + (hit.rect[1] + hit.rect[3] + 5 + Math.floor(hit.zone.chips / 4) * 18) + "px;" +
+      "font:700 9.5px ui-monospace,monospace; color:" + hit.zone.color + "; border:1px solid " +
+      hit.zone.color + "88; border-radius:5px; padding:1px 5px; background:rgba(11,13,18,0.9); z-index:15;";
     chip.textContent = abbr.length > 7 ? abbr.slice(0, 6) + "…" : abbr;
-    boardwrap.appendChild(chip);
+    stageEl.appendChild(chip);
     gsap.fromTo(chip, { scale: 0, opacity: 0 }, { scale: 1, opacity: 1, duration: 0.3, ease: "back.out(2.5)" });
-    z.chips++;
+    hit.zone.chips++;
   }
 
-  // ---- per-card machine effects (fire exactly once, on dock) ----
-  var pendingTimers = [];
-  function later(sec, fn) { pendingTimers.push(setTimeout(fn, sec * 1000)); }
+  // correct application — identical visuals to slide 02's game
+  function applyCard(card, hit) {
+    card._applied.push(hit.zone.key);
+    var dots = card.querySelectorAll(".prog i");
+    if (dots[card._applied.length - 1]) dots[card._applied.length - 1].classList.add("done");
 
-  var kvW = [32, 21, 13, 8], kvStep = 0;
-  function kvFx() {
-    kvStep = Math.min(3, kvStep + 1);
-    gsap.to(".kcell", { width: kvW[kvStep], duration: 0.5, ease: "power2.inOut" });
-    toastZone("cap", "KV bytes ↓ — fits smaller");
+    hit.zone.flashEls.forEach(function (f) {
+      gsap.fromTo(f, { opacity: 0 }, { opacity: 1, duration: 0.09, yoyo: true, repeat: 3 });
+    });
+    dockChip(card, hit);
+    zoneEffect(hit.zone, hit.rect);
+    correctCount++;
+    updateScore();
+
+    var domains = JSON.parse(card.dataset.domains);
+    if (card._applied.length >= domains.length) {
+      card.dataset.absorbed = "1";
+      var c = cardCenter(card);
+      var p = card._pos || { x: 0, y: 0 };
+      gsap.to(card, {
+        x: p.x + (hit.rect[0] + hit.rect[2] / 2 - c.x),
+        y: p.y + (hit.rect[1] + hit.rect[3] / 2 - c.y),
+        scale: 0.12, opacity: 0, duration: 0.45, ease: "power2.in",
+      });
+    } else {
+      gsap.to(card, {
+        scale: 0.9, duration: 0.12, yoyo: true, repeat: 1,
+        onComplete: function () {
+          card._pos = null;
+          gsap.to(card, { x: 0, y: 0, scale: 1, duration: 0.55, ease: "power3.inOut" });
+        }
+      });
+    }
   }
-  var hbmW = document.getElementById("hbmW");
+
+  var wireSlow = 0;
+  function toast(rect, text, color) {
+    var t = document.createElement("div");
+    t.className = "ztoast";
+    t.style.cssText = "position:absolute; left:" + (rect[0] + rect[2] / 2) + "px; top:" + (rect[1] - 12) +
+      "px; transform:translateX(-50%); font:700 13px ui-monospace,monospace; color:" + color +
+      "; z-index:25; pointer-events:none; white-space:nowrap; text-shadow:0 2px 8px #000;";
+    t.textContent = text;
+    stageEl.appendChild(t);
+    gsap.fromTo(t, { opacity: 0, y: 8 }, {
+      opacity: 1, y: -26, duration: 1.6, ease: "power1.out",
+      onComplete: function () { gsap.to(t, { opacity: 0, duration: 0.5, onComplete: function () { t.remove(); } }); }
+    });
+  }
+  function zoneEffect(zone, rect) {
+    if (zone.key === "bw") {
+      toast(rect, "HBM reads / token ↓", zone.color);
+    } else if (zone.key === "compute") {
+      var lit = document.querySelectorAll("#die .tiles i:not(.idle)");
+      for (var i = 0; i < 6 && i < lit.length; i++) {
+        lit[i].classList.add("idle");
+        lit[i].style.background = "rgba(57,135,229,0.06)";
+        lit[i].style.animation = "none";
+      }
+      toast(rect, "FLOPs / token ↓", zone.color);
+    } else if (zone.key === "cap") {
+      var layers = document.querySelectorAll(".hbm .layer:not(.idle)");
+      if (layers.length) {
+        var ly = layers[layers.length - 1];
+        ly.classList.add("idle");
+        ly.style.opacity = "0.15";
+        ly.style.animation = "none";
+      }
+      toast(rect, "KV bytes ↓ — fits smaller", zone.color);
+    } else {
+      wireSlow++;
+      document.querySelectorAll("#wires line").forEach(function (l) {
+        l.style.animationDuration = (0.9 + 0.7 * wireSlow) + "s";
+        l.style.opacity = Math.max(0.3, 1 - 0.22 * wireSlow);
+      });
+      toast(rect, "all-to-all traffic ↓", zone.color);
+    }
+  }
+
+  // ---- the demonstration: cards fly themselves, one domain at a time ----
+  var fx = [];   // independent tweens/delays, killed on reset
+  function later(sec, fn) { fx.push(gsap.delayedCall(sec, fn)); }
+
+  function autoApply(card, domainIdx) {
+    var domains = JSON.parse(card.dataset.domains);
+    var key = domains[domainIdx];
+    if (!key || card.dataset.absorbed) return;
+    var z = zoneByKey[key], r = z.rects[0];
+    var c = cardCenter(card);
+    var p = card._pos || { x: 0, y: 0 };
+    card._pos = { x: p.x + (r[0] + r[2] / 2 - c.x), y: p.y + (r[1] + r[3] / 2 - c.y) };
+    fx.push(gsap.to(card, {
+      x: card._pos.x, y: card._pos.y, scale: 1.07, duration: 0.55, ease: "power2.inOut",
+      onComplete: function () { applyCard(card, { zone: z, rect: r }); },
+    }));
+    // remaining domains follow after the card has pulsed back to the tray
+    if (domainIdx + 1 < domains.length) later(1.75, function () { autoApply(card, domainIdx + 1); });
+  }
+  function play(abbr) {
+    var card = cardByAbbr[abbr];
+    if (!card.dataset.absorbed && !card._playing) { card._playing = true; autoApply(card, 0); }
+  }
+
+  // ---- the extra machine effects, layered on the slide-02 game ----------
   var alertTweens = [];
   function alertsOn() {
-    hbmW.classList.add("flood");
-    document.querySelectorAll("#wires line").forEach(function (l) { l.classList.add("alert"); });
-    alertTweens.push(gsap.fromTo("#al-cap", { opacity: 0 }, { opacity: 0.85, duration: 0.5, yoyo: true, repeat: -1 }));
-    alertTweens.push(gsap.fromTo(".al-comm", { opacity: 0 }, { opacity: 0.8, duration: 0.5, yoyo: true, repeat: -1, delay: 0.18 }));
-    toastZone("cap", "does not fit in one package");
+    alertTweens.push(gsap.fromTo(alrings, { opacity: 0 }, { opacity: 0.85, duration: 0.5, yoyo: true, repeat: -1, stagger: 0.12 }));
+    toast([92, 225, 84, 0], "2.8T does not fit in one package", "#e04b38");
+    toast([790, 436, 150, 130], "every MoE layer: all-to-all", "#e04b38");
   }
   function alertsOff() {
     alertTweens.forEach(function (t) { t.kill(); });
     alertTweens = [];
-    gsap.to("#al-cap, .al-comm", { opacity: 0, duration: 0.3, overwrite: "auto" });
-    hbmW.classList.remove("flood");
-    document.querySelectorAll("#wires line").forEach(function (l) { l.classList.remove("alert"); });
+    gsap.to(alrings, { opacity: 0, duration: 0.3, overwrite: "auto" });
   }
   function pipesThin(on) {
     document.querySelectorAll(".pipe").forEach(function (p) { p.classList.toggle("thin", on); });
   }
 
-  var FX = {
-    "FA": function () { toastZone("bw", "attention IO ↓"); },
-    "GQA": kvFx, "MLA": kvFx, "KDA": kvFx,
-    "FP8 / INT4": function () {
-      gsap.to(".wcell", { width: 12, duration: 0.55, ease: "power2.inOut" });
-      toastZone("cap", "weight bytes ↓");
-      toastZone("bw", "HBM reads / token ↓");
-    },
-    "MoE": function () {
-      gsap.to("#die .tiles", { opacity: 0.05, duration: 0.4 });
-      gsap.fromTo("#exgrid", { opacity: 0 }, { opacity: 1, duration: 0.45 });
-      gsap.fromTo("#exgrid .ex", { scale: 0.6 }, { scale: 1, duration: 0.35, stagger: 0.07, ease: "back.out(2)" });
-      gsap.fromTo("#routerpill", { opacity: 0, y: -8 }, { opacity: 1, y: 0, duration: 0.35, delay: 0.2 });
-      toastZone("compute", "FLOPs / token ↓");
-      // the chain reaction: compute discount, capacity + interconnect invoice
-      later(0.6, function () {
-        if (cardByAbbr["EP"].dataset.docked) { alertsOn(); later(1.2, alertsOff); }
-        else alertsOn();
-      });
-    },
-    "EP": function () {
-      gsap.fromTo(".peer .ech", { opacity: 0, scale: 0.5 }, { opacity: 1, scale: 1, duration: 0.35, stagger: 0.05, ease: "back.out(2)" });
-      alertsOff();
-      toastZone("comm", "experts distributed — cleared");
-    },
-    "MTP": function () {
-      gsap.timeline()
-        .to("#drafter", { opacity: 1, duration: 0.25 })
-        .to("#drafter", { left: 452, top: 244, duration: 0.55, ease: "power2.inOut" })
-        .call(function () { document.getElementById("drafter").classList.add("docked"); die.classList.add("hot"); });
-      pipesThin(true);
-      toastZone("bw", "bytes / token ÷ k");
-      // rejected drafts flicker and vanish near the sim
-      gsap.timeline({ delay: 0.5 })
-        .fromTo(".rej", { opacity: 0 }, { opacity: 1, duration: 0.16, yoyo: true, repeat: 3, stagger: 0.14 })
-        .to(".rej", { opacity: 0, duration: 0.3, overwrite: "auto" });
-    },
-    "PD": function () {
-      gsap.fromTo("#splitline", { opacity: 0, scaleY: 0 }, { opacity: 1, scaleY: 1, duration: 0.5, ease: "power2.out" });
-      gsap.fromTo(".poolchip", { opacity: 0, y: -8 }, { opacity: 1, y: 0, duration: 0.35, stagger: 0.12, delay: 0.2 });
-      gsap.fromTo("#pdpanel", { autoAlpha: 0, y: -10 }, { autoAlpha: 1, y: 0, duration: 0.45, delay: 0.25 });
-      toastZone("compute", "TTFT · TPOT — decoupled");
-    },
-  };
-
-  // ---- dock / fly / drag ----
-  function dockCard(card, zkey) {
-    if (card.dataset.docked) return;
-    card.dataset.docked = "1";
-    var domains = JSON.parse(card.dataset.domains);
-    domains.forEach(flashZone);          // multi-bucket cards light BOTH slots
-    dockChip(card, zkey);
-    apps += domains.length; dockedCount++;
-    updateScore();
-    var fx = FX[card.dataset.abbr];
-    if (fx) fx();
-  }
-  function flyCard(card) {
-    if (card.dataset.docked || card._flying) return;
-    card._flying = true;
-    var zkey = card.dataset.fly, r = ZONES[zkey].rects[0];
-    var c = cardCenter(card), p = card._pos || { x: 0, y: 0 };
-    gsap.to(card, {
-      x: p.x + (r[0] + r[2] / 2 - c.x), y: p.y + (r[1] + r[3] / 2 - c.y),
-      scale: 0.15, opacity: 0, duration: 0.6, ease: "power2.in",
-      onComplete: function () { card._flying = false; dockCard(card, zkey); },
-    });
-  }
-  function manualDock(card, zkey) {
-    var r = ZONES[zkey].rects[0];
-    var c = cardCenter(card), p = card._pos || { x: 0, y: 0 };
-    gsap.to(card, {
-      x: p.x + (r[0] + r[2] / 2 - c.x), y: p.y + (r[1] + r[3] / 2 - c.y),
-      scale: 0.12, opacity: 0, duration: 0.45, ease: "power2.in",
-    });
-    dockCard(card, zkey);
-  }
-  function rejectCard(card) {
-    var c = cardCenter(card);
-    var t = document.createElement("div");
-    t.className = "ztoast";
-    t.style.cssText = "position:absolute; left:" + c.x + "px; top:" + (c.y - 30) +
-      "px; transform:translateX(-50%); font:700 13px ui-monospace,monospace; color:#e04b38;" +
-      "z-index:25; pointer-events:none; white-space:nowrap; text-shadow:0 2px 8px #000;";
-    t.textContent = "✗ not this bottleneck";
-    boardwrap.appendChild(t);
-    gsap.fromTo(t, { opacity: 0, y: 8 }, {
-      opacity: 1, y: -22, duration: 1.3, ease: "power1.out",
-      onComplete: function () { gsap.to(t, { opacity: 0, duration: 0.4, onComplete: function () { t.remove(); } }); }
-    });
-    gsap.timeline()
-      .to(card, { x: "+=9", duration: 0.05, yoyo: true, repeat: 5 })
-      .to(card, { x: 0, y: 0, scale: 1, duration: 0.5, ease: "power3.inOut", onStart: function () { card._pos = null; } });
-  }
-
-  function enableCard(card) {
-    card.addEventListener("pointerdown", function (e) {
-      if (card.dataset.docked || card._flying) return;
-      e.preventDefault();
-      var s = stageScale(), sx = e.clientX, sy = e.clientY, moved = 0;
-      var base = card._pos || { x: 0, y: 0 };
-      card.setPointerCapture(e.pointerId);
-      card.classList.add("dragging");
-      function mv(ev) {
-        moved = Math.max(moved, Math.abs(ev.clientX - sx) + Math.abs(ev.clientY - sy));
-        card._pos = { x: base.x + (ev.clientX - sx) / s, y: base.y + (ev.clientY - sy) / s };
-        card.style.transform = "translate(" + card._pos.x + "px," + card._pos.y + "px) scale(1.07)";
-      }
-      function up() {
-        card.classList.remove("dragging");
-        card.removeEventListener("pointermove", mv);
-        card.removeEventListener("pointerup", up);
-        if (moved < 6) {
-          // a click on the card sends it to its correct bucket
-          card._pos = null;
-          flyCard(card);
-          return;
-        }
-        var z = hitZone(cardCenter(card));
-        if (!z) {
-          card._pos = null;
-          gsap.to(card, { x: 0, y: 0, scale: 1, duration: 0.55, ease: "elastic.out(1, 0.6)" });
-        } else {
-          var domains = JSON.parse(card.dataset.domains);
-          if (domains.indexOf(z.key) >= 0) manualDock(card, z.key);
-          else rejectCard(card);
-        }
-      }
-      card.addEventListener("pointermove", mv);
-      card.addEventListener("pointerup", up);
-    });
-  }
-  document.querySelectorAll("#tray .tcard").forEach(enableCard);
-
-  // ---- the end state: the filled summary table ----
+  // ---- the end state: the filled summary table --------------------------
   var GLYPH = { cap: "g-hbm", bw: "g-pipe", compute: "g-die", comm: "g-peer" };
   var summary = document.getElementById("summary");
   var hd = document.createElement("div");
@@ -631,92 +473,91 @@
   document.getElementById("tnote").textContent = CL.tableNote;
   document.getElementById("truefactors").textContent = CL.trueFactors;
 
-  // ---- sims: live speedometer + the ×1 ghost ----
+  // ---- sims: live speedometer + the ×1 ghost ----------------------------
   var sim = BN.buildSim(document.getElementById("simhost"), {});
   var ghost = BN.buildSim(document.getElementById("ghosthost"), {});
 
-  // ---- reset: restore the FULL game ----
+  // ---- reset: the whole demonstration back in its box --------------------
   function resetGame() {
-    pendingTimers.forEach(clearTimeout); pendingTimers = [];
+    fx.forEach(function (t) { t.kill(); });
+    fx = [];
     alertsOff();
-    gsap.killTweensOf([".wcell", ".kcell", "#die .tiles", "#exgrid", "#exgrid .ex", "#routerpill",
-      "#drafter", ".peer .ech", "#splitline", ".poolchip", "#pdpanel", ".rej", "#al-cap", ".al-comm"]);
-    gsap.set(".wcell", { clearProps: "width" });
-    gsap.set(".kcell", { clearProps: "width" });
-    gsap.set("#die .tiles", { clearProps: "opacity" });
-    gsap.set("#exgrid, #routerpill, .peer .ech, #splitline, .poolchip, .rej", { clearProps: "opacity,transform,scale,visibility" });
-    gsap.set("#pdpanel", { clearProps: "opacity,visibility,transform" });
-    gsap.set("#drafter", { clearProps: "left,top,opacity" });
-    document.getElementById("drafter").classList.remove("docked");
-    die.classList.remove("hot");
     pipesThin(false);
-    kvStep = 0; apps = 0; dockedCount = 0;
-    boardwrap.classList.remove("off");
+    document.getElementById("die").classList.remove("hot");
+    gsap.killTweensOf(".rej");
+    gsap.set(".rej", { clearProps: "opacity" });
+    wireSlow = 0; correctCount = 0;
+    document.getElementById("score").textContent = "";
     document.querySelectorAll(".zchip, .ztoast").forEach(function (c) { c.remove(); });
-    Object.keys(ZONES).forEach(function (k) { ZONES[k].chips = 0; });
+    ZONES.forEach(function (z) { z.chips = 0; });
+    document.querySelectorAll("#die .tiles i.idle, .hbm .layer.idle").forEach(function (el) {
+      el.classList.remove("idle");
+      el.style.background = ""; el.style.animation = ""; el.style.opacity = "";
+    });
+    document.querySelectorAll("#wires line").forEach(function (l) {
+      l.style.animationDuration = ""; l.style.opacity = "";
+    });
     document.querySelectorAll("#tray .tcard").forEach(function (c) {
       gsap.killTweensOf(c);
-      delete c.dataset.docked;
-      c._pos = null; c._flying = false;
+      delete c.dataset.absorbed;
+      c._pos = null; c._applied = []; c._playing = false;
+      c.querySelectorAll(".prog i").forEach(function (d) { d.classList.remove("done"); });
       gsap.set(c, { clearProps: "transform,opacity,visibility,scale" });
     });
-    tray.style.pointerEvents = "none";
-    document.getElementById("score").textContent = "";
     sim.stop(); ghost.stop();
   }
 
-  function flyByAbbr(a) { flyCard(cardByAbbr[a]); }
-
-  // ---- timeline: 6 beats ----
+  // ---- timeline: 6 beats -------------------------------------------------
   var tl = gsap.timeline({ paused: true });
 
-  // beat 1: the board returns — the machine wakes, buckets + sim + nine cards
-  tl.to("#boardwrap", { opacity: 1, filter: "grayscale(0)", duration: 0.65, ease: "power2.out" })
-    .fromTo(".ztag", { opacity: 0, scale: 0.7 }, { opacity: 1, scale: 1, duration: 0.4, stagger: 0.09, ease: "back.out(2)" }, "-=0.3")
-    .fromTo("#simhost, #ghostcap, #ghosthost, #score", { opacity: 0 }, { opacity: 1, duration: 0.4 }, "-=0.1")
+  // beat 1: the board from the opening returns, whole and awake
+  tl.to("#g-cap, #g-bw, #g-compute, #g-comm", { opacity: 1, filter: "grayscale(0)", duration: 0.6, ease: "power2.out", stagger: 0.08 })
+    .fromTo(".tag", { opacity: 0, scale: 0.7 }, { opacity: 1, scale: 1, duration: 0.4, stagger: 0.08, ease: "back.out(2)" }, "-=0.3")
+    .fromTo("#simhost, #simlab, #ghostcap, #ghosthost, #score", { opacity: 0 }, { opacity: 1, duration: 0.4 }, "-=0.1")
     .call(function () { sim.start(); ghost.start(); updateScore(); })
-    .fromTo("#tray .tcard", { opacity: 0, y: 26 }, { opacity: 1, y: 0, duration: 0.4, stagger: 0.05, ease: "power2.out" })
-    .call(function () { tray.style.pointerEvents = "auto"; });
+    .fromTo("#tray .tcard", { opacity: 0, y: 26 }, { opacity: 1, y: 0, duration: 0.4, stagger: 0.05, ease: "power2.out" });
   DECK.markStep(tl);
 
-  // beat 2: phase 1 — the positive fits, in sequence (skips anything hand-docked)
-  ["FA", "GQA", "MLA", "KDA", "FP8 / INT4"].forEach(function (a) {
-    tl.call(function () { flyByAbbr(a); }).to({}, { duration: 0.82 });
+  // beat 2: phase 1 — the positive fits, in sequence
+  ["FA", "GQA", "MLA", "KDA", "FP8 / INT4"].forEach(function (a, i) {
+    var domains = BN.techniques.filter(function (t) { return t[1] === a; })[0][2];
+    tl.call(function () { play(a); }).to({}, { duration: 1.2 + 1.75 * (domains.length - 1) });
   });
   tl.fromTo("#truefactors", { opacity: 0 }, { opacity: 1, duration: 0.35 }, "-=0.5");
   DECK.markStep(tl);
 
-  // beat 3: the chain reaction — MoE's discount, the invoices, EP clears them
-  tl.call(function () { flyByAbbr("MoE"); }).to({}, { duration: 2.1 })
-    .call(function () { flyByAbbr("EP"); }).to({}, { duration: 1.2 });
+  // beat 3: the chain reaction — MoE's discount, the red invoices, EP clears them
+  tl.call(function () { play("MoE"); }).to({}, { duration: 1.3 })
+    .call(alertsOn).to({}, { duration: 1.4 })
+    .call(function () { play("EP"); }).to({}, { duration: 3.1 })
+    .call(alertsOff).to({}, { duration: 0.4 });
   DECK.markStep(tl);
 
-  // beat 4: MTP — the drafter head bolts on, the pipe thins, the die heats
-  tl.call(function () { flyByAbbr("MTP"); }).to({}, { duration: 1.7 });
+  // beat 4: MTP — the pipe thins, the die heats, rejected drafts flicker away
+  tl.call(function () { play("MTP"); }).to({}, { duration: 1.3 })
+    .call(function () {
+      pipesThin(true);
+      document.getElementById("die").classList.add("hot");
+      fx.push(gsap.timeline()
+        .fromTo(".rej", { opacity: 0 }, { opacity: 1, duration: 0.16, yoyo: true, repeat: 3, stagger: 0.14 })
+        .to(".rej", { opacity: 0, duration: 0.3, overwrite: "auto" }));
+    }).to({}, { duration: 1.4 });
   DECK.markStep(tl);
 
-  // beat 5: PD — the machine splits into two pools; TTFT and TPOT decouple
-  tl.call(function () { flyByAbbr("PD"); }).to({}, { duration: 1.6 });
+  // beat 5: PD — the serving screen splits into per-phase gauges
+  tl.call(function () { play("PD"); }).to({}, { duration: 3.0 })
+    .fromTo("#pdpanel", { autoAlpha: 0, y: -10 }, { autoAlpha: 1, y: 0, duration: 0.45 });
   DECK.markStep(tl);
 
-  // beat 6: the end state — pull back to the filled map
-  tl.to("#tray", { opacity: 0, duration: 0.4 })
-    .to("#simcol", { opacity: 0, duration: 0.4 }, "<")
-    .to("#boardwrap", { opacity: 0.06, duration: 0.7 }, "<")
-    .call(function () { tray.style.pointerEvents = "none"; boardwrap.classList.add("off"); })
+  // beat 6: pull back — the board freezes into the filled map
+  tl.to("#tray, #simhost, #simlab, #ghostcap, #ghosthost, #score, #pdpanel, #truefactors", { opacity: 0, duration: 0.4 })
+    .to("#board", { opacity: 0.06, duration: 0.7 }, "<")
+    .call(function () { fx.push(gsap.to(".zchip", { opacity: 0.1, duration: 0.5 })); })
     .fromTo("#summary", { opacity: 0 }, { opacity: 1, duration: 0.25 })
     .fromTo("#summary .srow", { opacity: 0, y: 14 }, { opacity: 1, y: 0, duration: 0.3, stagger: 0.06, ease: "power2.out" })
     .fromTo("#tnote", { opacity: 0 }, { opacity: 1, duration: 0.45 });
 
   DECK.register(tl, { reset: resetGame });
-
-  // hooks for automated QA
-  window.__qa = {
-    docked: function () { return document.querySelectorAll("#tray .tcard[data-docked]").length; },
-    speed: function () { return speedNow(); },
-    tableOpacity: function () { return +getComputedStyle(summary).opacity; },
-    trayCard: function (a) { var r = cardByAbbr[a].getBoundingClientRect(); return { x: r.left + r.width / 2, y: r.top + r.height / 2 }; },
-  };
 </script>
 </body>
 </html>

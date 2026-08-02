@@ -7,10 +7,6 @@
 <link rel="stylesheet" href="shared/deck.css?v=8">
 <link rel="stylesheet" href="shared/bottlenecks.css?v=8">
 <style>
-  #framing {
-    position: absolute; left: 45px; top: 98px; width: 860px;
-    font-size: 14.5px; font-style: italic; color: var(--accent); opacity: 0;
-  }
   #pkg {
     position: absolute; left: 60px; top: 150px; width: 600px; height: 410px;
     border: 1.5px solid var(--line); border-radius: 18px; background: rgba(27,30,39,0.45);
@@ -127,7 +123,6 @@
 <div class="stage">
   <div class="slide-title">Hardware framework and efficient algorithms</div>
   <div class="slide-sub">where is the bottleneck — capacity, bandwidth, compute, or interconnect?</div>
-  <div id="framing"></div>
 
   <div id="pkg"><span class="pkglab">GPU PACKAGE</span></div>
 
@@ -179,7 +174,6 @@
 <script src="shared/manifest.js?v=8"></script>
 <script src="shared/deck.js?v=8"></script>
 <script>
-  document.getElementById("framing").textContent = "“" + BN.framing + "”";
   document.getElementById("teaser").innerHTML = "“" + BN.teaser + "”" +
     ' <span style="color:#4d5468">— try it: the bucket you pay decides which meter moves</span>';
 
@@ -439,10 +433,6 @@
       .fromTo("#tag-" + pair[0], { opacity: 0, scale: 0.7 }, { opacity: 1, scale: 1, duration: 0.4, ease: "back.out(2)" }, "-=0.25");
     DECK.markStep(tl);
   });
-
-  // step 5: framing line
-  tl.fromTo("#framing", { opacity: 0, x: -18 }, { opacity: 1, x: 0, duration: 0.5, ease: "power2.out" });
-  DECK.markStep(tl);
 
   // step 6: the locked toolkit tray
   tl.fromTo("#tray .tcard", { opacity: 0, y: 30 },

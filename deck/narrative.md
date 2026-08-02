@@ -81,17 +81,13 @@ advances the slide.)
    longer fits one GPU, every token crosses NVLink or InfiniBand, and the
    network between GPUs becomes part of the model."
 
-5. **[framing line]** "So here's the framing for everything that follows:
-   every technique you'll see today is a way to pay one of these four bills —
-   and quite often, a way to move a cost from one bill to another."
-
-6. **[locked toolkit appears]** "And here's tonight's toolkit: FlashAttention,
+5. **[locked toolkit appears]** "And here's tonight's toolkit: FlashAttention,
    GQA, MLA, KDA, quantization, MoE, expert parallelism, prefill–decode
    disaggregation, multi-token prediction. These names mean nothing yet —
    that's deliberate. By the end of the talk, you'll sort them into these
    four buckets yourselves."
 
-7. **[decode simulator powers on]** "One more thing before we start: this
+6. **[decode simulator powers on]** "One more thing before we start: this
    screen. It's a decode stream running at K3's launch-day speed — our
    speedometer. The small gray window beneath it is a ghost pinned at that
    launch speed, so you can always see how far we've come. Keep an eye on
@@ -642,10 +638,12 @@ head. Speak "reported" aloud for the 85–90% figure.*
 
 ## Pages 24–25 — The closing (the map completed, the price tag reread)
 
-*The slide-02 board returns as the GPU-package machine of slides 16–23; the
-four bottleneck zones ARE the drop targets. Cards can be dragged to a bucket
-or simply clicked — a click flies the card to its correct home. Clicking
-through auto-plays the whole game; anything docked by hand is skipped.*
+*Slide 02's board returns, reproduced exactly — same package, W/KV HBM,
+pipes, die, peers, tags, tray, speedometer + ghost. This page is a pure
+DEMONSTRATION: nothing is draggable; each click auto-plays the next phase
+and the cards fly themselves into their buckets with slide 02's absorb
+animations. (The interactive version stays on slide 02 — the closing page's
+replay chip jumps there.)*
 
 ### 24 — The Machine, Fully Upgraded
 
@@ -662,21 +660,21 @@ through auto-plays the whole game; anything docked by hand is skipped.*
    themselves shrink. Five cards, and the meter is already pulling away from
    the ghost."
 3. "Now the card with a plot twist. MoE docks in compute — FLOPs per token
-   drop, the die unzips into experts, the meter jumps. But watch: the
-   weights HBM floods amber and the interconnect flashes red. A discount at
-   one bucket, invoices at two others — you know this story. Expert
-   parallelism docks in the interconnect, the model drapes across the rack,
-   and the alerts clear. Capacity became communication, and communication
-   was tamed."
-4. "MTP — bandwidth. The drafter head bolts onto the die, the pipe traffic
-   thins by the acceptance factor, and notice the die heat up: this is the
-   only card on the board that spends compute to buy bandwidth. Those little
-   dashed tokens flickering by the meter are the rejected drafts — wasted
-   FLOPs that were free anyway."
-5. "And prefill–decode disaggregation splits the whole machine: a P pool
-   owning time-to-first-token, a D pool owning time-per-output-token, each
-   tuned alone. On screen we cap the meter at eight-x for legibility — the
-   corner caption keeps the honest arithmetic."
+   drop, the die's tiles go idle, the meter jumps. But watch: red alerts —
+   all the weights no longer fit in one package, and every MoE layer is an
+   all-to-all. A discount at one bucket, invoices at two others — you know
+   this story. Expert parallelism pays both: capacity became communication,
+   and communication was tamed. The alerts clear."
+4. "MTP — bandwidth. One weight read now carries k tokens: the pipe traffic
+   thins, and notice the die heat up — this is the only card on the board
+   that spends compute to buy bandwidth. Those little dashed tokens
+   flickering by the meter are the rejected drafts — wasted FLOPs that
+   were free anyway."
+5. "And prefill–decode disaggregation: the serving screen itself splits —
+   a P pool owning time-to-first-token, a D pool owning time-per-output-
+   token, each gauge tuned alone. Fifteen out of fifteen: the meter reads
+   four-point-seven-five against the launch-day ghost — and the corner
+   caption keeps the honest arithmetic on the real factors."
 6. "Pull back. The empty board from the opening, now filled: nine
    techniques, the bottleneck each one attacks, the stage where it bites,
    and whether it ships in K3. Every row is a targeted strike on one of four
