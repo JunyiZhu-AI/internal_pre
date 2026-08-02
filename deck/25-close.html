@@ -7,88 +7,120 @@
 <link rel="stylesheet" href="shared/deck.css?v=8">
 <link rel="stylesheet" href="shared/bottlenecks.css?v=8">
 <style>
-  /* ---- the upgraded machine, left running as a faint backdrop ---- */
-  #bk {
-    position: absolute; left: 0; top: 0; width: 800px; height: 420px;
-    transform: translate(350px, 170px) scale(0.72); transform-origin: 0 0;
-    opacity: 0; pointer-events: none;
+  /* ---- the hardware framework, in slide-24's initial grayed state ---- */
+  #board {
+    position: absolute; inset: 0;
+    transform: translate(65px, -48px) scale(1.15); transform-origin: 0 0;
+    pointer-events: none;
   }
-  #bk .pkg {
-    position: absolute; left: 0; top: 0; width: 580px; height: 402px;
+  #pkg {
+    position: absolute; left: 60px; top: 150px; width: 600px; height: 410px;
     border: 1.5px solid var(--line); border-radius: 18px; background: rgba(27,30,39,0.45);
   }
-  #bk .hbm { position: absolute; left: 40px; width: 88px; height: 148px; border: 2px solid rgba(201,133,0,0.7); border-radius: 8px; }
-  #bk .hbmK { top: 224px; border-color: rgba(144,133,233,0.55); }
-  #bk .hbmW { top: 56px; }
-  #bk .cells { position: absolute; left: 8px; top: 8px; right: 8px; display: flex; flex-wrap: wrap; gap: 2px; align-content: flex-start; }
-  #bk .wcell { flex: none; width: 12px; height: 12px; border-radius: 2px; background: linear-gradient(rgba(201,133,0,0.45), rgba(201,133,0,0.85)); }
-  #bk .kcell { flex: none; width: 8px; height: 12px; border-radius: 2px; background: linear-gradient(rgba(144,133,233,0.4), rgba(144,133,233,0.8)); }
-  #bk .pipe { position: absolute; left: 134px; width: 116px; height: 16px; border: 2px solid rgba(47,214,176,0.3); border-radius: 8px; }
-  #bk .pipe i { position: absolute; top: 4px; width: 4px; height: 4px; border-radius: 50%; background: #2fd6b0; animation: bkFlow 2.6s linear infinite; opacity: 0.75; }
-  #bk .pipe i:nth-child(2) { animation-delay: 1.3s; }
-  @keyframes bkFlow { from { left: -6px; } to { left: 118px; } }
-  #bk .die {
-    position: absolute; left: 256px; top: 96px; width: 168px; height: 216px;
-    border: 2.5px solid #6fb1ff; border-radius: 10px; background: #0d1420;
-    box-shadow: 0 0 22px rgba(111,177,255,0.35);
+  #pkg .pkglab { position: absolute; left: 16px; top: 10px; font-size: 11px; color: var(--ink-2); letter-spacing: 0.08em; }
+  .dim { opacity: 0.16; filter: grayscale(0.85); }
+
+  #die {
+    position: absolute; left: 300px; top: 250px; width: 170px; height: 200px;
+    border: 2.5px solid #3987e5; border-radius: 10px;
+    background: #0d1420;
+    animation: bnChipPulse 1.8s ease-in-out infinite;
   }
-  #bk .exgrid { position: absolute; inset: 12px 12px 12px; display: grid; gap: 6px; grid-template-columns: 1fr 1fr; grid-template-rows: 1fr 1fr; }
-  #bk .ex {
-    border: 1.5px solid rgba(57,135,229,0.5); border-radius: 7px; background: rgba(57,135,229,0.07);
-    display: flex; align-items: center; justify-content: center; font: 700 10px ui-monospace, monospace; color: #9ec7f5; opacity: 0.4;
+  #die .dlab { position: absolute; bottom: 6px; width: 100%; text-align: center; font-size: 12px; color: #9ec7f5; font-weight: 600; }
+  .tiles { position: absolute; display: grid; gap: 3px; }
+  #die .tiles { inset: 10px 10px 28px; grid-template-columns: repeat(6, 1fr); grid-template-rows: repeat(7, 1fr); }
+  .tiles i {
+    background: rgba(57, 135, 229, 0.22); border-radius: 2px;
+    animation: smTwinkle 2.6s ease-in-out infinite;
   }
-  #bk .ex.on { opacity: 1; border-color: #6fb1ff; background: rgba(111,177,255,0.14); }
-  #bk .drafter {
-    position: absolute; left: 408px; top: 132px; width: 62px; height: 38px;
-    border: 1.5px solid #6fb1ff; border-radius: 8px; background: rgba(27,30,39,0.96);
-    display: flex; align-items: center; justify-content: center; font: 700 9px ui-monospace, monospace; color: #6fb1ff;
+  .tiles i:nth-child(3n) { animation-delay: 0.5s; }
+  .tiles i:nth-child(4n) { animation-delay: 1.1s; }
+  .tiles i:nth-child(5n) { animation-delay: 1.7s; background: rgba(57, 135, 229, 0.34); }
+  @keyframes smTwinkle { 50% { background: rgba(111, 177, 255, 0.6); } }
+
+  .hbm {
+    position: absolute; left: 92px; width: 84px; height: 110px;
+    border: 2px solid rgba(201,133,0,0.7); border-radius: 8px; overflow: hidden;
   }
-  #bk .peer { position: absolute; left: 624px; width: 150px; height: 96px; border: 1.5px solid var(--line); border-radius: 12px; background: rgba(27,30,39,0.45); }
-  #bk .peer .pdie { position: absolute; left: 14px; top: 22px; width: 50px; height: 50px; border: 2px solid #9085e9; border-radius: 7px; background: #12101f; }
-  #bk .peer .echs { position: absolute; left: 78px; top: 24px; width: 58px; display: flex; flex-wrap: wrap; gap: 3px; }
-  #bk .peer .ech { flex: none; width: 26px; height: 11px; border-radius: 2px; background: linear-gradient(rgba(201,133,0,0.45), rgba(201,133,0,0.8)); }
-  #bk .wires { position: absolute; left: 0; top: 0; }
-  #bk .wires line { stroke: #9085e9; stroke-width: 2.5; stroke-dasharray: 9 7; opacity: 0.7; }
-  #bk .split { position: absolute; left: 250px; top: 6px; width: 3px; height: 390px; border-radius: 2px;
-    background: linear-gradient(rgba(47,214,176,0.1), #2fd6b0, rgba(47,214,176,0.1)); }
-  #bk .pool { position: absolute; top: 8px; font: 700 10px ui-monospace, monospace; border: 1.5px solid; border-radius: 999px; padding: 2px 9px; background: rgba(11,13,18,0.92); white-space: nowrap; }
-  #bk .poolD { left: 68px; color: var(--accent); border-color: rgba(47,214,176,0.7); }
-  #bk .poolP { left: 342px; color: #6fb1ff; border-color: rgba(111,177,255,0.7); }
+  .hbm .layer {
+    position: absolute; left: 6px; right: 6px; height: 16px; border-radius: 3px;
+    background: linear-gradient(rgba(201,133,0,0.4), rgba(201,133,0,0.8));
+    animation: hbmGlow 2.6s ease-in-out infinite;
+  }
+  @keyframes hbmGlow { 50% { opacity: 0.45; } }
+  .hbm .hlab { position: absolute; bottom: 4px; width: 100%; text-align: center; font-size: 10.5px; color: #e0a935; font-weight: 700; }
+  #hbmK { border-color: rgba(144,133,233,0.6); }
+  #hbmK .layer { background: linear-gradient(rgba(144,133,233,0.35), rgba(144,133,233,0.75)); }
+  #hbmK .hlab { color: #9085e9; }
+
+  .pipe {
+    position: absolute; left: 178px; width: 120px; height: 16px;
+    border: 2px solid rgba(47,214,176,0.55); border-radius: 8px; overflow: hidden;
+  }
+  .pipe i {
+    position: absolute; top: 3px; width: 6px; height: 6px; border-radius: 50%;
+    background: #2fd6b0; animation: bnFlow 1.1s linear infinite;
+  }
+  .pipe i:nth-child(2) { animation-delay: 0.22s; }
+  .pipe i:nth-child(3) { animation-delay: 0.44s; }
+  .pipe i:nth-child(4) { animation-delay: 0.66s; }
+  .pipe i:nth-child(5) { animation-delay: 0.88s; }
+
+  .peer {
+    position: absolute; left: 790px; width: 150px; height: 96px;
+    border: 1.5px solid var(--line); border-radius: 12px; background: rgba(27,30,39,0.45);
+  }
+  .peer .pdie {
+    position: absolute; left: 50px; top: 18px; width: 50px; height: 50px;
+    border: 2px solid #9085e9; border-radius: 7px;
+    background: #12101f;
+  }
+  .peer .tiles { inset: 5px; grid-template-columns: repeat(3, 1fr); grid-template-rows: repeat(3, 1fr); gap: 2px; }
+  .peer .tiles i { background: rgba(144, 133, 233, 0.3); animation: none; }
+  .peer .plab { position: absolute; bottom: 5px; width: 100%; text-align: center; font-size: 10px; color: var(--ink-2); }
+  #wires { position: absolute; inset: 0; pointer-events: none; }
+  #wires line { stroke: #9085e9; stroke-width: 2.5; stroke-dasharray: 9 7; animation: commDash 0.9s linear infinite; }
+  @keyframes commDash { to { stroke-dashoffset: -32; } }
 
   /* ---- the end card ---- */
   #thanks {
     position: absolute; left: 0; top: 316px; width: 1280px; text-align: center;
-    font-size: 44px; font-weight: 800; letter-spacing: -0.01em; color: #e8eaf0; opacity: 0;
+    font-size: 44px; font-weight: 800; letter-spacing: -0.01em; color: #e8eaf0;
+    text-shadow: 0 4px 24px rgba(0,0,0,0.85); z-index: 5;
   }
-  #replaywrap { position: absolute; left: 0; top: 398px; width: 1280px; text-align: center; }
+  #replaywrap { position: absolute; left: 0; top: 398px; width: 1280px; text-align: center; z-index: 5; }
   #replay {
     display: inline-block;
     font: 700 13px ui-monospace, monospace; color: var(--accent); text-decoration: none;
     border: 1.5px solid rgba(47,214,176,0.7); border-radius: 999px; padding: 8px 20px;
-    background: rgba(11,13,18,0.85); opacity: 0; visibility: hidden;
+    background: rgba(11,13,18,0.85);
   }
   #replay:hover { background: rgba(47,214,176,0.12); box-shadow: 0 0 14px rgba(47,214,176,0.3); }
 </style>
 </head>
 <body>
 <div class="stage">
-  <div id="bk">
-    <div class="pkg"></div>
-    <div class="hbm hbmW"><div class="cells"></div></div>
-    <div class="hbm hbmK"><div class="cells"></div></div>
-    <div class="pipe" style="top:120px"><i></i><i></i></div>
-    <div class="pipe" style="top:288px"><i></i><i></i></div>
-    <div class="die"><div class="exgrid"></div></div>
-    <div class="drafter">MTP head</div>
-    <svg class="wires" width="800" height="420">
-      <line x1="424" y1="188" x2="626" y2="136"/>
-      <line x1="424" y1="228" x2="626" y2="332"/>
-    </svg>
-    <div class="peer" style="top:88px"><div class="pdie"></div><div class="echs"><i class="ech"></i><i class="ech"></i><i class="ech"></i><i class="ech"></i></div></div>
-    <div class="peer" style="top:284px"><div class="pdie"></div><div class="echs"><i class="ech"></i><i class="ech"></i><i class="ech"></i><i class="ech"></i></div></div>
-    <div class="split"></div>
-    <div class="pool poolD">D pool</div>
-    <div class="pool poolP">P pool</div>
+  <div id="board">
+    <div id="pkg"><span class="pkglab">GPU PACKAGE</span></div>
+    <div class="grp dim">
+      <div class="hbm" id="hbmW" style="top:225px"><div class="layer" style="top:8px"></div><div class="layer" style="top:30px; animation-delay:0.4s"></div><div class="layer" style="top:52px; animation-delay:0.8s"></div><div class="hlab">W · HBM</div></div>
+      <div class="hbm" id="hbmK" style="top:365px"><div class="layer" style="top:8px; animation-delay:0.2s"></div><div class="layer" style="top:30px; animation-delay:0.6s"></div><div class="layer" style="top:52px; animation-delay:1s"></div><div class="hlab">KV · HBM</div></div>
+    </div>
+    <div class="grp dim">
+      <div class="pipe" style="top:268px"><i></i><i></i><i></i><i></i><i></i></div>
+      <div class="pipe" style="top:412px"><i></i><i></i><i></i><i></i><i></i></div>
+    </div>
+    <div class="grp dim">
+      <div id="die"><div class="dlab">Processor</div></div>
+    </div>
+    <div class="grp dim">
+      <svg id="wires" width="1280" height="720">
+        <line x1="470" y1="320" x2="792" y2="240"/>
+        <line x1="470" y1="390" x2="792" y2="480"/>
+      </svg>
+      <div class="peer" style="top:196px"><div class="pdie"></div><div class="plab">GPU 1</div></div>
+      <div class="peer" style="top:436px"><div class="pdie"></div><div class="plab">GPU n</div></div>
+    </div>
   </div>
 
   <div id="thanks"></div>
@@ -101,33 +133,31 @@
 <script src="shared/manifest.js?v=8"></script>
 <script src="shared/deck.js?v=8"></script>
 <script>
-  // ---- backdrop machine furniture ----
-  function fillCells(sel, cls, n) {
-    var host = document.querySelector(sel);
-    for (var i = 0; i < n; i++) { var c = document.createElement("i"); c.className = cls; host.appendChild(c); }
+  // board furniture, exactly as slides 02/24
+  function addTiles(host, n) {
+    var t = document.createElement("div");
+    t.className = "tiles";
+    for (var i = 0; i < n; i++) t.appendChild(document.createElement("i"));
+    host.appendChild(t);
   }
-  fillCells("#bk .hbmW .cells", "wcell", 12);
-  fillCells("#bk .hbmK .cells", "kcell", 12);
-  var exg = document.querySelector("#bk .exgrid");
-  for (var i = 0; i < 4; i++) {
-    var ex = document.createElement("div");
-    ex.className = "ex" + (i === 2 ? " on" : "");
-    ex.textContent = "E" + (i + 1);
-    exg.appendChild(ex);
-  }
+  addTiles(document.getElementById("die"), 42);
+  document.querySelectorAll(".peer .pdie").forEach(function (p) { addTiles(p, 9); });
 
   document.getElementById("thanks").textContent = CL.thanks;
   var replay = document.getElementById("replay");
   replay.textContent = CL.replay.label;
   replay.href = CL.replay.href;
 
-  // ---- one beat: the machine hums on faintly; thanks + replay ----
+  // everything is on stage from the start — a gentle fade plays by itself,
+  // no click needed (the timeline auto-plays after registering)
   var tl = gsap.timeline({ paused: true });
-  tl.fromTo("#bk", { opacity: 0 }, { opacity: 0.13, duration: 0.9, ease: "power2.out" })
-    .fromTo("#thanks", { opacity: 0, y: 16 }, { opacity: 1, y: 0, duration: 0.55, ease: "power2.out" }, "-=0.45")
-    .fromTo("#replay", { autoAlpha: 0, y: 10 }, { autoAlpha: 1, y: 0, duration: 0.45, ease: "power2.out" }, "-=0.2");
+  tl.fromTo("#board", { opacity: 0 }, { opacity: 1, duration: 1.0, ease: "power2.out" })
+    .fromTo("#thanks", { opacity: 0, y: 14 }, { opacity: 1, y: 0, duration: 0.55, ease: "power2.out" }, "-=0.55")
+    .fromTo("#replay", { opacity: 0, y: 8 }, { opacity: 1, y: 0, duration: 0.45, ease: "power2.out" }, "-=0.25");
 
-  DECK.register(tl, {});
+  // this page auto-plays: on load, and again after a reset
+  DECK.register(tl, { reset: function () { gsap.delayedCall(0.08, function () { tl.play(); }); } });
+  tl.play();
 </script>
 </body>
 </html>
