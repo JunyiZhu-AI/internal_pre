@@ -499,20 +499,24 @@ pools — landing back on the rate card's $0.30.*
 
 ### 19 — The MoE Evolution: Finer, Sparser, Shared
 
-1. "The frontier pushed MoE along three axes. Finer: DeepSeekMoE split
-   coarse experts into many small ones — more routing combinations, better
-   specialization. Shared: one always-on expert carries the common
-   knowledge, freeing the routed ones to specialize. And sparser — watch
-   the activation rate collapse."
-2. "Run the race. DeepSeek-V3, 2024: 671 billion total, 37 active — 256
+1. "Here's the machine again — and this time HBM is the hero, because HBM
+   is where the experts live. One MoE layer, the way slide 18 left it:
+   eight coarse experts."
+2. "The frontier pushed that picture along three axes. Finer: DeepSeekMoE
+   split coarse experts into many small ones — watch the eight shatter
+   into sixty-four — more routing combinations, better specialization.
+   Shared: one always-on expert carries the common knowledge, freeing the
+   routed ones to specialize. And sparser — watch the activation rate
+   collapse: eight of sixty-four wake per token."
+3. "Run the race. DeepSeek-V3, 2024: 671 billion total, 37 active — 256
    routed experts, top-8, one shared. Kimi K2, 2025: a trillion total,
    32 active — 384 experts, still top-8."
-3. "And K3: 896 routed experts, top-16 plus the shared one — 2.8 trillion
+4. "And K3: 896 routed experts, top-16 plus the shared one — 2.8 trillion
    total, 41 billion active. Sixteen out of 896 is a 1.8 percent
    activation rate; the recipe is called Stable LatentMoE. That's the grid
    filling HBM on the left — the teal bar on top is the shared expert,
    never off."
-4. "One line of interpretation: the field is buying enormous capacity at
+5. "One line of interpretation: the field is buying enormous capacity at
    near-constant per-token cost. Total goes 671 → 1,000 → 2,800; the
    active row — note the ×10 zoom it needs to even be visible — barely
    moves."

@@ -174,14 +174,19 @@
   var sharedBar = document.getElementById("shared");
   function sharedOn(on) { sharedBar.classList.toggle("live", on); }
 
-  // ---- timeline: 4 beats ----
+  // ---- timeline: 5 beats ----
   var tl = gsap.timeline({ paused: true });
 
-  // beat 1: three axes — the grid subdivides, one expert locks on, sparsity bites
+  // beat 1: the machine returns — one MoE layer, eight coarse experts
   tl.to("#machine", { opacity: 1, filter: "grayscale(0)", duration: 0.6, ease: "power2.out" })
-    .fromTo("#ax0", { opacity: 0, y: 12 }, { opacity: 1, y: 0, duration: 0.4, ease: "power2.out" })
+    .call(function () { setLab("one MoE layer — 8 coarse experts in HBM"); })
+    .fromTo("#grid", { opacity: 0.25 }, { opacity: 1, duration: 0.5 });
+  DECK.markStep(tl);
+
+  // beat 2: three axes — the grid subdivides, one expert locks on, sparsity bites
+  tl.fromTo("#ax0", { opacity: 0, y: 12 }, { opacity: 1, y: 0, duration: 0.4, ease: "power2.out" })
     .call(function () { buildGrid(64, 8, 0, 6); setLab("finer: 8 coarse experts → 64 small ones"); })
-    .fromTo("#grid", { opacity: 0.25 }, { opacity: 1, duration: 0.5 })
+    .fromTo("#grid", { opacity: 0.25 }, { opacity: 1, duration: 0.5, immediateRender: false })
     .fromTo("#ax1", { opacity: 0, y: 12 }, { opacity: 1, y: 0, duration: 0.4, ease: "power2.out" })
     .fromTo("#shared", { opacity: 0 }, { opacity: 1, duration: 0.3 })
     .call(function () { sharedOn(true); })
@@ -191,7 +196,7 @@
     .fromTo("#grid", { opacity: 0.4 }, { opacity: 1, duration: 0.5, immediateRender: false });
   DECK.markStep(tl);
 
-  // beat 2: the race begins — DeepSeek-V3, then Kimi K2
+  // beat 3: the race begins — DeepSeek-V3, then Kimi K2
   tl.fromTo("#er-v3", { opacity: 0, x: 20 }, { opacity: 1, x: 0, duration: 0.45, ease: "power2.out" })
     .call(function () { buildGrid(MOE.evo[0].routed, 16, MOE.evo[0].topk, 4); setLab(MOE.evo[0].name + " — " + MOE.evo[0].routed + " routed experts"); })
     .fromTo("#grid", { opacity: 0.3 }, { opacity: 1, duration: 0.45, immediateRender: false })
@@ -203,7 +208,7 @@
     .fromTo("#er-k2 .ef", { scaleX: 0 }, { scaleX: 1, duration: 0.55, stagger: 0.1, ease: "power2.out" }, "-=0.3");
   DECK.markStep(tl);
 
-  // beat 3: K3 — 896 experts, activation collapses to 1.8%
+  // beat 4: K3 — 896 experts, activation collapses to 1.8%
   tl.fromTo("#er-k3", { opacity: 0, x: 20 }, { opacity: 1, x: 0, duration: 0.45, ease: "power2.out" })
     .call(function () { buildGrid(MOE.evo[2].routed, 32, MOE.evo[2].topk, 2); setLab(MOE.evo[2].name + " — " + MOE.evo[2].routed + " routed experts"); })
     .fromTo("#grid", { opacity: 0.3 }, { opacity: 1, duration: 0.5, immediateRender: false })
@@ -212,7 +217,7 @@
     .fromTo("#actrate", { opacity: 0, y: 8 }, { opacity: 1, y: 0, duration: 0.45, ease: "power2.out" });
   DECK.markStep(tl);
 
-  // beat 4: what it means
+  // beat 5: what it means
   tl.fromTo("#interp", { opacity: 0, y: 10 }, { opacity: 1, y: 0, duration: 0.5, ease: "power2.out" });
 
   DECK.register(tl, {
