@@ -60,7 +60,8 @@
   .tiles i:nth-child(4n) { animation-delay: 1.1s; }
   @keyframes smTwinkle { 50% { background: rgba(111,177,255,0.6); } }
   #die.moe { animation: none; border-color: rgba(57,135,229,0.5); }
-  #die.moe .tiles i { animation: none; background: rgba(57,135,229,0.05); }
+  /* only the four transferred experts exist on the die — the idle ones never leave HBM */
+  #die.moe .tiles i { animation: none; background: transparent; }
   #die.moe .tiles i.keepon { animation: none; background: rgba(111,177,255,0.75); box-shadow: 0 0 8px rgba(111,177,255,0.45); }
 
   #turnchip {

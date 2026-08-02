@@ -526,8 +526,8 @@ pools — landing back on the rate card's $0.30.*
 1. "The four buckets from the start of the talk are back. Turn the model
    MoE and watch compute: it relaxes — the matmul bill follows 41 billion
    active, not 2.8 trillion. Look at the processor: only the four active
-   experts' tiles are lit. But in this talk, a discount at one bucket
-   usually means an invoice at another."
+   experts are on it at all — the idle ones never leave HBM. But in this
+   talk, a discount at one bucket usually means an invoice at another."
 2. "The invoice: capacity. All 2.8 trillion parameters must sit in HBM,
    even though ninety-eight percent are idle for any given token. At four
    bits that's about 1.4 terabytes of weights — at least eight B200s
