@@ -27,7 +27,7 @@ var MOE = {
   evo: [
     { key: "v3", name: "DeepSeek-V3", year: 2024, total: 671, active: 37, routed: 256, topk: 8, shared: 1, color: "#3987e5" },
     { key: "k2", name: "Kimi K2", year: 2025, total: 1000, active: 32, routed: 384, topk: 8, shared: 1, color: "#6fb1ff" },
-    { key: "k3", name: "Kimi K3", year: 2026, total: 2800, active: 41, routed: 896, topk: 16, shared: 1, color: "#2fd6b0", label: "Stable LatentMoE" },
+    { key: "k3", name: "Kimi K3", year: 2026, total: 2800, active: 41, routed: 896, topk: 16, shared: 2, color: "#2fd6b0", label: "Stable LatentMoE" },
   ],
   k3rate: "16 / 896 active ≈ 1.8%",
   interp: "the field is buying enormous capacity at near-constant per-token cost",

@@ -511,10 +511,10 @@ pools — landing back on the rate card's $0.30.*
 3. "Run the race. DeepSeek-V3, 2024: 671 billion total, 37 active — 256
    routed experts, top-8, one shared. Kimi K2, 2025: a trillion total,
    32 active — 384 experts, still top-8."
-4. "And K3: 896 routed experts, top-16 plus the shared one — 2.8 trillion
-   total, 41 billion active. Sixteen out of 896 is a 1.8 percent
+4. "And K3: 896 routed experts, top-16, plus two shared experts — 2.8
+   trillion total, 41 billion active. Sixteen out of 896 is a 1.8 percent
    activation rate; the recipe is called Stable LatentMoE. That's the grid
-   filling HBM on the left — the teal bar on top is the shared expert,
+   filling HBM on the left — the teal bar on top is the shared experts,
    never off."
 5. "One line of interpretation: the field is buying enormous capacity at
    near-constant per-token cost. Total goes 671 → 1,000 → 2,800; the
