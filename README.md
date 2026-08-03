@@ -30,7 +30,9 @@ the hardware — correct drops dock a chip, raise the score, and speed up the
 decode simulator; wrong drops bounce back. Dragging never advances the slide.
 
 The spoken script lives in **`deck/narrative.md`**, one numbered beat per
-click. Slide sources for new pages follow `deck/templates/qkt-matmul.html`
+click — open **`deck/narrative.html`** for a readable rendered version with a
+table of contents and an "open slide" link per section (handy on a second
+screen while rehearsing). Slide sources for new pages follow `deck/templates/qkt-matmul.html`
 (the engine template — not part of the talk); the engine contract is
 documented at the top of `deck/shared/deck.js`.
 
