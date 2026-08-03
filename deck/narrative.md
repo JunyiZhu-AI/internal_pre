@@ -528,16 +528,17 @@ pools — landing back on the rate card's $0.30.*
    active, not 2.8 trillion. Look at the processor: only the four active
    experts are on it at all — the idle ones never leave HBM. But in this
    talk, a discount at one bucket usually means an invoice at another."
-2. "The invoice: capacity. All 2.8 trillion parameters must sit in HBM,
+2. "Invoice one: capacity. All 2.8 trillion parameters must sit in HBM,
    even though ninety-eight percent are idle for any given token. At four
    bits that's about 1.4 terabytes of weights — at least eight B200s
    before a single byte of KV cache. It does not fit in one package."
-3. "And the weights that spill out of the package still have to live
-   somewhere: more GPUs — bought not for their FLOPs, but purely to hold
-   the model. Capacity is the entry ticket."
-4. "So the reframe: MoE moved the bottleneck — from compute to capacity.
-   The systems layer answers next: expert parallelism — and watch what NEW
-   bill that answer creates."
+3. "Invoice two: communication. The moment experts live on different GPUs,
+   every MoE layer becomes an all-to-all token exchange — out to the
+   experts, back from the experts, every layer. Interconnect is now a
+   first-class bottleneck."
+4. "So the reframe: MoE moved the bottleneck — from compute to capacity
+   plus interconnect. The rest of this section is the systems layer
+   answering: expert parallelism, then prefill–decode disaggregation."
 
 ### 21 — Expert Parallelism
 

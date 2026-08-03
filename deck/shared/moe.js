@@ -36,8 +36,8 @@ var MOE = {
   bill: {
     cap: "all 2.8T params must sit in HBM — even though ~98% are idle for any given token",
     capMath: "2.8T @ 4-bit ≈ 1.4 TB of weights → ≥ 8 B200s (192 GB) before KV or activations",
-    spread: "the spilled experts must live somewhere — more GPUs, just to hold the model",
-    frame: "MoE moved the bottleneck: compute → capacity",
+    comm: "experts live on different GPUs → every MoE layer is an all-to-all token exchange",
+    frame: "MoE moved the bottleneck: compute → capacity + interconnect",
     response: "the systems layer answers: Expert Parallelism, then Prefill–Decode disaggregation",
   },
 
