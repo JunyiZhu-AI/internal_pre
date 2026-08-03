@@ -97,7 +97,7 @@
 <body>
 <div class="stage">
   <div class="slide-title">Expert Parallelism</div>
-  <div class="slide-sub">one package becomes a rack — experts stay whole, tokens do the travelling</div>
+  <div class="slide-sub">experts stay whole, tokens do the travelling</div>
 
   <div id="drapechip"></div>
   <div id="rack"></div>
@@ -132,7 +132,7 @@
   var k3 = MOE.evo[2];
   var perGpu = k3.routed / 8;
   document.getElementById("drapechip").textContent =
-    (k3.total / 1000) + "T drapes across the rack — " + k3.routed + " experts / 8 GPUs = " + perGpu + " each";
+    (k3.total / 1000) + "T sharded across the rack — " + k3.routed + " experts / 8 GPUs = " + perGpu + " each";
   document.getElementById("tp0").querySelector("b").textContent = MOE.ep.vsTP[0][0];
   document.getElementById("tp0").querySelector(".td").textContent = MOE.ep.vsTP[0][1];
   document.getElementById("tp1").querySelector("b").textContent = MOE.ep.vsTP[1][0];
@@ -160,22 +160,46 @@
     rack.appendChild(p);
   }
 
-  // travelling dots: 4 tokens in, 7 packets out+back, 1 result out
+  // ---- all-to-all: every GPU starts with tokens; each token travels to the
+  //      GPU that holds its expert, computes, and returns. Loops forever. ----
   var stage = document.querySelector(".stage");
-  function mkdot(cls, id, x, y) {
-    var d = document.createElement("div");
-    d.className = "pdot " + cls; d.id = id;
-    d.style.left = x + "px"; d.style.top = y + "px";
-    stage.appendChild(d);
+  var dots = [];
+  for (var h = 0; h < 8; h++) {
+    for (var k = 0; k < 2; k++) {
+      var d = document.createElement("div");
+      d.className = "pdot tk";
+      var hx = centers[h][0] + (k ? 22 : -2), hy = centers[h][1] + (k ? 18 : -28);
+      var dest = (h + 1 + k * 3) % 8;                      // a permutation: all send, all receive
+      var dx = centers[dest][0] + (k ? -14 : 10), dy = centers[dest][1] + (k ? -20 : 12);
+      d.style.left = hx + "px"; d.style.top = hy + "px";
+      stage.appendChild(d);
+      dots.push({ el: d, hx: hx, hy: hy, dx: dx, dy: dy });
+    }
   }
-  for (i = 0; i < 4; i++) mkdot("tk", "tk" + i, 14, 160 + i * 36);
-  var HOME = 1; // tokens land on GPU 1
-  var others = [0, 2, 3, 4, 5, 6, 7];
-  others.forEach(function (g, n) { mkdot("pk", "pk" + n, centers[HOME][0] - 4, centers[HOME][1] - 4); });
-  mkdot("tk", "out", centers[HOME][0] - 4, centers[HOME][1] - 4);
 
   function diesHot(on) {
     document.querySelectorAll(".mdie").forEach(function (d) { d.classList.toggle("hot", on); });
+  }
+
+  var loopTl = null;
+  function startLoop() {
+    if (loopTl) { loopTl.play(0); return; }
+    loopTl = gsap.timeline({ repeat: -1 });
+    var els = dots.map(function (o) { return o.el; });
+    loopTl.call(function () { dots.forEach(function (o) { gsap.set(o.el, { left: o.hx, top: o.hy }); }); })
+      .to(els, { opacity: 1, duration: 0.25, stagger: 0.01 })
+      .to({}, { duration: 0.35 });
+    dots.forEach(function (o, n) {                        // dispatch: everyone swaps, paths cross
+      loopTl.to(o.el, { left: o.dx, top: o.dy, duration: 0.8, ease: "power1.inOut" }, n ? "<0.015" : undefined);
+    });
+    loopTl.call(function () { diesHot(true); })           // compute at the destination experts
+      .to({}, { duration: 0.75 })
+      .call(function () { diesHot(false); });
+    dots.forEach(function (o, n) {                        // combine: everyone returns home
+      loopTl.to(o.el, { left: o.hx, top: o.hy, duration: 0.8, ease: "power1.inOut" }, n ? "<0.015" : undefined);
+    });
+    loopTl.to(els, { opacity: 0, duration: 0.25 })
+      .to({}, { duration: 0.5 });
   }
 
   // gantt bars (pre-built, revealed in beat 4)
@@ -206,30 +230,13 @@
     .fromTo("#nvl", { opacity: 0 }, { opacity: 1, duration: 0.4 });
   DECK.markStep(tl);
 
-  // beat 2: a batch dispatches — all-to-all out, local compute, all-to-all back
-  tl.fromTo("#ph0", { opacity: 0, y: 8 }, { opacity: 1, y: 0, duration: 0.3 })
-    .fromTo(".pdot.tk", { opacity: 0 }, { opacity: 1, duration: 0.2, stagger: 0.05 })
-    .to("#tk0", { left: centers[HOME][0] - 16, top: centers[HOME][1] - 12, duration: 0.55, ease: "power1.inOut" }, "<")
-    .to("#tk1", { left: centers[HOME][0] - 4, top: centers[HOME][1] - 12, duration: 0.55, ease: "power1.inOut" }, "<0.05")
-    .to("#tk2", { left: centers[HOME][0] - 16, top: centers[HOME][1], duration: 0.55, ease: "power1.inOut" }, "<0.05")
-    .to("#tk3", { left: centers[HOME][0] - 4, top: centers[HOME][1], duration: 0.55, ease: "power1.inOut" }, "<0.05")
-    .to(".pdot.tk", { opacity: 0, duration: 0.2 })
-    .fromTo(".pdot.pk", { opacity: 0 }, { opacity: 1, duration: 0.15 }, "<");
-  others.forEach(function (g, n) {
-    tl.to("#pk" + n, { left: centers[g][0] - 4, top: centers[g][1] - 4, duration: 0.55, ease: "power1.inOut" }, n ? "<0.04" : undefined);
-  });
-  tl.fromTo("#ph1", { opacity: 0, y: 8 }, { opacity: 1, y: 0, duration: 0.3 })
-    .call(function () { diesHot(true); })
-    .to({}, { duration: 0.7 })
-    .fromTo("#ph2", { opacity: 0, y: 8 }, { opacity: 1, y: 0, duration: 0.3 });
-  others.forEach(function (g, n) {
-    tl.to("#pk" + n, { left: centers[HOME][0] - 4, top: centers[HOME][1] - 4, duration: 0.55, ease: "power1.inOut" }, n ? "<0.04" : undefined);
-  });
-  tl.to(".pdot.pk", { opacity: 0, duration: 0.2 })
-    .call(function () { diesHot(false); })
-    .fromTo("#out", { opacity: 0 }, { opacity: 1, duration: 0.15 }, "<")
-    .to("#out", { left: 748, top: 340, duration: 0.5, ease: "power1.in" })
-    .to("#out", { opacity: 0, duration: 0.2 });
+  // beat 2: all-to-all — tokens on every GPU swap to their experts and return;
+  //         the exchange keeps looping through the following clicks
+  tl.call(startLoop)
+    .fromTo("#ph0", { opacity: 0, y: 8 }, { opacity: 1, y: 0, duration: 0.3 }, "+=0.5")
+    .fromTo("#ph1", { opacity: 0, y: 8 }, { opacity: 1, y: 0, duration: 0.3 }, "+=1.0")
+    .fromTo("#ph2", { opacity: 0, y: 8 }, { opacity: 1, y: 0, duration: 0.3 }, "+=0.9")
+    .to({}, { duration: 1.2 });
   DECK.markStep(tl);
 
   // beat 3: why not tensor parallelism
@@ -247,6 +254,8 @@
 
   DECK.register(tl, {
     reset: function () {
+      if (loopTl) loopTl.pause(0);
+      gsap.set(".pdot", { opacity: 0 });
       diesHot(false);
     }
   });

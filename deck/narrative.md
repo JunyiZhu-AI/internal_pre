@@ -544,11 +544,14 @@ pools — landing back on the rate card's $0.30.*
 
 1. "One package becomes eight. Expert parallelism: different experts on
    different GPUs — 896 experts across 8 GPUs is 112 each — and the model
-   that didn't fit now drapes across a rack."
-2. "The cost is choreography. A batch arrives: dispatch — all-to-all —
-   every token flies to the GPUs that hold its experts. Compute happens
-   locally — watch the dies flash. Combine — all-to-all again — and
-   everything is back where it started."
+   that didn't fit is now sharded across a rack."
+2. "The cost is choreography — and here is what all-to-all actually looks
+   like. Every GPU holds its own tokens, but at the MoE layer each
+   token's experts usually live somewhere else. So all of them swap at
+   once: every GPU sending to every GPU, paths crossing the whole rack.
+   Compute happens at the destination — watch the dies flash — then
+   everyone swaps back. Dispatch, compute, combine — and it never stops:
+   this exchange happens at every single MoE layer."
 3. "Why not tensor parallelism? TP splits every matmul — an all-reduce
    every single layer, latency-bound. EP keeps whole experts local and
    communicates only at expert boundaries."
