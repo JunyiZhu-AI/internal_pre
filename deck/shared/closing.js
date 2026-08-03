@@ -28,7 +28,7 @@ var CL = {
   ],
   answers: [
     ["Q1", "why is output 5× input — for every vendor?", "decode pays per token in bandwidth; prefill amortises — the roofline, invoiced"],
-    ["Q2", "why is a cache hit 10× cheaper?", "PD serving + prefix cache: a hit skips prefill entirely"],
+    ["Q2", "why is a cache hit 10× cheaper?", "prefix caching — a hit skips prefill entirely; PD-style serving makes cached KV shared and routable, so the discount holds at scale"],
     ["Q3", "why does $3 / $15 take 2.8T params, KDA, and 1M context?", "because every layer — KDA · MLA · MoE · MXFP4 · EP · PD — was co-designed to push these two numbers down"],
   ],
   pattern: "the price sheet is the physics of this talk, invoiced",

@@ -60,7 +60,8 @@ var MOE = {
     how: "prefill workers build the KV cache → hand it over the interconnect → decode workers stream tokens",
     benefits: ["scale each pool independently", "per-phase parallelism & batching (different EP degrees)", "prefill spikes no longer stall decode"],
     cost: "the price: shipping KV caches across the network, fast",
-    cache: "prefix caching + PD-aware routing: a cached prefix skips prefill entirely — the $0.30 / $3.00 cache-hit gap is this architecture showing through the rate card",
+    cache: "the 10× is prefix caching: a cache hit skips prefill entirely — $3.00 of compute that never happens",
+    cacheScale: "what PD-style serving adds is scale: cached KV becomes a shared, routable resource — the discount holds across a datacenter",
     vllm: "K3's team upstreamed prefix-caching work to vLLM — the economics and the engineering are one story",
   },
 };

@@ -578,11 +578,13 @@ pools — landing back on the rate card's $0.30.*
    degrees in P and D; and a prefill spike no longer stalls everyone's
    decode. The price: shipping KV caches across the network, fast."
 4. "And with that, the rate card again. Question 2 — why is a cache hit
-   ten times cheaper? Prefix caching plus PD-aware routing: a cached
-   prefix skips prefill entirely — watch the bypass path. $3.00 becomes
-   $0.30. That discount isn't marketing; it's this architecture showing
-   through the price sheet. K3's team upstreamed prefix-caching work to
-   vLLM — the economics and the engineering are one story."
+   ten times cheaper? Because a hit skips prefill entirely — that's
+   prefix caching, and that alone is the ten-x: watch the bypass path go
+   around the P pool. What PD-style serving adds is scale — the cached KV
+   becomes a shared, routable resource, so any hit can be served by any
+   decode pool and the discount holds across a datacenter. $3.00 becomes
+   $0.30. K3's team upstreamed prefix-caching work to vLLM — the
+   economics and the engineering are one story."
 
 *(final click → next page)*
 
