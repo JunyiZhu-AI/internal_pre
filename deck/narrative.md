@@ -564,27 +564,17 @@ pools — landing back on the rate card's $0.30.*
 
 ### 22 — Prefill–Decode Disaggregation
 
-1. "Honesty first: this last one is not an MoE trick — Splitwise, DistServe,
-   Mooncake all did it for dense models. It answers the oldest split in
-   this talk: prefill is compute-bound and owns time-to-first-token;
-   decode is bandwidth-bound and owns time-per-output-token. Co-locate
-   them and they fight for the same GPU — and couple those two latency
-   targets."
+1. "The oldest split in this talk: prefill is compute-bound and owns
+   time-to-first-token; decode is bandwidth-bound and owns
+   time-per-output-token. Co-locate them and they fight for the same
+   GPU — and couple those two latency targets."
 2. "So split the machines. A prefill pool builds the KV cache; the parcel
    ships over the interconnect; a decode pool streams tokens out. TTFT and
    TPOT are now tuned independently — each gauge has its own owner."
 3. "What it buys: each pool scales to its own traffic; each phase gets its
    own parallelism and batching — frontier MoE clusters run different EP
-   degrees in P and D; and a prefill spike no longer stalls everyone's
-   decode. The price: shipping KV caches across the network, fast."
-4. "And with that, the rate card again. Question 2 — why is a cache hit
-   ten times cheaper? Because a hit skips prefill entirely — that's
-   prefix caching, and that alone is the ten-x: watch the bypass path go
-   around the P pool. What PD-style serving adds is scale — the cached KV
-   becomes a shared, routable resource, so any hit can be served by any
-   decode pool and the discount holds across a datacenter. $3.00 becomes
-   $0.30. K3's team upstreamed prefix-caching work to vLLM — the
-   economics and the engineering are one story."
+   degrees in P and D; and a prefill spike no longer stalls anyone's
+   decode."
 
 *(final click → next page)*
 
