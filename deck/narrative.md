@@ -600,10 +600,13 @@ head. Speak "reported" aloud for the 85–90% figure.*
    little box, not part of our die — guesses ahead, placing a few ghost
    tokens on the belt. Then the big model runs one ordinary forward pass —
    one weight read — and stamps all of them at once: the guesses it agrees
-   with solidify and roll away; the one it rejects drops off the belt, and
-   generation redraws from that point. Keep watching — draft, verify,
-   accept, reject, again and again; that's the decode loop now. The tally
-   flips: one read, three tokens. Two things to hold. It's lossless —
+   with solidify and roll away; the one it rejects gets swapped on the
+   spot — the verify pass already computed the base model's own token for
+   that position, watch the blue one fly out of the die to replace it —
+   and anything drafted after the rejection is discarded, unjudged. Keep
+   watching — draft, verify, accept, correct, again and again; that's the
+   decode loop now. The tally holds: one read, three tokens — two accepted
+   plus the correction. Two things to hold. It's lossless —
    verification keeps the output distribution exactly unchanged, so the
    speedup is capped only by the acceptance rate. And in the classic
    two-model form, that acceptance hinges on how well a foreign little

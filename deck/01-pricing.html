@@ -38,7 +38,6 @@
     background: rgba(11,13,18,0.55); font-family: ui-monospace, monospace;
     box-shadow: 0 4px 14px rgba(0,0,0,0.4);
   }
-  #fn3 { position: absolute; left: 44px; top: 452px; width: 560px; font-size: 10px; color: #6b7284; line-height: 1.45; opacity: 0; }
   #qs3 {
     position: absolute; left: 44px; top: 508px; width: 1192px;
     display: flex; flex-direction: row; gap: 16px;
@@ -78,7 +77,6 @@
   </div>
 
   <div id="qs3"></div>
-  <div id="fn3"></div>
   <div id="promise3"></div>
 </div>
 
@@ -125,7 +123,6 @@
   PRICING.questions.forEach(function (q, i) {
     qs3.innerHTML += '<div class="qchip" id="q' + i + '"><span class="qn">Q' + (i + 1) + "</span>" + q + "</div>";
   });
-  document.getElementById("fn3").textContent = PRICING.footnote;
   document.getElementById("promise3").textContent = "Promise: " + PRICING.promise;
 
   function badge(id, x, y) {
@@ -152,8 +149,7 @@
 
   // step 2: performance table — near-tie, with provenance tags
   tl.fromTo("#perf", { opacity: 0, x: 40 }, { opacity: 1, x: 0, duration: 0.5, ease: "power3.out" })
-    .fromTo("#perf .lrow", { opacity: 0, x: 14 }, { opacity: 1, x: 0, duration: 0.3, stagger: 0.08 }, "-=0.2")
-    .fromTo("#fn3", { opacity: 0 }, { opacity: 1, duration: 0.4 });
+    .fromTo("#perf .lrow", { opacity: 0, x: 14 }, { opacity: 1, x: 0, duration: 0.3, stagger: 0.08 }, "-=0.2");
   DECK.markStep(tl);
 
   // step 3: the per-token verdict — discount stamps hit the rate card
