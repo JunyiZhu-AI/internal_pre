@@ -27,9 +27,9 @@ var CL = {
     ["output", "$15.00", "decode is bandwidth-bound and serial — the hardest to scale → 5× input"],
   ],
   answers: [
-    ["Q1", "why is output 5× input — for every vendor?", "decode pays per token in bandwidth; prefill amortises — the roofline, invoiced"],
-    ["Q2", "why is a cache hit 10× cheaper?", "prefix caching — a hit skips prefill entirely; PD-style serving makes cached KV shared and routable, so the discount holds at scale"],
-    ["Q3", "why does $3 / $15 take 2.8T params, KDA, and 1M context?", "because every layer — KDA · MLA · MoE · MXFP4 · EP · PD — was co-designed to push these two numbers down"],
+    ["Q1", "how can a 2.8-trillion-parameter model sell tokens this cheap?", "because every layer — KDA · MLA · MoE · MXFP4 · EP · PD — was co-designed to push these two numbers down"],
+    ["Q2", "why is output 5× input — for every vendor?", "decode pays per token in bandwidth; prefill amortises — the roofline, invoiced"],
+    ["Q3", "why is a cache hit 10× cheaper?", "prefix caching — a hit skips prefill entirely; PD-style serving makes cached KV shared and routable, so the discount holds at scale"],
   ],
   pattern: "the price sheet is the physics of this talk, invoiced",
   open: [

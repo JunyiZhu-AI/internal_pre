@@ -31,18 +31,19 @@ restart, loop (auto-plays all steps, for rehearsal or hallway mode). F = fullscr
 3. **[red discount stamps hit the K3 price column]** "So per *token*, K3
    looks like a steal: forty percent under Sol, seventy under Fable."
 
-4. **[Q1 appears, ? lands on output price]** "So here's the first question
-   this rate card begs: why is output five times the price of input — for
-   *every* vendor? That ratio is suspiciously universal."
+4. **[Q1 appears, ? lands on K3 column]** "So here's the first question
+   this rate card begs: how can a 2.8-trillion-parameter model sell tokens
+   this cheap? K3's answer is a new attention mechanism, extreme sparsity,
+   a million tokens of context — what physics connects that architecture
+   to this price?"
 
-5. **[Q2 appears, ? lands on cached input]** "Second: why does a cache hit
-   cost ten times less than a miss? Ninety percent off, from all three
+5. **[Q2 appears, ? lands on output price]** "Second: why is output five
+   times the price of input — for *every* vendor? That ratio is
+   suspiciously universal."
+
+6. **[Q3 appears, ? lands on cached input]** "And third: why does a cache
+   hit cost ten times less than a miss? Ninety percent off, from all three
    vendors, again."
-
-6. **[Q3 appears, ? lands on K3 column]** "And third: what does it take to
-   *afford* three-and-fifteen? K3's answer is 2.8 trillion parameters, a new
-   attention mechanism, a million tokens of context. Why those choices —
-   what physics connects this architecture to this price?"
 
 7. **[promise]** "That's the talk: token cost is physics, not marketing. By
    the end, every number on this slide will be explainable from first

@@ -34,9 +34,9 @@ var PRICING = {
   ],
 
   questions: [
+    "How can a 2.8-trillion-parameter model sell tokens this cheap?",
     "Why is output 5× more expensive than input — for every vendor?",
     "Why is a cache hit 10× cheaper than a miss?",
-    "Why does competing at $3 / $15 take 2.8T params, KDA, and 1M context?",
   ],
 
   quote: "“K3 is half the price per token; GPT-5.6 uses half as many tokens. Price evens out.”",
