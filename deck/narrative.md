@@ -160,9 +160,10 @@ capacity within a few seconds — let it hit the wall before clicking on.*
 
 **Load:** title only.
 
-1. **[the machine, idle]** "Here's the machine you already know how to read —
-   processor, the HBM pipe, the memory itself. Inference runs on it in two
-   completely different modes, and you're about to watch both."
+1. **[the ball drops onto the ridge]** "Here's the machine you already know
+   how to read — processor, the HBM pipe, the memory itself — and here comes
+   tonight's workload, landing right on the machine's ridge. Inference runs
+   in two completely different modes, and you're about to watch both."
 
 2. **[prefill: die saturates, weight block rides in, KV receipt]** "Mode
    one: prefill. The whole prompt arrives at once, thousands of positions
@@ -172,11 +173,12 @@ capacity within a few seconds — let it hit the wall before clicking on.*
    intensity scales with sequence length, the processor saturates,
    utilisation pins near 95%, and we're deep in compute-bound territory.
    This phase sets your time-to-first-token, and it's why input tokens are
-   cheap. Then the pipe flips direction for a moment — the receipt this
-   phase leaves behind, a fresh KV cache block, writing back out to HBM."
+   cheap."
 
-3. **[the flip: first token]** "Then the first output token appears — and
-   the entire thermal picture inverts."
+3. **[the flip: first token, then the KV receipt]** "Then the first output
+   token appears — prefill is done. And watch the pipe flip direction: the
+   receipt prefill leaves behind, the prompt's whole KV cache, writes back
+   out to HBM. Now the entire thermal picture inverts."
 
 4. **[decode: pipe red-hot, die idle, KV growing]** "Mode two: decode. One
    token at a time, and for *every* token the machine drags all 140 GB of

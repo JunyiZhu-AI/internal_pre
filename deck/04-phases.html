@@ -129,8 +129,8 @@
   // step 1: the familiar roof + the machine below it; the ? dot hovers
   tl.fromTo("#plot", { opacity: 0 }, { opacity: 1, duration: 0.5 })
     .fromTo("#gpuwrap", { opacity: 0, y: 16 }, { opacity: 1, y: 0, duration: 0.5, ease: "power2.out" }, "-=0.2")
-    .fromTo("#wdot", { opacity: 0, left: P(24).x - 8, top: P(24).y - 60 }, { opacity: 1, duration: 0.4 })
-    .to("#wdot", { top: P(24).y - 48, duration: 0.9, yoyo: true, repeat: 1, ease: "sine.inOut" });
+    .fromTo("#wdot", { opacity: 0, left: P(295).x - 8, top: P(295).y - 130 }, { opacity: 1, duration: 0.25 })
+    .to("#wdot", { top: P(295).y - 8, duration: 0.8, ease: "bounce.out" });
   DECK.markStep(tl);
 
   // step 2: PREFILL — parallel wave; the dot rides RIGHT past the ridge
@@ -153,20 +153,12 @@
       document.getElementById("stat").innerHTML = "weights read <b>once</b>, amortised over the whole prompt";
     })
     .fromTo("#stat", { opacity: 0 }, { opacity: 1, duration: 0.3 })
-    .to("#wdot", { top: P(24).y - 8, duration: 0.4, ease: "bounce.out" })
     .to("#wdot", { left: P(700).x - 8, top: P(700).y - 8, duration: 1.4, ease: "power2.inOut" })
     .call(function () {
       var l = document.getElementById("lab-pre");
       l.style.left = (P(700).x - 150) + "px"; l.style.top = (P(700).y + 16) + "px";
     })
-    .fromTo("#lab-pre", { opacity: 0 }, { opacity: 1, duration: 0.35 })
-    // prefill done — its KV receipt writes back out in one pile
-    .call(function () {
-      PH.pipeDir(gpu, "offload");
-      for (var k = 0; k < 6; k++) PH.addKV(gpu);
-    })
-    .to({}, { duration: 0.7 })
-    .call(function () { PH.pipeDir(gpu, "load"); });
+    .fromTo("#lab-pre", { opacity: 0 }, { opacity: 1, duration: 0.35 });
   DECK.markStep(tl);
 
   // step 3: THE FLIP — first output token
@@ -174,7 +166,15 @@
     var c = chip(556, 602, "out");
     gsap.fromTo(c, { scale: 0 }, { scale: 1.4, x: -60, duration: 0.8, ease: "back.out(2)", onComplete: function () { gsap.to(c, { opacity: 0, duration: 0.4, onComplete: function () { c.remove(); } }); } });
   })
-    .to(heat, { die: 0.55, pipe: 0.45, duration: 0.9, ease: "power2.inOut", onUpdate: applyHeat });
+    .to({}, { duration: 0.85 })
+    // the first token marks prefill done — its KV receipt writes back out
+    .call(function () {
+      PH.pipeDir(gpu, "offload");
+      for (var k = 0; k < 6; k++) PH.addKV(gpu);
+    })
+    .to({}, { duration: 0.7 })
+    .call(function () { PH.pipeDir(gpu, "load"); })
+    .to(heat, { die: 0.55, pipe: 0.45, duration: 0.9, ease: "power2.inOut", onUpdate: applyHeat }, "-=0.5");
   DECK.markStep(tl);
 
   // step 4: DECODE — the dot crashes down the slant to AI ~ 1
