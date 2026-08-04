@@ -104,7 +104,6 @@
       <div class="pnotes">
         <span id="attnnote"></span>
         <span class="ta-tag kv" id="kvtag"></span>
-        <span class="ta-tag flash" id="flashtag"></span>
       </div>
     </div>
   </div>
@@ -126,7 +125,6 @@
       </div>
       <div class="pnotes">
         <span id="ffnnote"></span>
-        <span class="ta-tag moe" id="moetag"></span>
       </div>
     </div>
   </div>
@@ -148,8 +146,6 @@
   document.getElementById("attnnote").textContent = TA.attnNote;
   document.getElementById("ffnnote").textContent = TA.ffnNote;
   document.getElementById("kvtag").textContent = TA.kvTag;
-  document.getElementById("flashtag").textContent = TA.flashTag;
-  document.getElementById("moetag").textContent = TA.moeTag;
   document.getElementById("caption").textContent = TA.caption;
 
   var pipe = document.getElementById("pipe");
@@ -238,14 +234,12 @@
     tl.to(p, { strokeDashoffset: 0, duration: 0.4, ease: "power2.out" }, i ? "-=0.28" : "+=0");
   });
   tl.fromTo("#kvtag", { opacity: 0, scale: 0.6 }, { opacity: 1, scale: 1, duration: 0.35, ease: "back.out(2)" })
-    .to(["#wk", "#wv"], { borderColor: "#9085e9", color: "#9085e9", duration: 0.35 }, "<")
-    .fromTo("#flashtag", { opacity: 0, scale: 0.6 }, { opacity: 1, scale: 1, duration: 0.35, ease: "back.out(2)" });
+    .to(["#wk", "#wv"], { borderColor: "#9085e9", color: "#9085e9", duration: 0.35 }, "<");
   DECK.markStep(tl);
 
   // step 4: the FFN machine
   tl.to("#mapffn", { boxShadow: "0 0 14px rgba(201,133,0,0.7)", duration: 0.3 })
-    .fromTo("#pffn .inner", { opacity: 0 }, { opacity: 1, duration: 0.4 })
-    .fromTo("#moetag", { opacity: 0, scale: 0.6 }, { opacity: 1, scale: 1, duration: 0.35, ease: "back.out(2)" });
+    .fromTo("#pffn .inner", { opacity: 0 }, { opacity: 1, duration: 0.4 });
   DECK.markStep(tl);
 
   // step 5: where the parameters live
