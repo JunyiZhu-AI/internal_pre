@@ -11,7 +11,7 @@ var PH = {
     return '<div class="phgpu" id="' + id + '">' +
       '<div class="ph-die"><div class="ph-tiles">' + tiles + "</div>" +
       '<div class="ph-lab">Processor</div><div class="ph-util">util <b>—</b></div></div>' +
-      '<div class="ph-pipe"><i></i><i></i><i></i><i></i><i></i><div class="ph-plab">HBM ⇄ die</div></div>' +
+      '<div class="ph-pipe"><div class="ph-flow"><i></i><i></i><i></i><i></i><i></i></div><div class="ph-plab">HBM ⇄ die</div></div>' +
       '<div class="ph-hbm">' +
       '<div class="ph-w">weights<br>140 GB</div>' +
       '<div class="ph-kv"><span class="ph-kvlab">KV</span><div class="ph-kvrows"></div></div>' +
@@ -50,13 +50,13 @@ var PH = {
   },
   addKV: function (gpu, warn) {
     var rows = gpu.querySelector(".ph-kvrows");
-    if (rows.children.length >= 18) {
+    if (rows.children.length >= 30) {
       gpu.querySelector(".ph-kv").classList.add("full");
       return;
     }
     var r = document.createElement("b");
     rows.appendChild(r);
-    if (rows.children.length >= 14 || warn) gpu.querySelector(".ph-kv").classList.add("warn");
+    if (rows.children.length >= 25 || warn) gpu.querySelector(".ph-kv").classList.add("warn");
   },
   clearKV: function (gpu) {
     gpu.querySelector(".ph-kvrows").innerHTML = "";

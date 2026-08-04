@@ -4,8 +4,8 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Preliminaries — Prefill vs Decode: Two Different Workloads</title>
-<link rel="stylesheet" href="shared/deck.css?v=14">
-<link rel="stylesheet" href="shared/phases.css?v=14">
+<link rel="stylesheet" href="shared/deck.css?v=15">
+<link rel="stylesheet" href="shared/phases.css?v=15">
 <style>
   #plot { position: absolute; left: 40px; top: 128px; opacity: 0; }
   #plot text { font: 11px ui-monospace, monospace; fill: #6b7284; }
@@ -56,9 +56,9 @@
 </div>
 
 <script src="../vendor/gsap.min.js"></script>
-<script src="shared/phases.js?v=14"></script>
-<script src="shared/manifest.js?v=14"></script>
-<script src="shared/deck.js?v=14"></script>
+<script src="shared/phases.js?v=15"></script>
+<script src="shared/manifest.js?v=15"></script>
+<script src="shared/deck.js?v=15"></script>
 <script>
   document.getElementById("caption").textContent = PH.caption;
   document.getElementById("gpuwrap").innerHTML = PH.gpuHTML("gpu");
@@ -115,12 +115,13 @@
     PH.pipeDir(gpu, "load");
     var w = gpu.querySelector(".ph-w");
     gsap.fromTo(w, { boxShadow: "0 0 16px rgba(224,75,56,0.9)" }, { boxShadow: "0 0 0px rgba(224,75,56,0)", duration: 0.9 });
-    var c = chip(580, 560, "out");
+    var c = chip(556, 602, "out");
     gsap.to(c, { x: -60, opacity: 0, duration: 1.0, ease: "power1.out", onComplete: function () { c.remove(); } });
   }).to({}, { duration: 0.6 })
     .call(function () {
       PH.pipeDir(gpu, "offload");
-      PH.addKV(gpu); PH.addKV(gpu);   // fill visibly: KV reaches capacity within a few seconds
+      // pile the KV cache visibly until the box is full
+      PH.addKV(gpu); PH.addKV(gpu); PH.addKV(gpu); PH.addKV(gpu);
     })
     .to({}, { duration: 0.5 });
 
@@ -167,7 +168,7 @@
 
   // step 3: THE FLIP — first output token
   tl.call(function () {
-    var c = chip(580, 560, "out");
+    var c = chip(556, 602, "out");
     gsap.fromTo(c, { scale: 0 }, { scale: 1.4, x: -60, duration: 0.8, ease: "back.out(2)", onComplete: function () { gsap.to(c, { opacity: 0, duration: 0.4, onComplete: function () { c.remove(); } }); } });
   })
     .to(heat, { die: 0.55, pipe: 0.45, duration: 0.9, ease: "power2.inOut", onUpdate: applyHeat });

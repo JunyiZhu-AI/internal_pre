@@ -26,6 +26,9 @@
   position: relative; width: 92px; height: 18px; border-radius: 9px;
   border: 2px solid rgba(47,214,176,0.55); overflow: visible;
 }
+/* dots travel inside this sleeve so they never poke out of the pipe ends
+   (the pipe itself stays overflow-visible for the label below it) */
+.ph-flow { position: absolute; inset: 0; border-radius: 7px; overflow: hidden; }
 .ph-pipe i {
   position: absolute; top: 3px; width: 6px; height: 6px; border-radius: 50%;
   background: #2fd6b0; animation: bnFlow2rev 1.3s linear infinite;
@@ -57,7 +60,7 @@
 }
 .ph-kvlab { position: absolute; top: 2px; right: 6px; font: 700 9px ui-monospace, monospace; color: #9085e9; }
 .ph-kvrows { display: flex; flex-wrap: wrap; gap: 2px; align-content: flex-start; height: 100%; }
-.ph-kvrows b { width: 21px; height: 7px; border-radius: 2px; background: rgba(144,133,233,0.75); }
+.ph-kvrows b { width: 21px; height: 10px; border-radius: 2px; background: rgba(144,133,233,0.75); }
 .ph-kv.warn { border-color: #e04b38; animation: kvWarn 0.8s infinite; }
 @keyframes kvWarn { 50% { box-shadow: 0 0 14px rgba(224,75,56,0.7); } }
 .ph-kv.full { border-style: solid; }
