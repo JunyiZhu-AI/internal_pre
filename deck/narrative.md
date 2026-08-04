@@ -164,13 +164,16 @@ capacity within a few seconds — let it hit the wall before clicking on.*
    processor, the HBM pipe, the memory itself. Inference runs on it in two
    completely different modes, and you're about to watch both."
 
-2. **[prefill: die saturates, pipe cool, KV receipt]** "Mode one: prefill.
-   The whole prompt arrives at once, thousands of positions in parallel. The
-   weights are read from HBM *once* and amortised across all of them — so
-   arithmetic intensity scales with sequence length, the processor saturates,
+2. **[prefill: die saturates, weight block rides in, KV receipt]** "Mode
+   one: prefill. The whole prompt arrives at once, thousands of positions
+   in parallel — and watch the pipe: the tokens stream into the processor
+   and one amber weight block rides in with them. The weights are read
+   from HBM *once* and amortised across all of them — so arithmetic
+   intensity scales with sequence length, the processor saturates,
    utilisation pins near 95%, and we're deep in compute-bound territory.
    This phase sets your time-to-first-token, and it's why input tokens are
-   cheap. And notice the receipt it leaves behind: a fresh KV cache block."
+   cheap. Then the pipe flips direction for a moment — the receipt this
+   phase leaves behind, a fresh KV cache block, writing back out to HBM."
 
 3. **[the flip: first token]** "Then the first output token appears — and
    the entire thermal picture inverts."
@@ -179,11 +182,11 @@ capacity within a few seconds — let it hit the wall before clicking on.*
    token at a time, and for *every* token the machine drags all 140 GB of
    weights — plus the growing KV cache — through the pipe, to do just 140
    gigaFLOPs of work. Arithmetic intensity: one. The pipe glows, the
-   processor idles at three percent — and watch the KV block: every token
-   adds a row, until it hits the ceiling and physically squeezes out the
-   batch slots beside it. Decode throughput *is* bandwidth; latency *is*
-   bytes-read. Shrinking bytes per token is the entire game of efficient
-   decode."
+   processor idles at three percent — and watch its rhythm: everything
+   pours in from HBM, then the new token's KV writes back out, every
+   single step, until the cache hits its ceiling. Decode throughput *is*
+   bandwidth; latency *is* bytes-read. Shrinking bytes per token is the
+   entire game of efficient decode."
 
 5. **[caption]** "Same model. Same GPU. Two different workloads. That's why
    output tokens cost five times input on every rate card — and almost every

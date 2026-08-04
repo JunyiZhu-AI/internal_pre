@@ -15,7 +15,6 @@ var PH = {
       '<div class="ph-hbm">' +
       '<div class="ph-w">weights<br>140 GB</div>' +
       '<div class="ph-kv"><span class="ph-kvlab">KV</span><div class="ph-kvrows"></div></div>' +
-      '<div class="ph-batch">batch</div>' +
       '<div class="ph-lab">HBM</div></div>' +
       "</div>";
   },
@@ -51,21 +50,23 @@ var PH = {
   },
   addKV: function (gpu, warn) {
     var rows = gpu.querySelector(".ph-kvrows");
-    if (rows.children.length >= 12) {
+    if (rows.children.length >= 18) {
       gpu.querySelector(".ph-kv").classList.add("full");
-      gpu.querySelector(".ph-batch").classList.add("squeezed");
       return;
     }
     var r = document.createElement("b");
     rows.appendChild(r);
-    if (rows.children.length >= 9 || warn) gpu.querySelector(".ph-kv").classList.add("warn");
+    if (rows.children.length >= 14 || warn) gpu.querySelector(".ph-kv").classList.add("warn");
   },
   clearKV: function (gpu) {
     gpu.querySelector(".ph-kvrows").innerHTML = "";
     gpu.querySelector(".ph-kv").classList.remove("warn", "full");
-    gpu.querySelector(".ph-batch").classList.remove("squeezed");
+  },
+  // pipe direction: "load" = HBM -> die (right to left), "offload" = KV writeback (left to right)
+  pipeDir: function (gpu, dir) {
+    gpu.querySelector(".ph-pipe").classList.toggle("offload", dir === "offload");
   },
   reset: function (gpu) {
-    PH.setDie(gpu, 0); PH.setPipe(gpu, 0); PH.setUtil(gpu, "—"); PH.clearKV(gpu);
+    PH.setDie(gpu, 0); PH.setPipe(gpu, 0); PH.setUtil(gpu, "—"); PH.clearKV(gpu); PH.pipeDir(gpu, "load");
   },
 };
