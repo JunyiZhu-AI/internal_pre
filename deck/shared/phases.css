@@ -60,7 +60,7 @@
 }
 .ph-kvlab { position: absolute; top: 2px; right: 6px; font: 700 9px ui-monospace, monospace; color: #9085e9; }
 .ph-kvrows { display: flex; flex-wrap: wrap; gap: 2px; align-content: flex-start; height: 100%; }
-.ph-kvrows b { width: 21px; height: 10px; border-radius: 2px; background: rgba(144,133,233,0.75); }
+.ph-kvrows b { width: 28px; height: 13px; border-radius: 2px; background: rgba(144,133,233,0.75); }
 .ph-kv.warn { border-color: #e04b38; animation: kvWarn 0.8s infinite; }
 @keyframes kvWarn { 50% { box-shadow: 0 0 14px rgba(224,75,56,0.7); } }
 .ph-kv.full { border-style: solid; }

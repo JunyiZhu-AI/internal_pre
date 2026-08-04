@@ -50,13 +50,13 @@ var PH = {
   },
   addKV: function (gpu, warn) {
     var rows = gpu.querySelector(".ph-kvrows");
-    if (rows.children.length >= 30) {
+    if (rows.children.length >= 16) {
       gpu.querySelector(".ph-kv").classList.add("full");
       return;
     }
     var r = document.createElement("b");
     rows.appendChild(r);
-    if (rows.children.length >= 25 || warn) gpu.querySelector(".ph-kv").classList.add("warn");
+    if (rows.children.length >= 13 || warn) gpu.querySelector(".ph-kv").classList.add("warn");
   },
   clearKV: function (gpu) {
     gpu.querySelector(".ph-kvrows").innerHTML = "";
