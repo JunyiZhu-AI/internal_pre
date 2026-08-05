@@ -12,7 +12,7 @@ var CL = {
     "MoE":       ["compute — FLOPs / token", "training + decode", "✓ Stable LatentMoE 896/16"],
     "EP":        ["capacity → communication", "training + decode", "✓"],
     "PD":        ["workload mismatch · KV reuse", "serving", "✓ + prefix cache"],
-    "MTP":       ["bandwidth per token — amortisation", "decode", "lineage: DSv3"],
+    "MTP":       ["bandwidth per token — amortisation", "decode", "✓ 1 MTP layer · EAGLE-3 draft"],
   },
   tableNote: "the empty board from the opening, now filled",
 

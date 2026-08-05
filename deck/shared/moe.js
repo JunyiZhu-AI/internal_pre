@@ -1,6 +1,6 @@
 /* Slides 18-22 shared data: MoE and the systems layer.
-   Single source of truth — real-world figures verified, K3-world figures
-   (2.8T/41B, 896 experts, Stable LatentMoE) are the talk's fictional facts. */
+   Single source of truth — figures per the Kimi K3 technical report
+   (arXiv:2607.24653, Table 1) and the K2/DeepSeek-V3 reports. */
 var MOE = {
   // ---- slide 18: conditional computation ----
   mech: "every FFN → N expert FFNs + a router · each token runs top-k of them",
@@ -22,15 +22,15 @@ var MOE = {
   axes: [
     ["finer experts", "split each expert into many small ones — more routing combinations, better specialization (DeepSeekMoE)"],
     ["shared expert", "one always-on expert carries common knowledge — routed experts specialize"],
-    ["deeper sparsity", "more routed experts, near-constant active — the activation rate collapses"],
+    ["deeper sparsity", "more routed experts — the activation rate collapses"],
   ],
   evo: [
     { key: "v3", name: "DeepSeek-V3", year: 2024, total: 671, active: 37, routed: 256, topk: 8, shared: 1, color: "#3987e5" },
-    { key: "k2", name: "Kimi K2", year: 2025, total: 1000, active: 32, routed: 384, topk: 8, shared: 1, color: "#6fb1ff" },
-    { key: "k3", name: "Kimi K3", year: 2026, total: 2800, active: 41, routed: 896, topk: 16, shared: 2, color: "#2fd6b0", label: "Stable LatentMoE" },
+    { key: "k2", name: "Kimi K2", year: 2025, total: 1040, active: 32.6, routed: 384, topk: 8, shared: 1, color: "#6fb1ff" },
+    { key: "k3", name: "Kimi K3", year: 2026, total: 2780, active: 104.2, routed: 896, topk: 16, shared: 2, color: "#2fd6b0", label: "Stable LatentMoE" },
   ],
   k3rate: "16 / 896 active ≈ 1.8%",
-  interp: "the field is buying enormous capacity at near-constant per-token cost",
+  interp: "the field is buying enormous capacity — and activating an ever-smaller fraction of it per token",
 
   // ---- slide 20: the hidden bill ----
   bill: {

@@ -26,5 +26,6 @@ var MTP = {
     what: "DeepSeek-V3's MTP: train an extra module to predict the next-NEXT token — then reuse it as the drafter at inference",
     accept: "~85–90% acceptance reported",
     point: "inference acceleration designed into the architecture",
+    k3: "K3 ships it: 1 MTP layer, pre-trained in — then fine-tuned into an EAGLE-3-style drafter",
   },
 };

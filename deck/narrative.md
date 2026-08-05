@@ -518,19 +518,19 @@ pools — landing back on the rate card's $0.30.*
    routed experts, top-8, one shared. Kimi K2, 2025: a trillion total,
    32 active — 384 experts, still top-8."
 4. "And K3: 896 routed experts, top-16, plus two shared experts — 2.8
-   trillion total, 41 billion active. Sixteen out of 896 is a 1.8 percent
+   trillion total, 104 billion active. Sixteen out of 896 is a 1.8 percent
    activation rate; the recipe is called Stable LatentMoE. That's the grid
    filling HBM on the left — the teal bar on top is the shared experts,
    never off."
-5. "One line of interpretation: the field is buying enormous capacity at
-   near-constant per-token cost. Total goes 671 → 1,000 → 2,800; the
-   active row — note the ×10 zoom it needs to even be visible — barely
-   moves."
+5. "One line of interpretation: totals soared — 671 billion, a trillion,
+   2.8 trillion. The active slice grew too, but look at the rates: 3.1,
+   2.1, 1.8 percent. The field is buying enormous capacity and touching
+   an ever-smaller fraction of it per token."
 
 ### 20 — MoE's Hidden Bill
 
 1. "The four buckets from the start of the talk are back. Turn the model
-   MoE and watch compute: it relaxes — the matmul bill follows 41 billion
+   MoE and watch compute: it relaxes — the matmul bill follows 104 billion
    active, not 2.8 trillion. Look at the processor: only the four active
    experts are on it at all — the idle ones never leave HBM. But in this
    talk, a discount at one bucket usually means an invoice at another."
