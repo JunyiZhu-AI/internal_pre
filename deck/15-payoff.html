@@ -4,9 +4,9 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Attention Line: The Payoff</title>
-<link rel="stylesheet" href="shared/deck.css?v=21">
-<link rel="stylesheet" href="shared/evo.css?v=21">
-<link rel="stylesheet" href="shared/bottlenecks.css?v=21">
+<link rel="stylesheet" href="shared/deck.css?v=22">
+<link rel="stylesheet" href="shared/evo.css?v=22">
+<link rel="stylesheet" href="shared/bottlenecks.css?v=22">
 <style>
   #map { left: 690px; top: 96px; }
   #film { position: absolute; left: 292px; top: 128px; display: flex; gap: 14px; }
@@ -30,12 +30,11 @@
   .lr .lv { font: 700 13px ui-monospace, monospace; color: #c7cce0; white-space: nowrap; }
   #cut { position: absolute; left: 700px; top: 252px; font: 700 13px ui-monospace, monospace; color: #e0a935;
          border: 1.5px solid rgba(201,133,0,0.55); border-radius: 999px; padding: 6px 14px; background: var(--panel); opacity: 0; }
-  #x63 { position: absolute; left: 1078px; top: 196px; text-align: center; opacity: 0; }
+  #x63 { position: absolute; left: 1066px; top: 148px; text-align: center; opacity: 0; }
   #x63 .big { font: 900 44px ui-monospace, monospace; color: var(--accent); line-height: 1; }
-  #x63 .sm { font: 600 9.5px ui-monospace, monospace; color: #9aa1b5; margin-top: 4px; width: 150px; }
+  #x63 .sm { font: 600 9.5px ui-monospace, monospace; color: #9aa1b5; margin-top: 4px; width: 170px; }
   #simh { position: absolute; left: 700px; top: 306px; width: 520px; height: 218px; opacity: 0; }
   #parity { position: absolute; left: 700px; top: 546px; opacity: 0; }
-  #bridge { position: absolute; left: 44px; bottom: 28px; font-size: 17px; font-weight: 800; color: var(--accent); opacity: 0; }
 </style>
 </head>
 <body>
@@ -51,27 +50,25 @@
   <div id="x63"><div class="big"></div><div class="sm"></div></div>
   <div id="simh"></div>
   <div id="parity" class="op-chip"></div>
-  <div id="bridge"></div>
 </div>
 
 <script src="../vendor/gsap.min.js"></script>
-<script src="shared/attnevo.js?v=21"></script>
-<script src="shared/bottlenecks.js?v=21"></script>
-<script src="shared/manifest.js?v=21"></script>
-<script src="shared/deck.js?v=21"></script>
+<script src="shared/attnevo.js?v=22"></script>
+<script src="shared/bottlenecks.js?v=22"></script>
+<script src="shared/manifest.js?v=22"></script>
+<script src="shared/deck.js?v=22"></script>
 <script>
   EV.mapStrip(document.getElementById("map"), 5);
   document.getElementById("cut").textContent = EV.payoff.kvcut;
   document.querySelector("#x63 .big").textContent = EV.payoff.speed + "×";
-  document.querySelector("#x63 .sm").textContent = "decode throughput at 1M context";
+  document.querySelector("#x63 .sm").textContent = "decode throughput at 1M context — reported, Kimi Linear lineage";
   document.getElementById("parity").textContent = EV.payoff.quality;
-  document.getElementById("bridge").textContent = EV.payoff.bridge;
 
   function glyphHTML(key) {
     var s = "", i, r, c;
     if (key === "mha") { for (i = 0; i < 14; i++) s += '<i class="gs" style="width:3px"></i>'; return '<div class="g">' + s + "</div>"; }
-    if (key === "gqa") { for (i = 0; i < 4; i++) s += '<i class="gs" style="width:8px"></i>'; return '<div class="g">' + s + "</div>"; }
-    if (key === "mla") return '<div class="g"><i class="gs cap" style="width:10px"></i></div>';
+    if (key === "gqa") { for (i = 0; i < 4; i++) s += '<i class="gs" style="width:3px"></i>'; return '<div class="g" style="width:66px; justify-content:space-between">' + s + "</div>"; }
+    if (key === "mla") return '<div class="g" style="width:66px"><i class="gs cap" style="width:3px; height:16px"></i></div>';
     if (key === "sparse") {
       for (r = 0; r < 6; r++) for (c = 0; c < 6; c++) {
         var bg = c > r ? "transparent" : (r - c < 2 ? "rgba(224,169,53,0.85)" : "rgba(57,135,229,0.14)");
@@ -128,17 +125,13 @@
     .call(function () { sim.setSpeed(2.0); }).to({}, { duration: 0.5 })
     .call(function () { sim.setSpeed(3.5); }).to({}, { duration: 0.5 })
     .call(function () { sim.setSpeed(5.0); }).to({}, { duration: 0.5 })
-    .call(function () { sim.setSpeed(6.3); })
+    .call(function () { sim.setSpeed(6.0); })
     .fromTo("#x63", { opacity: 0, scale: 0.4 }, { opacity: 1, scale: 1, duration: 0.5, ease: "back.out(2)" })
     .to({}, { duration: 0.8 });
   DECK.markStep(tl);
 
   // step 3: and quality holds
   tl.fromTo("#parity", { opacity: 0, y: 8 }, { opacity: 1, y: 0, duration: 0.45 });
-  DECK.markStep(tl);
-
-  // step 4: bridge to the next section
-  tl.fromTo("#bridge", { opacity: 0, y: 10 }, { opacity: 1, y: 0, duration: 0.5 });
 
   DECK.register(tl, {
     reset: function () {

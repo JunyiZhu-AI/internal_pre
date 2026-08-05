@@ -50,11 +50,10 @@ var EV = {
     position: "attacks decode bandwidth (fixed state) AND capacity (tiny cache) at 1M context",
   },
   payoff: {
-    kvcut: "≈ 75% KV cache reduction (3:1 hybrid + MLA)",
-    speed: "6.3", speedLabel: "× decode throughput at 1M context",
+    kvcut: "≈ 75% KV cut — only 24 of 93 layers cache (hybrid + MLA)",
+    speed: "~6", speedLabel: "× decode throughput at 1M context",
     quality: "quality parity or better on long-context benchmarks",
     ladder: [["MHA", "2.6 MB"], ["GQA", "330 KB"], ["MLA", "~70 KB"], ["hybrid-KDA", "~tens of KB"]],
-    bridge: "context scaling: fixed. Next: shrink the weights themselves — quantization.",
   },
 
   // compact recurring mini-map strip (slides 10-15). activeIdx: index into nodes.

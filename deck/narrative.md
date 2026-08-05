@@ -416,14 +416,15 @@ do.*
 1. "Read the gauge one last time, across the whole line: megabytes per
    token under MHA, 330 kilobytes under GQA, seventy under MLA, tens under
    the hybrid-KDA recipe — mostly state, barely cache."
-2. "K3's reported numbers for that recipe: about 75% less KV cache, and up
-   to 6.3× decode throughput at a million tokens of context. Watch the
-   speedometer."
+2. "The numbers for that recipe. The 75% KV cut you can read straight off
+   the architecture table: only 24 of K3's 93 layers are MLA and carry a
+   cache at all. The speed side — up to about six-x decode throughput at a
+   million tokens — is the reported figure from the Kimi Linear lineage
+   the hybrid descends from. Watch the speedometer."
 3. "And quality? Reported parity or better on long-context benchmarks —
-   that's the claim to interrogate, but it's the claim."
-4. "So attention fixed its context scaling. The other machine in the block
-   still carries two-thirds of the parameters — next: shrink the weights
-   themselves. Quantization."
+   that's the claim to interrogate, but it's the claim. That closes the
+   attention line; the other machine in the block still carries two-thirds
+   of the parameters — next, we shrink the weights themselves."
 
 *(final click → next page)*
 

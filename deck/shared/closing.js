@@ -18,7 +18,7 @@ var CL = {
 
   // on-screen speedup is capped for legibility; true factors go in a corner caption
   speedCap: 8,
-  trueFactors: "true factors — attention arc ≈ 6.3× decode · quant ÷2 bytes again · MTP ÷k",
+  trueFactors: "true factors — attention arc ~6× decode (reported) · quant ÷2 bytes again · MTP ÷k",
 
   // ---- slide 25: the rate card, annotated ----
   receipt: [
