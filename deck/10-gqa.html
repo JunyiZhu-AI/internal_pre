@@ -22,8 +22,6 @@
   .blab { position: absolute; left: 654px; top: 5px; font: 700 13px ui-monospace, monospace; color: #9085e9; white-space: nowrap; }
   #bl2 { color: var(--accent); opacity: 0; }
   #div8 { position: absolute; left: 290px; top: -4px; font: 800 19px ui-monospace, monospace; color: var(--accent); opacity: 0; }
-  #already { position: absolute; left: 0; top: 476px; width: 100%; text-align: center;
-             font: 600 12.5px ui-monospace, monospace; color: #9aa1b5; opacity: 0; }
   #adopt { position: absolute; left: 44px; bottom: 66px; font: 600 14px ui-monospace, monospace; color: #9aa1b5; opacity: 0; }
   #pattern { position: absolute; left: 44px; bottom: 28px; font-size: 17px; font-weight: 800; color: var(--accent); opacity: 0; }
 </style>
@@ -44,7 +42,6 @@
     <span class="blab" id="bl2">0.33 MB / token</span>
     <span id="div8">÷ 8</span>
   </div>
-  <div id="already"></div>
   <div id="adopt"></div>
   <div id="pattern"></div>
 </div>
@@ -56,7 +53,6 @@
 <script>
   EV.mapStrip(document.getElementById("map"), 1);
   document.getElementById("cap3").textContent = "GQA — " + EV.gqa.note;
-  document.getElementById("already").textContent = EV.gqa.already;
   document.getElementById("adopt").textContent = EV.gqa.adopters;
   document.getElementById("pattern").textContent = EV.gqa.pattern;
 
@@ -77,7 +73,7 @@
     if (k === 4) leaders.push(s);
   }
   var CX = (778 - 6) / 2;
-  function GX(g) { return g * (GW + GG) + (GW - 14) / 2; }
+  function GX(g) { return g * (GW + GG) + (GW - 6) / 2; }
 
   var tl = gsap.timeline({ paused: true });
 
@@ -100,7 +96,7 @@
       opacity: function (i) { return i % 8 === 4 ? 1 : 0; },
       duration: 0.7, ease: "power2.inOut"
     }, "<")
-    .to(leaders, { width: 14, boxShadow: "0 0 12px rgba(144,133,233,0.7)", duration: 0.35 });
+    .to(leaders, { boxShadow: "0 0 12px rgba(144,133,233,0.7)", duration: 0.35 });
   DECK.markStep(tl);
 
   // step 3: the bill — cache ÷ 8
@@ -108,8 +104,7 @@
     .to("#bbar", { width: 80, duration: 1.0, ease: "power2.inOut" })
     .to("#bl1", { opacity: 0, duration: 0.3 }, "<0.5")
     .to("#bl2", { opacity: 1, duration: 0.3 }, "<")
-    .fromTo("#div8", { opacity: 0, scale: 0.5 }, { opacity: 1, scale: 1, duration: 0.4, ease: "back.out(2)" })
-    .fromTo("#already", { opacity: 0 }, { opacity: 1, duration: 0.45 });
+    .fromTo("#div8", { opacity: 0, scale: 0.5 }, { opacity: 1, scale: 1, duration: 0.4, ease: "back.out(2)" });
   DECK.markStep(tl);
 
   // step 4: who runs it, and what it means
