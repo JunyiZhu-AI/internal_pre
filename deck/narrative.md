@@ -463,15 +463,19 @@ slide 03 deliberately reappear here.*
 1. "Watch where quantization enters the pipeline. Old world: after training
    — PTQ, compress and accept the loss. Then DeepSeek-V3 moved it before
    pretraining: FP8-native. K3 moves it inside training: quantization-aware
-   training from the SFT stage onward."
-2. "K3's recipe: MXFP4 weights, MXFP8 activations. The 'MX' is microscaling
-   — one shared scale per small block of values — and that block-wise scale
-   is what keeps four-bit weights accurate. Watch the wall repaint sixteen,
-   eight, four — and the quality line hold flat."
-3. "The payoff: versus FP8, four-bit weights halve the weight memory and
-   the decode bandwidth *again* — and that flows straight into the token
-   price. Watch the machine: footprint frees, the pipe carries half the
-   bytes per token, quality holds."
+   training through the whole post-training stage — SFT and RL, with
+   rollout and training sharing the same scheme, so serving never sees a
+   precision it wasn't trained in."
+2. "K3's recipe: MXFP4 expert weights — the experts are the bulk of the
+   2.8 trillion — with MXFP8 activations; attention, the latent
+   projections, shared experts and routers stay higher precision. The 'MX'
+   is microscaling — one shared scale per small block of values — and that
+   block-wise scale is what keeps four-bit weights accurate. Watch the
+   wall repaint sixteen, eight, four — and the quality line hold flat."
+3. "The payoff: versus FP8, four-bit expert weights halve the weight
+   memory and the decode bandwidth *again* — and that flows straight into
+   the token price. Watch the machine: footprint frees, the pipe carries
+   half the bytes per token, quality holds."
 4. "So the takeaway: at the frontier, precision is an architecture
    hyperparameter, co-designed with the model — not a compression
    afterthought. And now weights are cheap to store — but decode still
@@ -684,8 +688,9 @@ replay chip jumps there.)*
 5. "And prefill–decode disaggregation: the serving screen itself splits —
    a P pool owning time-to-first-token, a D pool owning time-per-output-
    token, each gauge tuned alone. Fifteen out of fifteen: the meter reads
-   four-point-seven-five against the launch-day ghost — and the corner
-   caption keeps the honest arithmetic on the real factors."
+   twelve-x against the launch-day ghost — every technique compounding on
+   the attention line's six — and the corner caption keeps the honest
+   arithmetic on the real factors."
 6. "Pull back. The empty board from the opening, now filled: nine
    techniques, the bottleneck each one attacks, the stage where it bites,
    and whether it ships in K3. Every row is a targeted strike on one of four

@@ -16,7 +16,7 @@ var QT = {
   rows: [
     ["W4A16", "INT4 weights · FP16 matmul", "bandwidth + capacity", "the serving default — no compute speedup"],
     ["W8A8 / FP8", "both operands 8-bit", "+ tensor-core compute", "native on Hopper / Blackwell"],
-    ["MXFP4", "4-bit weights × 8-bit activations", "the frontier", "K3's recipe — next slide"],
+    ["MXFP4", "4-bit expert weights × 8-bit activations", "the frontier", "K3's recipe — next slide"],
     ["KV INT8/FP8", "quantized cache", "capacity only", "the third dial"],
   ],
 
@@ -26,10 +26,11 @@ var QT = {
   timeline: [
     ["PTQ", "compress AFTER training", "accept the loss"],
     ["FP8-native", "precision chosen BEFORE pretraining", "DeepSeek-V3"],
-    ["QAT from SFT", "quantization INSIDE training", "K3: MXFP4 weights × MXFP8 activations"],
+    ["QAT from SFT", "quantization inside post-training — SFT and RL share the scheme", "K3: MXFP4 expert weights × MXFP8 activations"],
   ],
   micro: "microscaling: one shared scale per small block of values — what keeps 4-bit weights accurate",
-  why: "vs FP8: 4-bit weights halve HBM footprint and decode bandwidth AGAIN — straight into token cost",
+  scope: "non-expert parts stay higher precision — attention, latent MoE projections, shared experts, routers",
+  why: "vs FP8: 4-bit expert weights — the bulk of 2.8T — halve HBM footprint and decode bandwidth AGAIN",
   takeaway: "At the frontier, precision is an architecture hyperparameter — co-designed, not a compression afterthought.",
   bridge: "Weights are now cheap to store — but decode still reads every one it uses. What if we used fewer of them per token? Enter MoE.",
 };
