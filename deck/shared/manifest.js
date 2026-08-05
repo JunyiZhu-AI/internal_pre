@@ -2,6 +2,7 @@
    and the "N / M" counter. Add new pages here, in presentation order.
    (01-qkt-matmul.html is the engine template page, kept out of the flow.) */
 window.DECK_PAGES = [
+  "00-title.html",
   "01-pricing.html",
   "02-bottlenecks.html",
   "03-roofline.html",

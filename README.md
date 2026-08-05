@@ -11,7 +11,7 @@ no server backend, no CDN dependency — all libraries vendored):
 
 Click-stepped presentation pages, one HTML file per slide, listed in
 presentation order in `deck/shared/manifest.js`. Entry point:
-**`deck/01-pricing.html`** (or follow the card on `index.html`).
+**`deck/00-title.html`** (or follow the card on `index.html`).
 
 Controls:
 

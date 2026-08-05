@@ -12,6 +12,18 @@ restart, loop (auto-plays all steps, for rehearsal or hallway mode). F = fullscr
 
 ---
 
+## Page 00 — Title
+
+*Everything appears by itself on load — no clicks. The picker wheel rolls
+through every technique in the deck, resting a couple of seconds on
+"Efficient LLM Techniques" each cycle. One click → page 1.*
+
+1. (While the wheel rolls) "Good evening — tonight we go from one model's
+   price tag to the whole modern toolkit of efficient LLM serving. Every
+   name you see rolling past, we will build from first principles."
+
+---
+
 ## Page 01 — Everyone Is Talking About K3's Token Cost
 
 **Load:** title only.
