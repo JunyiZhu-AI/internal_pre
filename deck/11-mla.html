@@ -4,8 +4,8 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>MLA: Compress KV into a Latent</title>
-<link rel="stylesheet" href="shared/deck.css?v=19">
-<link rel="stylesheet" href="shared/evo.css?v=19">
+<link rel="stylesheet" href="shared/deck.css?v=20">
+<link rel="stylesheet" href="shared/evo.css?v=20">
 <style>
   #map { left: 690px; top: 96px; }
   #zone { position: absolute; left: 60px; top: 168px; width: 600px; height: 280px; opacity: 0; }
@@ -20,7 +20,12 @@
   #cbox { position: absolute; left: 420px; top: 34px; width: 160px; height: 210px; border: 2px dashed rgba(144,133,233,0.6);
           border-radius: 10px; }
   #cbox .cl { position: absolute; top: 8px; width: 100%; text-align: center; font: 700 11px ui-monospace, monospace; color: #9085e9; }
-  .mcap { position: absolute; left: 74px; width: 12px; height: 26px; border-radius: 6px; background: #b3aaff; opacity: 0; }
+  .mcap { position: absolute; left: 48px; width: 18px; height: 26px; border-radius: 6px; background: #b3aaff; opacity: 0; }
+  .mcap.sm { left: 78px; width: 9px; height: 14px; border-radius: 4px;
+             background: rgba(179,170,255,0.25); border: 1.5px solid #b3aaff; }
+  #cleg { position: absolute; left: 380px; top: 252px; width: 240px; text-align: center;
+          font: 600 9.5px ui-monospace, monospace; color: #9085e9; opacity: 0; }
+  #cleg b { color: #b3aaff; }
   #latlab { position: absolute; left: 60px; top: 452px; width: 600px; text-align: center;
             font: 600 12.5px ui-monospace, monospace; color: #9085e9; opacity: 0; }
   #bars { position: absolute; left: 90px; top: 500px; width: 540px; opacity: 0; }
@@ -38,7 +43,6 @@
   #wnote { position: absolute; left: 40px; top: 152px; font: 11px ui-monospace, monospace; color: #6b7284; }
   #abline { position: absolute; left: 0; top: 196px; width: 520px; font: 700 13.5px ui-monospace, monospace; color: var(--accent); opacity: 0; }
   #adopt { position: absolute; left: 44px; bottom: 66px; font: 600 14px ui-monospace, monospace; color: #9aa1b5; opacity: 0; }
-  #framing { position: absolute; left: 44px; bottom: 28px; font-size: 17px; font-weight: 800; color: var(--accent); opacity: 0; }
 </style>
 </head>
 <body>
@@ -56,6 +60,7 @@
     <div id="ctcap"></div>
     <div id="ctlab">c_t</div>
     <div id="cbox"><span class="cl">the cache</span></div>
+    <div id="cleg"><b>▮</b> low-rank c_t &nbsp; <b>▯</b> shared RoPE key</div>
   </div>
   <div id="latlab"></div>
   <div id="bars">
@@ -71,13 +76,12 @@
     <div id="abline"></div>
   </div>
   <div id="adopt"></div>
-  <div id="framing"></div>
 </div>
 
 <script src="../vendor/gsap.min.js"></script>
-<script src="shared/attnevo.js?v=19"></script>
-<script src="shared/manifest.js?v=19"></script>
-<script src="shared/deck.js?v=19"></script>
+<script src="shared/attnevo.js?v=20"></script>
+<script src="shared/manifest.js?v=20"></script>
+<script src="shared/deck.js?v=20"></script>
 <script>
   EV.mapStrip(document.getElementById("map"), 2);
   document.getElementById("latlab").textContent = "only " + EV.mla.latent + " enters the cache";
@@ -85,15 +89,18 @@
   document.getElementById("bline").textContent = EV.mla.bytes + "";
   document.getElementById("abline").textContent = EV.mla.absorb;
   document.getElementById("adopt").textContent = EV.mla.adopters;
-  document.getElementById("framing").textContent = EV.mla.framing;
 
-  // three mini capsules that land in the cache box
+  // three cache entries: a big low-rank c_t block + a small shared-RoPE block
   var cbox = document.getElementById("cbox");
   for (var i = 0; i < 3; i++) {
-    var m = document.createElement("div");
-    m.className = "mcap"; m.id = "mc" + i;
-    m.style.top = (166 - i * 34) + "px";
-    cbox.appendChild(m);
+    var b = document.createElement("div");
+    b.className = "mcap"; b.id = "mcb" + i;
+    b.style.top = (166 - i * 34) + "px";
+    cbox.appendChild(b);
+    var s = document.createElement("div");
+    s.className = "mcap sm"; s.id = "mcs" + i;
+    s.style.top = (172 - i * 34) + "px";
+    cbox.appendChild(s);
   }
 
   var tl = gsap.timeline({ paused: true });
@@ -104,8 +111,14 @@
     .to("#stK, #stV", { x: 60, scaleX: 0.3, opacity: 0.3, duration: 0.8, ease: "power2.inOut" })
     .fromTo("#ctcap", { opacity: 0, scale: 0.3 }, { opacity: 1, scale: 1, duration: 0.45, ease: "back.out(2)" })
     .fromTo("#ctlab", { opacity: 0 }, { opacity: 1, duration: 0.3 }, "<")
-    .fromTo("#mc0, #mc1, #mc2", { opacity: 0, x: -60, y: -20 }, { opacity: 1, x: 0, y: 0, duration: 0.45, stagger: 0.18, ease: "power2.out" })
     .fromTo("#latlab", { opacity: 0 }, { opacity: 1, duration: 0.4 });
+  // the compression repeats three times — c_t piles up in the cache
+  for (var r = 0; r < 3; r++) {
+    tl.fromTo("#ctcap", { scale: 0.45, opacity: 0.4 }, { scale: 1, opacity: 1, duration: 0.3, ease: "back.out(1.8)", immediateRender: false })
+      .fromTo("#mcb" + r, { opacity: 0, x: -74, y: -18 }, { opacity: 1, x: 0, y: 0, duration: 0.45, ease: "power2.out" })
+      .fromTo("#mcs" + r, { opacity: 0, x: -96, y: -12 }, { opacity: 1, x: 0, y: 0, duration: 0.45, ease: "power2.out" }, "<0.09");
+  }
+  tl.fromTo("#cleg", { opacity: 0 }, { opacity: 1, duration: 0.35 });
   DECK.markStep(tl);
 
   // step 2: the number — an order of magnitude under GQA
@@ -126,8 +139,7 @@
   DECK.markStep(tl);
 
   // step 4: who runs it — and how to frame it
-  tl.fromTo("#adopt", { opacity: 0, y: 8 }, { opacity: 1, y: 0, duration: 0.4 })
-    .fromTo("#framing", { opacity: 0, y: 10 }, { opacity: 1, y: 0, duration: 0.5 });
+  tl.fromTo("#adopt", { opacity: 0, y: 8 }, { opacity: 1, y: 0, duration: 0.4 });
 
   DECK.register(tl, {});
 </script>
