@@ -52,7 +52,7 @@
     var s = "", i, r, c;
     if (key === "mha") { for (i = 0; i < 14; i++) s += '<i class="gs" style="width:3px"></i>'; return '<div class="g">' + s + "</div>"; }
     if (key === "gqa") { for (i = 0; i < 4; i++) s += '<i class="gs" style="width:3px"></i>'; return '<div class="g" style="width:68px; justify-content:space-between">' + s + "</div>"; }
-    if (key === "mla") return '<div class="g"><i class="gs cap" style="width:68px; height:20px"></i></div>';
+    if (key === "mla") { for (i = 0; i < 4; i++) s += '<i class="gs" style="width:3px; height:20px"></i>'; return '<div class="g" style="width:68px; justify-content:space-between">' + s + "</div>"; }
     if (key === "sparse") {
       for (r = 0; r < 6; r++) for (c = 0; c < 6; c++) {
         var bg = c > r ? "transparent" : (r - c < 2 ? "rgba(224,169,53,0.85)" : "rgba(57,135,229,0.14)");
