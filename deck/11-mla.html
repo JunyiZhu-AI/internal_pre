@@ -4,8 +4,8 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>MLA: Compress KV into a Latent</title>
-<link rel="stylesheet" href="shared/deck.css?v=20">
-<link rel="stylesheet" href="shared/evo.css?v=20">
+<link rel="stylesheet" href="shared/deck.css?v=21">
+<link rel="stylesheet" href="shared/evo.css?v=21">
 <style>
   #map { left: 690px; top: 96px; }
   #zone { position: absolute; left: 60px; top: 168px; width: 600px; height: 280px; opacity: 0; }
@@ -60,7 +60,7 @@
     <div id="ctcap"></div>
     <div id="ctlab">c_t</div>
     <div id="cbox"><span class="cl">the cache</span></div>
-    <div id="cleg"><b>▮</b> low-rank c_t &nbsp; <b>▯</b> shared RoPE key</div>
+    <div id="cleg"><b>▮</b> low-rank c_t &nbsp; <b>▯</b> RoPE key (shared across heads)</div>
   </div>
   <div id="latlab"></div>
   <div id="bars">
@@ -79,9 +79,9 @@
 </div>
 
 <script src="../vendor/gsap.min.js"></script>
-<script src="shared/attnevo.js?v=20"></script>
-<script src="shared/manifest.js?v=20"></script>
-<script src="shared/deck.js?v=20"></script>
+<script src="shared/attnevo.js?v=21"></script>
+<script src="shared/manifest.js?v=21"></script>
+<script src="shared/deck.js?v=21"></script>
 <script>
   EV.mapStrip(document.getElementById("map"), 2);
   document.getElementById("latlab").textContent = "only " + EV.mla.latent + " enters the cache";
@@ -105,20 +105,21 @@
 
   var tl = gsap.timeline({ paused: true });
 
-  // step 1: K,V strips squeezed through the bottleneck into c_t
+  // step 1: for EVERY token — K,V come in, get squeezed, c_t goes out to the cache
   tl.fromTo("#zone", { opacity: 0, y: 14 }, { opacity: 1, y: 0, duration: 0.55, ease: "power2.out" })
-    .to({}, { duration: 0.4 })
-    .to("#stK, #stV", { x: 60, scaleX: 0.3, opacity: 0.3, duration: 0.8, ease: "power2.inOut" })
-    .fromTo("#ctcap", { opacity: 0, scale: 0.3 }, { opacity: 1, scale: 1, duration: 0.45, ease: "back.out(2)" })
-    .fromTo("#ctlab", { opacity: 0 }, { opacity: 1, duration: 0.3 }, "<")
-    .fromTo("#latlab", { opacity: 0 }, { opacity: 1, duration: 0.4 });
-  // the compression repeats three times — c_t piles up in the cache
+    .fromTo("#ctlab", { opacity: 0 }, { opacity: 1, duration: 0.3 })
+    .fromTo("#latlab", { opacity: 0 }, { opacity: 1, duration: 0.4 }, "<");
   for (var r = 0; r < 3; r++) {
-    tl.fromTo("#ctcap", { scale: 0.45, opacity: 0.4 }, { scale: 1, opacity: 1, duration: 0.3, ease: "back.out(1.8)", immediateRender: false })
-      .fromTo("#mcb" + r, { opacity: 0, x: -74, y: -18 }, { opacity: 1, x: 0, y: 0, duration: 0.45, ease: "power2.out" })
-      .fromTo("#mcs" + r, { opacity: 0, x: -96, y: -12 }, { opacity: 1, x: 0, y: 0, duration: 0.45, ease: "power2.out" }, "<0.09");
+    tl.fromTo("#stK, #stV", { x: 0, scaleX: 1, opacity: 0 }, { opacity: 1, duration: 0.3, immediateRender: false })   // this token's K,V arrive
+      .to("#stK, #stV", { x: 60, scaleX: 0.3, opacity: 0.25, duration: 0.7, ease: "power2.inOut" })                   // squeezed through the bottleneck
+      .fromTo("#ctcap", { opacity: 0, scale: 0.35 }, { opacity: 1, scale: 1, duration: 0.35, ease: "back.out(2)", immediateRender: false })
+      .to("#stK, #stV", { opacity: 0, duration: 0.25 }, "<")
+      .fromTo("#mcb" + r, { opacity: 0, x: -74, y: -18 }, { opacity: 1, x: 0, y: 0, duration: 0.45, ease: "power2.out" })  // c_t out, into the pile
+      .fromTo("#mcs" + r, { opacity: 0, x: -96, y: -12 }, { opacity: 1, x: 0, y: 0, duration: 0.45, ease: "power2.out" }, "<0.09")
+      .to("#ctcap", { opacity: 0, duration: 0.2 });
   }
-  tl.fromTo("#cleg", { opacity: 0 }, { opacity: 1, duration: 0.35 });
+  tl.fromTo("#cleg", { opacity: 0 }, { opacity: 1, duration: 0.35 })
+    .fromTo("#ctcap", { opacity: 0, scale: 0.6 }, { opacity: 1, scale: 1, duration: 0.35, ease: "back.out(1.8)", immediateRender: false });
   DECK.markStep(tl);
 
   // step 2: the number — an order of magnitude under GQA

@@ -346,17 +346,20 @@ do.*
 ### 11 — MLA: Compress KV into a Latent
 
 1. "DeepSeek's move goes further: don't share the heads — compress them.
-   Project every token's K and V down to one low-rank latent vector, about
-   512 dimensions, plus one small shared RoPE key. Cache *only those two* —
-   watch the pile: for every token, one big low-rank block and its little
-   RoPE companion."
+   Watch the loop: a token's K and V come in, get squeezed through the
+   bottleneck, and what comes out is one low-rank latent, about 512
+   dimensions, plus one small RoPE key shared across all heads. Cache
+   *only those two* — token after token, the pile grows: big latent,
+   little RoPE companion."
 2. "Per-token cache drops to the seventy-kilobyte class — an order of
    magnitude below GQA, at comparable reported quality."
 3. "The elegant part: at inference the up-projection folds into W_Q and W_O
    — absorbed, gone. That's what makes the compression real at decode:
    attention scores against the cached latents *directly*, so what streams
    out of HBM every token is the compressed seventy kilobytes — never the
-   full K and V — and the compression costs zero extra decode compute."
+   full K and V. The scores now run over 512-dim latents instead of
+   128-dim heads, so it does spend a few extra FLOPs — but FLOPs are
+   exactly the currency a bandwidth-bound decoder has to spare."
 4. "DeepSeek V2 and V3, Kimi K2 — and K3's full-attention layers still use
    gated MLA today. Keep that in mind: MLA isn't a detour we pass by; it's
    part of the endpoint."

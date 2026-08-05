@@ -24,7 +24,7 @@ var EV = {
   mla: {
     latent: "c_t: rank ≈ 512 + 64 RoPE dims",
     bytes: "~70 KB / token — an order of magnitude below GQA",
-    absorb: "absorbed into W_Q / W_O → attention reads c_t directly: HBM traffic stays compressed, no extra decode compute",
+    absorb: "absorbed into W_Q / W_O → attention reads c_t directly: HBM traffic stays compressed",
     adopters: "DeepSeek-V2/V3 · Kimi K2 · K3's full-attention layers (gated MLA)",
     framing: "not a detour — both history and part of the SOTA endpoint",
   },
