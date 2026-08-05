@@ -2,12 +2,12 @@
    One thread metric everywhere: KV bytes per decoded token x quality. */
 var EV = {
   nodes: [
-    { key: "mha", name: "MHA", sub: "baseline", bytes: "2.6 MB", color: "#6b7284" },
-    { key: "gqa", name: "MQA / GQA", sub: "share KV heads", bytes: "330 KB", color: "#3987e5" },
-    { key: "mla", name: "MLA", sub: "low-rank latent", bytes: "~70 KB", color: "#6fb1ff" },
+    { key: "mha", name: "MHA", sub: "baseline", bytes: "2.6 MB / token", color: "#6b7284" },
+    { key: "gqa", name: "MQA / GQA", sub: "share KV heads", bytes: "330 KB / token", color: "#3987e5" },
+    { key: "mla", name: "MLA", sub: "low-rank latent", bytes: "~70 KB / token", color: "#6fb1ff" },
     { key: "sparse", name: "Sparse", sub: "fewer tokens", bytes: "≤ window", color: "#e0a935" },
     { key: "linear", name: "Linear / SSM", sub: "fixed-size state", bytes: "O(1) state", color: "#2fd6b0" },
-    { key: "kda", name: "KDA", sub: "per-channel gates", bytes: "O(1) state", color: "#e04b38" },
+    { key: "kda", name: "KDA", sub: "per-channel gates", bytes: "~tens of KB", color: "#e04b38" },
   ],
 
   metric: "judged by one metric: KV bytes / token × quality retention",

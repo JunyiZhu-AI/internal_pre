@@ -4,8 +4,8 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>The Attention Evolution Map</title>
-<link rel="stylesheet" href="shared/deck.css?v=18">
-<link rel="stylesheet" href="shared/evo.css?v=18">
+<link rel="stylesheet" href="shared/deck.css?v=19">
+<link rel="stylesheet" href="shared/evo.css?v=19">
 <style>
   #metric { position: absolute; left: 0; top: 140px; width: 100%; text-align: center; font: 600 15px ui-monospace, monospace; color: var(--accent); opacity: 0; }
   #lineage { position: absolute; left: 72px; top: 240px; display: flex; align-items: flex-start; opacity: 0; }
@@ -36,14 +36,14 @@
 
   <div id="metric"></div>
   <div id="lineage"></div>
-  <div id="gaugewrap"><div class="ev-gauge">KV bytes / token · <b id="gv">2.6 MB</b></div></div>
+  <div id="gaugewrap"><div class="ev-gauge">Kimi K3&rsquo;s KV bytes / token · <b id="gv">2.6 MB</b></div></div>
   <div id="story"></div>
 </div>
 
 <script src="../vendor/gsap.min.js"></script>
-<script src="shared/attnevo.js?v=18"></script>
-<script src="shared/manifest.js?v=18"></script>
-<script src="shared/deck.js?v=18"></script>
+<script src="shared/attnevo.js?v=19"></script>
+<script src="shared/manifest.js?v=19"></script>
+<script src="shared/deck.js?v=19"></script>
 <script>
   document.getElementById("metric").textContent = EV.metric;
   document.getElementById("story").textContent = EV.story;
@@ -99,7 +99,7 @@
 
   // step 3: the cache disappears — Linear, KDA
   tl.call(function () { on("linear"); setG("O(1) state"); }).to({}, { duration: 0.9 })
-    .call(function () { on("kda"); setG("O(1) state"); }).to({}, { duration: 0.9 });
+    .call(function () { on("kda"); setG("~tens of KB"); }).to({}, { duration: 0.9 });
   DECK.markStep(tl);
 
   // step 4: the story in one line
