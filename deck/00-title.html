@@ -38,7 +38,7 @@
 </head>
 <body>
 <div class="stage">
-  <div id="t1">From Kimi K3 to Broad</div>
+  <div id="t1">From Kimi K3 to</div>
   <div id="wheelwrap"><div id="wheel"></div></div>
   <div id="band"></div>
   <div id="speaker">Speaker: <b>Junyi Zhu</b></div>
@@ -52,7 +52,7 @@
   // the wheel's strip: the umbrella phrase + every technique in the deck
   // (from the shared roster), padded with duplicate neighbours so the
   // resting frame after a full revolution is pixel-identical to the start
-  var HERO = "Efficient LLM Techniques";
+  var HERO = "Broad Efficient LLM Techniques";
   var techs = BN.techniques.map(function (t) { return t[0]; });
   var strip = [techs[techs.length - 1], HERO].concat(techs, [HERO, techs[0]]);
   var wheel = document.getElementById("wheel");
