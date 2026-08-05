@@ -4,8 +4,8 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>The Attention Evolution Map</title>
-<link rel="stylesheet" href="shared/deck.css?v=16">
-<link rel="stylesheet" href="shared/evo.css?v=16">
+<link rel="stylesheet" href="shared/deck.css?v=17">
+<link rel="stylesheet" href="shared/evo.css?v=17">
 <style>
   #metric { position: absolute; left: 0; top: 140px; width: 100%; text-align: center; font: 600 15px ui-monospace, monospace; color: var(--accent); opacity: 0; }
   #lineage { position: absolute; left: 72px; top: 240px; display: flex; align-items: flex-start; opacity: 0; }
@@ -33,7 +33,6 @@
 <body>
 <div class="stage">
   <div class="slide-title">The Attention Evolution Map</div>
-  <div class="slide-sub">six architectures — the same n×n matrix and purple strips, reshaped again and again</div>
 
   <div id="metric"></div>
   <div id="lineage"></div>
@@ -42,9 +41,9 @@
 </div>
 
 <script src="../vendor/gsap.min.js"></script>
-<script src="shared/attnevo.js?v=16"></script>
-<script src="shared/manifest.js?v=16"></script>
-<script src="shared/deck.js?v=16"></script>
+<script src="shared/attnevo.js?v=17"></script>
+<script src="shared/manifest.js?v=17"></script>
+<script src="shared/deck.js?v=17"></script>
 <script>
   document.getElementById("metric").textContent = EV.metric;
   document.getElementById("story").textContent = EV.story;
@@ -52,8 +51,8 @@
   function glyphHTML(key) {
     var s = "", i, r, c;
     if (key === "mha") { for (i = 0; i < 14; i++) s += '<i class="gs" style="width:3px"></i>'; return '<div class="g">' + s + "</div>"; }
-    if (key === "gqa") { for (i = 0; i < 4; i++) s += '<i class="gs" style="width:9px"></i>'; return '<div class="g">' + s + "</div>"; }
-    if (key === "mla") return '<div class="g"><i class="gs cap" style="width:11px"></i></div>';
+    if (key === "gqa") { for (i = 0; i < 4; i++) s += '<i class="gs" style="width:3px"></i>'; return '<div class="g" style="width:68px; justify-content:space-between">' + s + "</div>"; }
+    if (key === "mla") return '<div class="g"><i class="gs cap" style="width:68px; height:20px"></i></div>';
     if (key === "sparse") {
       for (r = 0; r < 6; r++) for (c = 0; c < 6; c++) {
         var bg = c > r ? "transparent" : (r - c < 2 ? "rgba(224,169,53,0.85)" : "rgba(57,135,229,0.14)");
@@ -100,7 +99,7 @@
 
   // step 3: the cache disappears — Linear, KDA
   tl.call(function () { on("linear"); setG("O(1) state"); }).to({}, { duration: 0.9 })
-    .call(function () { on("kda"); setG("~tens of KB (state)"); }).to({}, { duration: 0.9 });
+    .call(function () { on("kda"); setG("O(1) state"); }).to({}, { duration: 0.9 });
   DECK.markStep(tl);
 
   // step 4: the story in one line

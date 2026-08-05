@@ -7,7 +7,7 @@ var EV = {
     { key: "mla", name: "MLA", sub: "low-rank latent", bytes: "~70 KB", color: "#6fb1ff" },
     { key: "sparse", name: "Sparse", sub: "fewer tokens", bytes: "≤ window", color: "#e0a935" },
     { key: "linear", name: "Linear / SSM", sub: "fixed-size state", bytes: "O(1) state", color: "#2fd6b0" },
-    { key: "kda", name: "KDA", sub: "per-channel gates", bytes: "~tens of KB", color: "#e04b38" },
+    { key: "kda", name: "KDA", sub: "per-channel gates", bytes: "O(1) state", color: "#e04b38" },
   ],
 
   metric: "judged by one metric: KV bytes / token × quality retention",
