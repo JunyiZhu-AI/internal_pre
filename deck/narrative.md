@@ -424,63 +424,8 @@ do.*
 3. "And quality? Reported parity or better on long-context benchmarks —
    that's the claim to interrogate, but it's the claim. That closes the
    attention line; the other machine in the block still carries two-thirds
-   of the parameters — next, we shrink the weights themselves."
-
-*(final click → next page)*
-
----
-
-## Pages 16–17 — Quantization (the notation, then the frontier)
-
-*Bucket payments: slide 02's machine returns and each dial visibly pays its
-bucket; the locked toolkit card unlocks. The B200 FP8/FP4 ceilings cut from
-slide 03 deliberately reappear here.*
-
-### 16 — Quantization: Decoding the Notation
-
-1. "The entire quantization field hides in one line of notation: W-x A-y —
-   x-bit weights, y-bit activations. The two letters buy completely
-   different things, and if you know which letter you turned, you know which
-   bottleneck you fixed."
-2. "Turn the W dial. Weights are static — known before deployment — so you
-   can be aggressive: four bits, per-group scales, GPTQ- and AWQ-style error
-   compensation, all offline. What does it buy? Bandwidth — decode re-reads
-   every weight, every token — and capacity. What does it NOT buy? Compute.
-   Watch the tensor cores: still FP16. W4A16 is the serving default, and it
-   is a pure memory play."
-3. "Now the A dial. Activations are dynamic and outlier-prone — harder. But
-   the moment BOTH operands are cheap, the matmul drops onto low-precision
-   tensor cores, and now you bought compute. That gives you the whole
-   family: W4A16 for serving, eight-bit both ways for compute, four-bit
-   weights at the frontier — and the KV cache as a third dial that buys
-   capacity alone."
-4. "And remember the roofline slide, where I hid the B200's other two
-   ceilings? Here they are: 2,250, 4,500, 9,000. The hardware has dials
-   too — and it's turning them in the same direction."
-
-### 17 — Precision Becomes an Architecture Hyperparameter
-
-1. "Watch where quantization enters the pipeline. Old world: after training
-   — PTQ, compress and accept the loss. Then DeepSeek-V3 moved it before
-   pretraining: FP8-native. K3 moves it inside training: quantization-aware
-   training through the whole post-training stage — SFT and RL, with
-   rollout and training sharing the same scheme, so serving never sees a
-   precision it wasn't trained in."
-2. "K3's recipe: MXFP4 expert weights — the experts are the bulk of the
-   2.8 trillion — with MXFP8 activations; attention, the latent
-   projections, shared experts and routers stay higher precision. The 'MX'
-   is microscaling — one shared scale per small block of values — and that
-   block-wise scale is what keeps four-bit weights accurate. Watch the
-   wall repaint sixteen, eight, four — and the quality line hold flat."
-3. "The payoff: versus FP8, four-bit expert weights halve the weight
-   memory and the decode bandwidth *again* — and that flows straight into
-   the token price. Watch the machine: footprint frees, the pipe carries
-   half the bytes per token, quality holds."
-4. "So the takeaway: at the frontier, precision is an architecture
-   hyperparameter, co-designed with the model — not a compression
-   afterthought. And now weights are cheap to store — but decode still
-   reads every weight it uses. What if we simply used fewer of them per
-   token? Enter MoE."
+   of the parameters — next: what if a token simply used fewer of them?
+   Mixture-of-Experts."
 
 *(final click → next page)*
 
@@ -495,10 +440,10 @@ pools — landing back on the rate card's $0.30.*
 
 ### 18 — MoE: Conditional Computation
 
-1. "Slide 17 ended on a promise: what if a token simply used fewer weights?
-   Here's the machine again. Zoom into the die — one layer of the stack,
-   the part we haven't touched all talk: the FFN. Dense, it's roughly
-   two-thirds of the parameters, and every token pays for all of it."
+1. "The attention line is closed — but the other machine in the block
+   still carries two-thirds of the parameters, and decode reads every
+   weight it uses. Here's the machine again. Zoom into the die — one
+   layer of the stack: the FFN. Dense, every token pays for all of it."
 2. "The trick: unzip the FFN into N parallel experts and put a router in
    front. Watch the tokens come through — each one activates only the
    top-k, here two of eight, and every token picks a different pair;
@@ -712,6 +657,65 @@ of slide 24's table.*
    to the bucket game."
 
 *(end of deck)*
+
+---
+
+## Backup — Quantization (pages 16–17, after the thank-you)
+
+*Bucket payments: slide 02's machine returns and each dial visibly pays its
+bucket; the locked toolkit card unlocks. The B200 FP8/FP4 ceilings cut from
+slide 03 deliberately reappear here.*
+
+### 16 — Quantization: Decoding the Notation
+
+1. "The entire quantization field hides in one line of notation: W-x A-y —
+   x-bit weights, y-bit activations. The two letters buy completely
+   different things, and if you know which letter you turned, you know which
+   bottleneck you fixed."
+2. "Turn the W dial. Weights are static — known before deployment — so you
+   can be aggressive: four bits, per-group scales, GPTQ- and AWQ-style error
+   compensation, all offline. What does it buy? Bandwidth — decode re-reads
+   every weight, every token — and capacity. What does it NOT buy? Compute.
+   Watch the tensor cores: still FP16. W4A16 is the serving default, and it
+   is a pure memory play."
+3. "Now the A dial. Activations are dynamic and outlier-prone — harder. But
+   the moment BOTH operands are cheap, the matmul drops onto low-precision
+   tensor cores, and now you bought compute. That gives you the whole
+   family: W4A16 for serving, eight-bit both ways for compute, four-bit
+   weights at the frontier — and the KV cache as a third dial that buys
+   capacity alone."
+4. "And remember the roofline slide, where I hid the B200's other two
+   ceilings? Here they are: 2,250, 4,500, 9,000. The hardware has dials
+   too — and it's turning them in the same direction."
+
+### 17 — Precision Becomes an Architecture Hyperparameter
+
+1. "Watch where quantization enters the pipeline. Old world: after training
+   — PTQ, compress and accept the loss. Then DeepSeek-V3 moved it before
+   pretraining: FP8-native. K3 moves it inside training: quantization-aware
+   training through the whole post-training stage — SFT and RL, with
+   rollout and training sharing the same scheme, so serving never sees a
+   precision it wasn't trained in."
+2. "K3's recipe: MXFP4 expert weights — the experts are the bulk of the
+   2.8 trillion — with MXFP8 activations; attention, the latent
+   projections, shared experts and routers stay higher precision. The 'MX'
+   is microscaling — one shared scale per small block of values — and that
+   block-wise scale is what keeps four-bit weights accurate. Watch the
+   wall repaint sixteen, eight, four — and the quality line hold flat."
+3. "The payoff: versus FP8, four-bit expert weights halve the weight
+   memory and the decode bandwidth *again* — and that flows straight into
+   the token price. Watch the machine: footprint frees, the pipe carries
+   half the bytes per token, quality holds."
+4. "So the takeaway: at the frontier, precision is an architecture
+   hyperparameter, co-designed with the model — not a compression
+   afterthought. And now weights are cheap to store — but decode still
+   reads every weight it uses. What if we simply used fewer of them per
+   token? Enter MoE."
+
+*(final click → next page)*
+
+---
+
 
 ---
 

@@ -17,8 +17,6 @@ window.DECK_PAGES = [
   "13-linear.html",
   "14-kda.html",
   "15-payoff.html",
-  "16-quant-notation.html",
-  "17-quant-sota.html",
   "18-moe.html",
   "19-moe-evo.html",
   "20-moe-bill.html",
@@ -27,4 +25,7 @@ window.DECK_PAGES = [
   "23-mtp.html",
   "24-map.html",
   "25-close.html",
+  // backup pages (after the thank-you): the quantization pair
+  "16-quant-notation.html",
+  "17-quant-sota.html",
 ];
