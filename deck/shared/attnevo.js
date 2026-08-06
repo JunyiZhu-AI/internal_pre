@@ -3,7 +3,7 @@
 var EV = {
   nodes: [
     { key: "mha", name: "MHA", sub: "baseline", bytes: "2.6 MB / token", color: "#6b7284" },
-    { key: "gqa", name: "MQA / GQA", sub: "share KV heads", bytes: "330 KB / token", color: "#3987e5" },
+    { key: "gqa", name: "MQA / GQA", sub: "share KV heads", bytes: "0.33 MB / token", color: "#3987e5" },
     { key: "mla", name: "MLA", sub: "low-rank latent", bytes: "~70 KB / token", color: "#6fb1ff" },
     { key: "sparse", name: "Sparse", sub: "fewer tokens", bytes: "≤ window", color: "#e0a935" },
     { key: "linear", name: "Linear / SSM", sub: "fixed-size state", bytes: "O(1) state", color: "#2fd6b0" },
@@ -53,7 +53,7 @@ var EV = {
     kvcut: "≈ 75% KV cut — only 24 of 93 layers cache (hybrid + MLA)",
     speed: "~6", speedLabel: "× decode throughput at 1M context",
     quality: "quality parity or better on long-context benchmarks",
-    ladder: [["MHA", "2.6 MB"], ["GQA", "330 KB"], ["MLA", "~70 KB"], ["hybrid-KDA", "~tens of KB"]],
+    ladder: [["MHA", "2.6 MB"], ["GQA", "0.33 MB"], ["MLA", "~70 KB"], ["hybrid-KDA", "~tens of KB"]],
   },
 
   // compact recurring mini-map strip (slides 10-15). activeIdx: index into nodes.

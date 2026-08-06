@@ -426,7 +426,7 @@ do.*
 ### 15 — Attention Line: The Payoff
 
 1. "Read the gauge one last time, across the whole line: megabytes per
-   token under MHA, 330 kilobytes under GQA, seventy under MLA, tens under
+   token under MHA, 0.33 megabytes under GQA, seventy kilobytes under MLA, tens under
    the hybrid-KDA recipe — mostly state, barely cache."
 2. "The numbers for that recipe. The 75% KV cut you can read straight off
    the architecture table: only 24 of K3's 93 layers are MLA and carry a
