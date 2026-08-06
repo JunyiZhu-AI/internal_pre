@@ -374,21 +374,9 @@ do.*
    exactly the currency a bandwidth-bound decoder has to spare."
 4. "DeepSeek V2 and V3, Kimi K2 — and K3's full-attention layers still use
    gated MLA today. Keep that in mind: MLA isn't a detour we pass by; it's
-   part of the endpoint."
-
-### 12 — Sparse Attention: Attend to Fewer Tokens
-
-1. "A different axis entirely: keep attention exact, but aim it at fewer
-   tokens. Sliding window — each token sees the last w — and suddenly cache
-   and compute are bounded by w, not by context."
-2. "The modern versions learn *where* to look: DeepSeek's NSA runs
-   compressed, selected, and local branches; Kimi's MoBA gates blocks like
-   a mixture of experts routes tokens."
-3. "Whatever falls outside the window or the selected blocks can be evicted
-   from the cache — that's a capacity win exactly where long context hurts."
-4. "The trade-off: selection is discrete. Miss a block, lose the memory.
-   Long-range recall needs care — which is precisely what the next idea
-   attacks."
+   part of the endpoint. And now the radical turn: however small the
+   per-token cache gets, it still *grows* with context — what if we
+   dropped the cache entirely?"
 
 ### 13 — Linear Attention & SSMs: Replace the Cache with a State
 

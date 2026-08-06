@@ -14,7 +14,6 @@ window.DECK_PAGES = [
   "09-evo-map.html",
   "10-gqa.html",
   "11-mla.html",
-  "12-sparse.html",
   "13-linear.html",
   "14-kda.html",
   "15-payoff.html",
