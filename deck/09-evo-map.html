@@ -25,8 +25,6 @@
   .gsq { width: 40px; height: 40px; border: 2px solid; border-radius: 7px; display: flex; flex-direction: column; justify-content: space-evenly; padding: 5px; background: rgba(47,214,176,0.06); }
   .gsq u { display: block; height: 4px; border-radius: 2px; background: #2fd6b0; }
   .gsq.kda { background: rgba(224,75,56,0.05); }
-  #gaugewrap { position: absolute; left: 50%; transform: translateX(-50%); top: 470px; opacity: 0; }
-  #gaugewrap .ev-gauge b { font-size: 16px; }
   #story { position: absolute; left: 0; bottom: 72px; width: 100%; text-align: center; font-size: 20px; font-weight: 800; color: var(--accent); opacity: 0; }
 </style>
 </head>
@@ -36,7 +34,6 @@
 
   <div id="metric"></div>
   <div id="lineage"></div>
-  <div id="gaugewrap"><div class="ev-gauge">KV bytes / token · <b id="gv">2.6 MB</b></div></div>
   <div id="story"></div>
 </div>
 
@@ -69,10 +66,6 @@
   });
 
   function on(key) { document.getElementById("nd-" + key).classList.add("on"); }
-  function setG(txt) {
-    document.getElementById("gv").textContent = txt;
-    gsap.fromTo("#gaugewrap", { scale: 1.14 }, { scale: 1, duration: 0.45, ease: "power2.out" });
-  }
 
   var tl = gsap.timeline({ paused: true });
 
@@ -80,18 +73,17 @@
   tl.fromTo("#lineage", { opacity: 0, y: 16 }, { opacity: 1, y: 0, duration: 0.6, ease: "power2.out" })
     .fromTo(".conn", { scaleX: 0 }, { scaleX: 1, duration: 0.35, stagger: 0.06, ease: "power2.out" }, "<")
     .fromTo("#metric", { opacity: 0 }, { opacity: 1, duration: 0.45 })
-    .fromTo("#gaugewrap", { opacity: 0, y: 8 }, { opacity: 1, y: 0, duration: 0.4 })
     .call(function () { on("mha"); });
   DECK.markStep(tl);
 
   // step 2: the cache shrinks — GQA, MLA, Sparse
-  tl.call(function () { on("gqa"); setG("0.33 MB"); }).to({}, { duration: 0.9 })
-    .call(function () { on("mla"); setG("~70 KB"); }).to({}, { duration: 0.9 });
+  tl.call(function () { on("gqa"); }).to({}, { duration: 0.9 })
+    .call(function () { on("mla"); }).to({}, { duration: 0.9 });
   DECK.markStep(tl);
 
   // step 3: the cache disappears — Linear, KDA
-  tl.call(function () { on("linear"); setG("O(1) state"); }).to({}, { duration: 0.9 })
-    .call(function () { on("kda"); setG("~tens of KB"); }).to({}, { duration: 0.9 });
+  tl.call(function () { on("linear"); }).to({}, { duration: 0.9 })
+    .call(function () { on("kda"); }).to({}, { duration: 0.9 });
   DECK.markStep(tl);
 
   // step 4: the story in one line
@@ -100,8 +92,6 @@
   DECK.register(tl, {
     reset: function () {
       document.querySelectorAll(".nd.on").forEach(function (n) { n.classList.remove("on"); });
-      document.getElementById("gv").textContent = "2.6 MB";
-      gsap.set("#gaugewrap", { scale: 1 });
     }
   });
 </script>
