@@ -68,7 +68,7 @@
     d.style.left = (44 + i * 240) + "px";
     d.style.borderColor = g.color + "77";
     d.innerHTML = '<span class="gn" style="color:' + g.color + '">' + g.name + '</span><span class="gs">' + g.gen + "</span>" +
-      '<div class="gd">' + (g.approx ? "~" : "") + g.tflops.toLocaleString() + " ÷ " + g.bw +
+      '<div class="gd">' + (g.approx ? "~" : "") + g.tflops.toLocaleString() + " TF ÷ " + g.bw + " TB/s" +
       ' → <b style="color:' + g.color + '">~' + GPUS.balance(g) + " F/B</b>" + (g.approx ? " ⚠" : "") + "</div>";
     cards.appendChild(d);
   });
