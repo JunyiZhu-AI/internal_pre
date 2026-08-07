@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Preliminaries — The Memory Wall: Memory Access Lags Behind Compute</title>
-<link rel="stylesheet" href="shared/deck.css?v=28">
+<link rel="stylesheet" href="shared/deck.css?v=29">
 <style>
   .gcard {
     position: absolute; top: 104px; width: 226px; height: 46px;
@@ -54,9 +54,9 @@
 </div>
 
 <script src="../vendor/gsap.min.js"></script>
-<script src="shared/gpus.js?v=28"></script>
-<script src="shared/manifest.js?v=28"></script>
-<script src="shared/deck.js?v=28"></script>
+<script src="shared/gpus.js?v=29"></script>
+<script src="shared/manifest.js?v=29"></script>
+<script src="shared/deck.js?v=29"></script>
 <script>
   document.getElementById("punch").innerHTML = GPUS.punchline + ' <span class="cliff">— ' + GPUS.cliffhanger + "</span>";
 
@@ -93,10 +93,6 @@
   el("text", { x: X0 + W / 2 - 100, y: Y0 + 38 }, "arithmetic intensity (FLOPs / byte)");
   el("text", { x: X0 - 52, y: ry(16384) - 10 }, "TFLOPS");
 
-  // the ridge band (revealed at step 7)
-  var band = el("rect", { x: rx(150), y: Y0 - H, width: rx(440) - rx(150), height: H, "class": "band", opacity: 0 });
-  el("text", { x: rx(150) + 6, y: 60, fill: "#9aa1b5", opacity: 0, id: "bandlab1" }, "the ridge has lived here");
-  el("text", { x: rx(150) + 6, y: 76, fill: "#9aa1b5", opacity: 0, id: "bandlab2" }, "for six years: 150–440");
   var memLab = el("text", { x: rx(2), y: 240, fill: "#6fb1ff", "font-weight": 700, opacity: 0 }, "← memory-bound: more FLOPs change nothing");
   var cmpLab = el("text", { x: rx(500), y: 240, fill: "#2fd6b0", "font-weight": 700, opacity: 0 }, "compute-bound →");
 
@@ -180,9 +176,7 @@
         .to("#decdot", { scale: 1.3, duration: 0.25, yoyo: true, repeat: 1 });
     }
     if (g.key === "b300") {
-      tl.to(band, { opacity: 1, duration: 0.5 })
-        .to("#bandlab1, #bandlab2", { opacity: 1, duration: 0.35 })
-        .fromTo("#punch", { opacity: 0, y: 10 }, { opacity: 1, y: 0, duration: 0.5 });
+      tl.fromTo("#punch", { opacity: 0, y: 10 }, { opacity: 1, y: 0, duration: 0.5 });
     } else {
       DECK.markStep(tl);   // the B300 beat is the finale — no trailing pause
     }

@@ -151,10 +151,12 @@ section.)*
 6. **[B200 roof; dot to 8]** "Blackwell: 2,250 teraFLOPS, and decode's roof
    reaches eight. Ceilings up seven-fold since A100; decode up four-fold."
 
-7. **[B300 ⚠: dot shakes, +0; band + punchline]** "And Blackwell Ultra —
+7. **[B300 ⚠: dot shakes, +0; punchline]** "And Blackwell Ultra —
    compute pushes toward 3,500, bandwidth doesn't move: decode gains
-   *nothing*. Add the band: across six years the ridge lives between 150 and
-   440, and decode sits at one. This is the structural fact of the talk:
+   *nothing*. Count the two journeys: the compute ceiling climbed from 312
+   to 3,500 teraFLOPS — eleven-fold — while decode's roof, the bandwidth,
+   went two to eight — four-fold, then flat. And decode sits at an
+   arithmetic intensity of one. This is the structural fact of the talk:
    hardware cannot fix memory-bound. Everything from here on — every
    technique in the toolkit — is about attacking this from the *software and
    architecture* side. Rubin and HBM4 arrive next year; the divergence

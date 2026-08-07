@@ -22,7 +22,7 @@ var GPUS = {
   divergence: "A100 → B200: compute ×7.2 · bandwidth ×4.0",
   h200note: "same FLOPs · +43% bandwidth · +76% capacity",
   rubin: "next: Rubin + HBM4, H2 2026 ⚠ — the divergence continues",
-  punchline: "Five generations: compute ceilings ×11 — decode's roof ×4, then flat. Hardware cannot fix memory-bound.",
+  punchline: "Five generations: compute ceilings ×11 (312 → 3,500 TF) — decode's roof ×4 (2 → 8 TB/s), then flat. Hardware cannot fix memory-bound.",
   cliffhanger: "but inference has TWO phases — and one of them lives on the other side of the ridge. Next: prefill vs decode.",
   sparse: "all TFLOPS BF16 dense — marketing numbers are 2:4 sparse",
 };
